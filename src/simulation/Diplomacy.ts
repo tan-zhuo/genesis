@@ -158,7 +158,7 @@ export function runDiplomacy(world: WorldState, rng: SeededRandom): void {
         if (neighbors) {
           const aggrA = a.traits.aggression + a.modifiers.aggression;
           const aggrB = b.traits.aggression + b.modifiers.aggression;
-          rel -= ((Math.max(0, aggrA) + Math.max(0, aggrB)) / 200) * 0.9;
+          rel -= ((Math.max(0, aggrA) + Math.max(0, aggrB)) / 200) * 1.15;
         }
         // Cultural affinity
         rel += (Math.min(a.culture, b.culture) / 100) * 0.15;

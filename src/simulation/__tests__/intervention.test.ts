@@ -118,9 +118,14 @@ describe('Anthropogenic climate', () => {
         if (!civ.alive) continue;
         civ.researchedTechs = ['survival', 'agriculture', 'writing', 'metallurgy', 'engineering', 'navigation', 'gunpowder', 'industry', 'electricity'];
         civ.technologyLevel = civ.researchedTechs.length;
-        civ.population = Math.max(civ.population, 2_000_000);
       }
-      simulateYears(world, 1200);
+      // A sustained industrial world: keep the smokestacks burning.
+      for (let chunk = 0; chunk < 12; chunk++) {
+        for (const civ of world.civs) {
+          if (civ.alive) civ.population = Math.max(civ.population, 3_000_000);
+        }
+        simulateYears(world, 100);
+      }
       return world;
     };
     const w1 = run();

@@ -7,6 +7,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { Universe } from '../state/simulatorStore';
 import { MapStatic, Snapshot } from '../simulation/types';
 import { buildTerrainCanvas } from './mapDetail';
+import { TECH_COUNT } from '../simulation/Technology';
 import { useT } from '../i18n';
 
 const TEX_W = 2048;
@@ -76,7 +77,7 @@ function paintLights(ctx: CanvasRenderingContext2D, mapStatic: MapStatic, snapsh
     const o = owners[i];
     const tech = o >= 0 ? snapshot.civs[o]?.technologyLevel ?? 1 : 1;
     const lum = Math.min(1, Math.log10(pop[i] + 1) / 5);
-    const eraT = Math.min(1, tech / 13);
+    const eraT = Math.min(1, tech / TECH_COUNT);
     img.data[i * 4] = 255 * lum;
     img.data[i * 4 + 1] = (150 + eraT * 100) * lum;
     img.data[i * 4 + 2] = (50 + eraT * 205) * lum;

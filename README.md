@@ -121,6 +121,12 @@ Only the *recipe* is ever serialized: seed + world config + civilization configs
 
 `src/simulation/__tests__/` covers: PRNG determinism, identical worlds from identical configs, seed divergence, exact replay equality (including event years), population sanity over 2,000 years (no NaN/∞/negatives), war termination (hard cap well under 50 years), city founding/expansion, splits & extinctions occurring in hostile worlds, config round-tripping to identical simulations, config validation/clamping, and rules measurably changing history. Plus a 10,000-year smoke/performance run.
 
+## The technology web · 人类科技网
+
+47 real human technologies in a dependency DAG — agriculture, pottery, the wheel, writing, currency, philosophy, medicine, navigation, printing, gunpowder, banking, the scientific method, steam engines, railroads, vaccination, electricity, flight, antibiotics, computing, the internet, genetic engineering, AI, fusion, spaceflight, transcendence… Civilizations do **not** walk a fixed ladder: each one picks its next research by **weighted choice biased by geography** (coastline share → sailing & navigation; mountains → mining & metallurgy; river valleys → irrigation; population density → medicine), **traits and doctrine** (the Iron Creed rushes gunpowder, the Golden Scale rushes banking, the Silent Sky rushes universities). Two nations in the same world grow visibly different trees — inspect any nation's personal path in the Technology tab. Naval powers can wage overseas conquest once they master navigation.
+
+47 项真实人类科技构成依赖网络。文明**不走固定阶梯**：每个文明按**地理**（海岸线→帆船航海，山地→采矿冶金，河谷→灌溉，人口密度→医术）与**性格信条**（铁血信条抢火药、金秤信条抢银行、寂空之思抢大学）加权选择下一项研究——同一世界里两个国家的科技树长得截然不同。科技页可查看每个国家的专属路径；掌握航海的海权国家可发动跨洋征服。
+
 ## Scientific models · 科学模型
 
 The physical world is grounded in real published models, each cheap enough for 10,000-year runs:

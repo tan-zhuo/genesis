@@ -4,7 +4,7 @@ import { ArrowLeft, Crosshair, Swords } from 'lucide-react';
 import { Rule } from '../simulation/types';
 import { InspectorTab, Universe, useSimulatorStore } from '../state/simulatorStore';
 import { fmtNum, fmtPct } from '../utils/format';
-import { techEraKey } from '../simulation/Technology';
+import { techEraKeyOf } from '../simulation/Technology';
 import { useT } from '../i18n';
 import { CivilizationPanel } from './CivilizationPanel';
 import { Timeline } from './Timeline';
@@ -114,7 +114,7 @@ function OverviewPanel({ universe }: { universe: Universe }): JSX.Element {
         <button key={c.id} className="civ-row" onClick={() => { selectCiv(c.id); setTab('nations'); }}>
           <span className="dot" style={{ background: c.color }} />
           <span className="civ-row-name">{c.name}</span>
-          <span className="muted small">{t(`era.${techEraKey(c.technologyLevel)}`)}</span>
+          <span className="muted small">{t(`era.${techEraKeyOf(c.researchedTechs)}`)}</span>
           <span className="civ-row-pop">{fmtNum(c.population)}</span>
           <span className="civ-row-territory muted">{fmtPct(c.territoryPct)}</span>
         </button>

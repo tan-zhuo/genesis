@@ -3,6 +3,7 @@
 // state. Opening a share link recomputes the identical world.
 import { Intervention, InterventionType, Rule, RuleActionType, RuleMetric, RuleOperator, Traits, WorldConfig, CivConfig, SIM_VERSION } from '../simulation/types';
 import { CIV_COLORS } from '../simulation/names';
+import { TECH_BY_ID } from '../simulation/Technology';
 
 const METRICS: RuleMetric[] = [
   'population', 'populationDensity', 'food', 'foodPerCapita', 'technology', 'military',
@@ -37,7 +38,7 @@ function validTraits(v: unknown): Traits {
   };
 }
 
-const VALID_TECHS = ['survival', 'agriculture', 'writing', 'metallurgy', 'engineering', 'navigation', 'gunpowder', 'industry', 'electricity', 'computing', 'ai'];
+const VALID_TECHS = [...TECH_BY_ID.keys()];
 
 function validCiv(v: unknown, index: number): CivConfig {
   const o = (v ?? {}) as Record<string, unknown>;

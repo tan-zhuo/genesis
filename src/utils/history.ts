@@ -1,6 +1,6 @@
 // Template-based world history narrative — no LLM, just data. Bilingual.
 import { Snapshot, WorldEvent } from '../simulation/types';
-import { techEraKey } from '../simulation/Technology';
+import { techEraKeyOf } from '../simulation/Technology';
 import { Lang, translate } from '../i18n';
 
 function fmt(n: number): string {
@@ -113,7 +113,7 @@ export function summarizeWorld(snapshot: Snapshot, allEvents: WorldEvent[], lang
   // Technology era.
   if (alive.length > 0) {
     const leader = [...alive].sort((a, b) => b.technologyLevel - a.technologyLevel)[0];
-    const era = translate(lang, `era.${techEraKey(leader.technologyLevel)}`);
+    const era = translate(lang, `era.${techEraKeyOf(leader.researchedTechs)}`);
     const hasAi = leader.researchedTechs.includes('ai');
     paragraphs.push(
       zh

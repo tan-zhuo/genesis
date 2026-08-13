@@ -329,6 +329,8 @@ const en: Record<string, string> = {
 
   // Tech tree
   'tech.all': 'All',
+  'tech.requires': 'Requires',
+  'tech.pathHint': "{name}'s path: {n}/{total} technologies — shaped by its coasts, mountains, crowds, and creed.",
   'tech.waiting': 'Waiting for the world…',
 
   // Timeline
@@ -815,6 +817,8 @@ const zh: Record<string, string> = {
   'era.transcendent': '超越时代',
 
   'tech.all': '全部',
+  'tech.requires': '前置',
+  'tech.pathHint': '{name}的科技之路：{n}/{total} — 由它的海岸、山脉、人口与信条塑造。',
   'tech.waiting': '等待世界生成…',
 
   'tl.all': '全部',

@@ -194,13 +194,14 @@ interface BuildingStyle {
 }
 
 function eraStyle(tech: number, k: number): BuildingStyle {
-  if (tech <= 4) {
+  // tech = number of researched technologies (of ~37)
+  if (tech <= 10) {
     return { wall: k % 2 ? '#8a6a44' : '#7d5f3c', roof: '#5d4226', tall: false, chimney: false };
   }
-  if (tech <= 7) {
+  if (tech <= 22) {
     return { wall: k % 2 ? '#9a938a' : '#8b847a', roof: '#6e4a34', tall: false, chimney: false };
   }
-  if (tech <= 9) {
+  if (tech <= 30) {
     return { wall: k % 2 ? '#7a7570' : '#6b6560', roof: '#4a4643', tall: false, chimney: true };
   }
   return { wall: k % 2 ? '#9fb2c8' : '#8fa4bd', roof: '#c8d6e8', tall: true, chimney: false };
@@ -237,7 +238,7 @@ export function buildBuildingsCanvas(map: MapStatic, snapshot: Snapshot): HTMLCa
 
     // Walls for major settlements (pre-industrial look for old eras, ring road later)
     if (city.level === 'capital' || city.level === 'city') {
-      ctx.strokeStyle = tech <= 8 ? 'rgba(120, 110, 96, 0.85)' : 'rgba(140, 155, 175, 0.6)';
+      ctx.strokeStyle = tech <= 26 ? 'rgba(120, 110, 96, 0.85)' : 'rgba(140, 155, 175, 0.6)';
       ctx.lineWidth = 1.1;
       ctx.beginPath();
       ctx.arc(cx, cy, spread * P * 0.95, 0, Math.PI * 2);

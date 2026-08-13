@@ -129,6 +129,7 @@ export interface Civilization {
   technologyLevel: number; // number of researched techs
   researchedTechs: string[];
   researchProgress: number;
+  currentResearch: string | null; // tech id chosen by geography/culture-weighted selection
 
   military: number; // 0-100 scale-ish strength index
   economy: number; // 0-100
@@ -436,6 +437,7 @@ export interface CivSummary {
   technologyLevel: number;
   researchedTechs: string[];
   researchProgress: number;
+  currentResearch: string | null;
   nextTechCost: number;
   military: number;
   economy: number;

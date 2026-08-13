@@ -61,6 +61,7 @@ export function growPopulation(world: WorldState, civ: Civilization, food: FoodR
   }
   if (crowding > 1.15) deathRate += Math.min(0.04, (crowding - 1.15) * 0.05); // density disease
   if (civ.warYears > 0) deathRate += 0.004; // wartime attrition beyond battle losses
+  deathRate /= tech.health; // medicine, vaccination, antibiotics, genetics
   deathRate *= 0.9 + rng.next() * 0.2; // small deterministic yearly variance
 
   // Rule-driven growth modifier (percentage points on net growth)

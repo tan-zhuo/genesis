@@ -7,6 +7,7 @@ import { TERRAINS } from '../simulation/types';
 import { useT } from '../i18n';
 import { Landmark, ZoomIn } from 'lucide-react';
 import { GOD_TOOLS } from './GodToolbar';
+import { TECH_COUNT } from '../simulation/Technology';
 import {
   buildBuildingsCanvas,
   buildDetailCanvas,
@@ -167,7 +168,7 @@ export function WorldCanvas({ universe }: Props): JSX.Element {
       return snapshot.civs.map((civ) => {
         switch (metric) {
           case 'technology':
-            return civ.technologyLevel / 13;
+            return civ.technologyLevel / TECH_COUNT;
           case 'economy':
             return civ.economy / 100;
           case 'military':
@@ -260,7 +261,7 @@ export function WorldCanvas({ universe }: Props): JSX.Element {
           const o = owner[i];
           const tech = o >= 0 ? snapshot.civs[o]?.technologyLevel ?? 1 : 1;
           const lum = Math.min(1, Math.log10(p + 1) / 5.2);
-          const eraT = Math.min(1, tech / 11); // 0 firelight -> 1 electric
+          const eraT = Math.min(1, tech / TECH_COUNT); // 0 firelight -> 1 electric
           lImg.data[i * 4] = 255 * lum;
           lImg.data[i * 4 + 1] = (140 + eraT * 110) * lum;
           lImg.data[i * 4 + 2] = (40 + eraT * 215) * lum;

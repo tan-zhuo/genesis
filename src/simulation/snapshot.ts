@@ -1,7 +1,7 @@
 // Build the render payload the worker posts to the UI thread.
 // Long series are decimated before sending so snapshots stay light even
 // after 10,000 simulated years.
-import { nextTech } from './Technology';
+import { techCost, TECH_BY_ID } from './Technology';
 import { relationStatus } from './Diplomacy';
 import {
   CivHistory,
@@ -66,7 +66,7 @@ export function buildSnapshot(
 ): Snapshot {
   const landTiles = countLandTiles(world);
   const civs: CivSummary[] = world.civs.map((c) => {
-    const upcoming = nextTech(c.researchedTechs);
+    const upcoming = c.currentResearch ? TECH_BY_ID.get(c.currentResearch) : null;
     return {
       id: c.id,
       name: c.name,
@@ -77,7 +77,8 @@ export function buildSnapshot(
       technologyLevel: c.technologyLevel,
       researchedTechs: [...c.researchedTechs],
       researchProgress: c.researchProgress,
-      nextTechCost: upcoming ? upcoming.cost : 0,
+      currentResearch: c.currentResearch,
+      nextTechCost: upcoming ? techCost(upcoming) : 0,
       military: c.military,
       economy: c.economy,
       happiness: c.happiness,

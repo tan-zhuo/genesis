@@ -243,6 +243,7 @@ export function createCivilization(
     technologyLevel: cfg.startTechs.length,
     researchedTechs: [...cfg.startTechs],
     researchProgress: 0,
+    currentResearch: null,
     military: 10,
     economy: 20,
     happiness: 60,

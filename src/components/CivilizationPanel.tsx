@@ -2,7 +2,7 @@
 import { ArrowLeft, Crosshair, Skull } from 'lucide-react';
 import { Universe, useSimulatorStore } from '../state/simulatorStore';
 import { CivSummary } from '../simulation/types';
-import { techEraKey } from '../simulation/Technology';
+import { techEraKeyOf } from '../simulation/Technology';
 import { useT } from '../i18n';
 import { fmtNum, fmtPct } from '../utils/format';
 import { LineChart } from './LineChart';
@@ -66,7 +66,7 @@ export function CivilizationPanel({ universe, civ }: { universe: Universe; civ: 
         <div className="big-stat"><span className="big-stat-value">{fmtNum(civ.population)}</span><span className="big-stat-label">{t('ov.population')}</span></div>
         <div className="big-stat"><span className="big-stat-value">{fmtPct(civ.territoryPct)}</span><span className="big-stat-label">{t('nat.territory')}</span></div>
         <div className="big-stat"><span className="big-stat-value">{civ.cityCount}</span><span className="big-stat-label">{t('ov.cities')}</span></div>
-        <div className="big-stat"><span className="big-stat-value">{t(`era.${techEraKey(civ.technologyLevel)}`)}</span><span className="big-stat-label">{t('nat.era')}</span></div>
+        <div className="big-stat"><span className="big-stat-value">{t(`era.${techEraKeyOf(civ.researchedTechs)}`)}</span><span className="big-stat-label">{t('nat.era')}</span></div>
       </div>
 
       <div className="stat-bars">

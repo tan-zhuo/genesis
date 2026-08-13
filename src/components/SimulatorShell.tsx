@@ -34,6 +34,7 @@ import { fmtNum } from '../utils/format';
 import { useI18nStore, useT } from '../i18n';
 import { useLang } from '../i18n';
 import { STAT_ICONS } from './icons';
+import { TECH_COUNT } from '../simulation/Technology';
 
 const MAP_MODES: MapMode[] = ['political', 'night', 'population', 'terrain', 'resources', 'technology', 'economy', 'military', 'culture'];
 
@@ -211,7 +212,7 @@ export function SimulatorShell(): JSX.Element {
           <span className="stat-chip" title={t('top.cities')}><STAT_ICONS.cities size={12} /> {snapshot?.cities.length ?? 0}</span>
           <span className="stat-chip" title={t('top.wars')}><STAT_ICONS.wars size={12} /> {activeWars}</span>
           <span className="stat-chip" title={t('top.alliances')}><STAT_ICONS.alliances size={12} /> {allianceCount}</span>
-          <span className="stat-chip" title={t('top.tech')}><STAT_ICONS.tech size={12} /> {maxTech}/13</span>
+          <span className="stat-chip" title={t('top.tech')}><STAT_ICONS.tech size={12} /> {maxTech}/{TECH_COUNT}</span>
         </div>
 
         <div className="topbar-actions">

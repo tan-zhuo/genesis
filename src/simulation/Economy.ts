@@ -1,7 +1,7 @@
 // Economy, happiness, stability, culture, military index, research,
 // and territorial expansion.
 import { SeededRandom } from './Random';
-import { nextTech, techMultipliers, TECH_BY_ID } from './Technology';
+import { availableTechs, techCost, techMultipliers, TechCategory, Technology, TECH_BY_ID } from './Technology';
 import { TERRAIN_INDEX } from './Terrain';
 import { demonym } from './names';
 import { Civilization, WorldState } from './types';
@@ -51,10 +51,101 @@ export function runEconomy(world: WorldState, civ: Civilization, foodRatio: numb
   if (!Number.isFinite(civ.military) || civ.military < 0) civ.military = 0;
 }
 
+/**
+ * What a civilization chooses to research is shaped by where it lives, how it
+ * lives, and what it believes — coastal traders reach for sails and banks,
+ * mountain warlords for bronze and gunpowder, crowded river valleys for
+ * irrigation and medicine.
+ */
+function researchWeight(world: WorldState, civ: Civilization, tech: Technology): number {
+  // Geography sample (deterministic stride over owned tiles)
+  const m = world.map;
+  let coast = 0;
+  let mountain = 0;
+  let river = 0;
+  let sampled = 0;
+  const nTiles = civ.tiles.length;
+  const step = Math.max(1, Math.floor(nTiles / 30));
+  for (let i = 0; i < nTiles; i += step) {
+    const t = civ.tiles[i];
+    if (m.owner[t] !== civ.index) continue;
+    sampled++;
+    const x = t % m.width;
+    const y = Math.floor(t / m.width);
+    if (m.terrain[t] === 4) mountain++;
+    if (m.river[t]) river++;
+    if (
+      (x > 0 && m.terrain[t - 1] === 0) ||
+      (x < m.width - 1 && m.terrain[t + 1] === 0) ||
+      (y > 0 && m.terrain[t - m.width] === 0) ||
+      (y < m.height - 1 && m.terrain[t + m.width] === 0)
+    ) {
+      coast++;
+    }
+  }
+  const denom = Math.max(1, sampled);
+  const coastFrac = coast / denom;
+  const mountainFrac = mountain / denom;
+  const riverFrac = river / denom;
+  const density = civ.population / Math.max(1, civ.territory);
+  const doctrine = civ.faith.doctrine;
+
+  let w = 1;
+  const cat: TechCategory = tech.category;
+  if (cat === 'maritime') {
+    w += coastFrac * 6;
+    if (coastFrac < 0.02) w *= 0.08; // a landlocked nation has no use for sails
+  } else if (cat === 'military') {
+    w += civ.traits.aggression / 45 + civ.memory.wars * 0.15;
+    if (doctrine === 'war' || doctrine === 'storm') w += 1.2;
+  } else if (cat === 'agrarian') {
+    w += riverFrac * 3 + Math.max(0, 1 - civ.yields.food / Math.max(1, civ.population / 180));
+    if (doctrine === 'harvest') w += 1.2;
+  } else if (cat === 'economy') {
+    w += civ.traits.trade / 40;
+    if (doctrine === 'gold') w += 1.5;
+  } else if (cat === 'knowledge') {
+    w += civ.traits.science / 40;
+    if (doctrine === 'void') w += 1.5;
+  } else if (cat === 'industry') {
+    w += mountainFrac * 3 + civ.economy / 80;
+  } else if (cat === 'health') {
+    w += Math.min(2.5, density / 400) + civ.memory.disasters * 0.2;
+    if (doctrine === 'ash') w += 0.8;
+  } else if (cat === 'apex') {
+    w += civ.traits.science / 30;
+  }
+  return Math.max(0.05, w);
+}
+
 export function runResearch(world: WorldState, civ: Civilization, rng: SeededRandom): void {
   const tech = techMultipliers(civ.researchedTechs);
-  const upcoming = nextTech(civ.researchedTechs);
-  if (!upcoming) return;
+
+  // Pick (or re-pick) a research target via geography/culture-weighted choice.
+  if (!civ.currentResearch || civ.researchedTechs.includes(civ.currentResearch)) {
+    const candidates = availableTechs(civ.researchedTechs);
+    if (candidates.length === 0) return;
+    const weights = candidates.map((c) => researchWeight(world, civ, c));
+    let total = 0;
+    for (const w of weights) total += w;
+    let roll = rng.next() * total;
+    let chosen = candidates[0];
+    for (let i = 0; i < candidates.length; i++) {
+      roll -= weights[i];
+      if (roll <= 0) {
+        chosen = candidates[i];
+        break;
+      }
+    }
+    civ.currentResearch = chosen.id;
+    civ.researchProgress = 0;
+  }
+
+  const upcoming = TECH_BY_ID.get(civ.currentResearch);
+  if (!upcoming) {
+    civ.currentResearch = null;
+    return;
+  }
 
   let cityScience = 0;
   for (const cid of civ.cityIds) {
@@ -71,20 +162,21 @@ export function runResearch(world: WorldState, civ: Civilization, rng: SeededRan
     rng.range(0.9, 1.1);
   civ.researchProgress += Math.max(0, points);
 
-  if (civ.researchProgress >= upcoming.cost) {
-    civ.researchProgress -= upcoming.cost;
+  const cost = techCost(upcoming);
+  if (civ.researchProgress >= cost) {
+    civ.researchProgress = 0;
     civ.researchedTechs.push(upcoming.id);
     civ.technologyLevel = civ.researchedTechs.length;
-    const t = TECH_BY_ID.get(upcoming.id);
+    civ.currentResearch = null;
     addEvent(world, {
       year: world.year,
       type: 'technology',
       civIds: [civ.id],
       title: `${civ.name} discovers ${upcoming.name}`,
-      description: `The ${demonym(civ.name)} mastered ${upcoming.name}. ${t?.blurb ?? ''}`,
+      description: `The ${demonym(civ.name)} mastered ${upcoming.name}.`,
       titleZh: `${civ.name}掌握了「${upcoming.nameZh}」`,
-      descriptionZh: `${civ.name}人掌握了${upcoming.nameZh}。${t?.blurbZh ?? ''}`,
-      importance: upcoming.id === 'agriculture' || upcoming.id === 'industry' || upcoming.id === 'ai' ? 7 : 5,
+      descriptionZh: `${civ.name}人掌握了${upcoming.nameZh}。`,
+      importance: ['agriculture', 'writing', 'gunpowder', 'industry', 'electricity', 'ai', 'spaceflight', 'transcendence'].includes(upcoming.id) ? 7 : 4,
     });
   }
 }

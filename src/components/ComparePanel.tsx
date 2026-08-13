@@ -5,6 +5,7 @@ import { Universe, useSimulatorStore } from '../state/simulatorStore';
 import { fmtNum } from '../utils/format';
 import { LineChart, Series } from './LineChart';
 import { useT } from '../i18n';
+import { TECH_COUNT } from '../simulation/Technology';
 
 export function ComparePanel({ universe }: { universe: Universe }): JSX.Element {
   const universes = useSimulatorStore((s) => s.universes);
@@ -43,7 +44,7 @@ export function ComparePanel({ universe }: { universe: Universe }): JSX.Element 
       { label: t('cmp.civilizations'), value: `${alive.length}` },
       { label: t('cmp.cities'), value: `${s.cities.length}` },
       { label: t('cmp.warsFought'), value: `${totalWars}` },
-      { label: t('cmp.maxTech'), value: `${Math.max(0, ...alive.map((c) => c.technologyLevel))}/13` },
+      { label: t('cmp.maxTech'), value: `${Math.max(0, ...alive.map((c) => c.technologyLevel))}/${TECH_COUNT}` },
       { label: t('cmp.extinctions'), value: `${s.civs.filter((c) => !c.alive).length}` },
     ];
   };

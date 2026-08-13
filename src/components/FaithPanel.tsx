@@ -36,7 +36,7 @@ export function FaithPanel({ universe }: { universe: Universe }): JSX.Element {
       traits: civ ? { ...civ.traits } : natives[0].traits,
       // The crossing strips the great machines — they arrive advanced but must rebuild.
       startTechs: (civ?.researchedTechs ?? ['survival']).filter(
-        (id) => !['computing', 'ai', 'spaceflight', 'transcendence'].includes(id),
+        (id) => !['computing', 'internet', 'genetics', 'ai', 'fusion', 'spaceflight', 'transcendence'].includes(id),
       ),
     };
     createUniverse(

@@ -3,7 +3,7 @@
 // simulateYear, so replays and branches reproduce it exactly.
 import { SeededRandom } from './Random';
 import { TERRAIN_INDEX } from './Terrain';
-import { nextTech } from './Technology';
+import { techCost, TECH_BY_ID } from './Technology';
 import { Civilization, Intervention, WorldState } from './types';
 import { addEvent, claimTile, createCivilization, randomCivConfig, tileYields } from './World';
 import { areNeighbors, isAtWar } from './Diplomacy';
@@ -267,8 +267,8 @@ export function applyIntervention(world: WorldState, iv: Intervention, rng: Seed
       civ.stability = Math.min(100, civ.stability + 30);
       civ.food += civ.population * 0.5;
       civ.gold += 800;
-      const upcoming = nextTech(civ.researchedTechs);
-      if (upcoming) civ.researchProgress += upcoming.cost * 0.35;
+      const upcoming = civ.currentResearch ? TECH_BY_ID.get(civ.currentResearch) : null;
+      if (upcoming) civ.researchProgress += techCost(upcoming) * 0.35;
       civ.lowStabilityYears = 0;
       receiveMiracle(world, civ, 'any');
       addEvent(world, {

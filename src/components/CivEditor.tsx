@@ -30,7 +30,7 @@ interface Props {
   onRandomize?: () => void;
 }
 
-const STARTABLE_TECHS = TECHNOLOGIES.slice(1, 6); // agriculture..navigation
+const STARTABLE_TECHS = TECHNOLOGIES.filter((t) => t.tier === 1); // neolithic package
 
 export function CivEditor({ civ, onChange, onRemove, onRandomize }: Props): JSX.Element {
   const t = useT();

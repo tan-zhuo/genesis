@@ -7,7 +7,7 @@ import { demonym } from './names';
 import { Civilization, War, WorldState } from './types';
 import { addEvent, compactTiles, releaseTile, transferTile } from './World';
 import { writeEpitaph } from './Faith';
-import { areNeighbors, isAtWar } from './Diplomacy';
+import { areNeighbors, civDistance, isAtWar } from './Diplomacy';
 
 const WAR_NAMES = ['War', 'Conflict', 'Struggle', 'Campaign', 'Crusade'];
 const WAR_ADJECTIVES = ['Great', 'Long', 'Bitter', 'Bloody', 'Silent', 'Burning', 'Iron', 'Broken', 'Endless', 'Red'];
@@ -23,17 +23,26 @@ export function runWarDeclarations(world: WorldState, rng: SeededRandom): void {
       if (!b.alive) continue;
       if (isAtWar(world, i, j)) continue;
       if (world.alliances[i][j]) continue;
-      if (!areNeighbors(a, b)) continue;
       const rel = world.relations[i][j];
-      if (rel > -45) continue;
-
+      const neighbors = areNeighbors(a, b);
       const aggr = Math.max(0, Math.min(150, a.traits.aggression + a.modifiers.aggression));
       const powerRatio = b.military > 0 ? a.military / b.military : 2;
       const risk = a.traits.riskTaking / 100;
-      let prob = (aggr / 100) * 0.04;
-      prob += Math.max(0, powerRatio - 1) * 0.03 * (0.5 + risk);
-      prob += a.modifiers.warProbability / 100;
-      prob += ((-rel - 45) / 100) * 0.02;
+
+      let prob = 0;
+      if (neighbors && rel < -35) {
+        // Border war: grievance boils over.
+        prob = (aggr / 100) * 0.04;
+        prob += Math.max(0, powerRatio - 1) * 0.03 * (0.5 + risk);
+        prob += a.modifiers.warProbability / 100;
+        prob += ((-rel - 35) / 100) * 0.02;
+      } else if (!neighbors && rel < 25 && techMultipliers(a.researchedTechs).naval) {
+        // Overseas conquest: a naval power eyes a weaker shore across the sea.
+        if (powerRatio > 1.5 && civDistance(a, b) < 120) {
+          prob = (aggr / 100) * 0.012 * (0.5 + risk) + a.modifiers.warProbability / 200;
+        }
+      }
+      if (prob <= 0) continue;
       if (powerRatio < 0.7 && risk < 0.6) prob *= 0.2; // don't pick fights you'll lose
       if (a.stability < 30) prob *= 0.4; // unstable nations avoid new wars
       prob = Math.max(0, Math.min(0.5, prob));
