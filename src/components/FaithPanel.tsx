@@ -3,6 +3,8 @@ import { Universe, useSimulatorStore } from '../state/simulatorStore';
 import { DOCTRINES, GOD_TITLES, getDoctrine } from '../simulation/Faith';
 import { useLang, useT } from '../i18n';
 import { fmtNum } from '../utils/format';
+import { DOCTRINE_ICONS, EVENT_ICONS } from './icons';
+import { Church, HeartHandshake, Landmark } from 'lucide-react';
 
 export function FaithPanel({ universe }: { universe: Universe }): JSX.Element {
   const t = useT();
@@ -43,7 +45,11 @@ export function FaithPanel({ universe }: { universe: Universe }): JSX.Element {
               <span className="faith-row-name">{c.name}</span>
               {doctrine ? (
                 <span className="faith-doctrine" title={zh ? doctrine.creedZh : doctrine.creedEn}>
-                  {doctrine.icon} {zh ? doctrine.nameZh : doctrine.nameEn}
+                  {(() => {
+                    const Icon = DOCTRINE_ICONS[doctrine.id] ?? Church;
+                    return <Icon size={12} className="inline-icon" />;
+                  })()}{' '}
+                  {zh ? doctrine.nameZh : doctrine.nameEn}
                 </span>
               ) : (
                 <span className="muted small">{t('faith.noDoctrine')}</span>
@@ -63,7 +69,7 @@ export function FaithPanel({ universe }: { universe: Universe }): JSX.Element {
             <div className="faith-row-foot muted small">
               <span>{dev >= 25 ? t('faith.devout') : dev <= -25 ? t('faith.defiant') : t('faith.indifferent')} ({dev > 0 ? '+' : ''}{dev})</span>
               {c.pendingPrayer && (
-                <span className="prayer-flag">🙏 {t(`faith.prays.${c.pendingPrayer.kind}`)}</span>
+                <span className="prayer-flag"><HeartHandshake size={11} className="inline-icon" /> {t(`faith.prays.${c.pendingPrayer.kind}`)}</span>
               )}
             </div>
           </button>
@@ -75,7 +81,7 @@ export function FaithPanel({ universe }: { universe: Universe }): JSX.Element {
           <div className="section-title">{t('faith.ruins')} · {snapshot.epitaphs.length}</div>
           {snapshot.epitaphs.slice(-8).reverse().map((e) => (
             <button key={e.civId} className="epitaph-row" onClick={() => focusOn(e.x, e.y)}>
-              <span className="epitaph-marker">🪦</span>
+              <span className="epitaph-marker"><Landmark size={15} /></span>
               <div>
                 <div className="epitaph-name" style={{ color: e.color }}>{e.name} · {e.foundedYear}–{e.deathYear}</div>
                 <div className="epitaph-text">{zh ? e.textZh : e.textEn}</div>
@@ -92,7 +98,10 @@ export function FaithPanel({ universe }: { universe: Universe }): JSX.Element {
             <div key={e.id} className="event-item importance-6">
               <span className="event-year">{t('tl.year', { y: e.year.toLocaleString('en-US') })}</span>
               <span className="event-title">
-                {e.type === 'prayer' ? '🙏' : e.type === 'philosophy' ? '📜' : '🕯'}{' '}
+                {(() => {
+                  const Icon = EVENT_ICONS[e.type] ?? Church;
+                  return <Icon size={13} className="event-icon" />;
+                })()}{' '}
                 {zh && e.titleZh ? e.titleZh : e.title}
               </span>
               <span className="event-desc">{zh && e.descriptionZh ? e.descriptionZh : e.description}</span>
@@ -105,7 +114,12 @@ export function FaithPanel({ universe }: { universe: Universe }): JSX.Element {
       <div className="doctrine-legend">
         {DOCTRINES.map((d) => (
           <div key={d.id} className="doctrine-item" title={zh ? d.creedZh : d.creedEn}>
-            <span>{d.icon}</span>
+            <span>
+              {(() => {
+                const Icon = DOCTRINE_ICONS[d.id] ?? Church;
+                return <Icon size={15} />;
+              })()}
+            </span>
             <div>
               <b>{zh ? d.nameZh : d.nameEn}</b>
               <div className="muted small">「{zh ? d.creedZh : d.creedEn}」</div>

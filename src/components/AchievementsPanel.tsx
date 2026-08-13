@@ -1,5 +1,7 @@
 // Achievements modal: what history have you witnessed?
-import { X } from 'lucide-react';
+import { Lock, X } from 'lucide-react';
+import { ACHIEVEMENT_ICONS } from './icons';
+import { Trophy } from 'lucide-react';
 import { useSimulatorStore } from '../state/simulatorStore';
 import { ACHIEVEMENTS, loadUnlocked } from '../utils/achievements';
 import { useLang, useT } from '../i18n';
@@ -25,9 +27,10 @@ export function AchievementsPanel(): JSX.Element | null {
           {ACHIEVEMENTS.map((a) => {
             const has = unlocked.has(a.id);
             const text = lang === 'zh' ? a.zh : a.en;
+            const Icon = has ? ACHIEVEMENT_ICONS[a.id] ?? Trophy : Lock;
             return (
               <div key={a.id} className={`ach-card ${has ? 'ach-unlocked' : ''}`}>
-                <span className="ach-icon">{has ? a.icon : '🔒'}</span>
+                <span className="ach-icon"><Icon size={19} /></span>
                 <div>
                   <div className="ach-name">{text.name}</div>
                   <div className="ach-desc">{text.desc}</div>

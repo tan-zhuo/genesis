@@ -5,6 +5,7 @@ import { MapMode, Universe, useSimulatorStore } from '../state/simulatorStore';
 import { MapStatic, Snapshot, WorldEvent } from '../simulation/types';
 import { TERRAINS } from '../simulation/types';
 import { useT } from '../i18n';
+import { Landmark, ZoomIn } from 'lucide-react';
 import { GOD_TOOLS } from './GodToolbar';
 import {
   buildBuildingsCanvas,
@@ -508,9 +509,19 @@ export function WorldCanvas({ universe }: Props): JSX.Element {
             ctx.stroke();
             const mx = v.x + ((a.cx + b.cx) / 2) * v.scale;
             const my = v.y + ((a.cy + b.cy) / 2) * v.scale;
-            ctx.font = '14px sans-serif';
-            ctx.textAlign = 'center';
-            ctx.fillText('⚔', mx, my + 5);
+            // Crossed-blades marker, drawn (no emoji): halo + red X
+            ctx.beginPath();
+            ctx.arc(mx, my, 8, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(10, 12, 18, 0.72)';
+            ctx.fill();
+            ctx.strokeStyle = `rgba(240, 90, 80, ${0.55 + pulse})`;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(mx - 4, my - 4);
+            ctx.lineTo(mx + 4, my + 4);
+            ctx.moveTo(mx + 4, my - 4);
+            ctx.lineTo(mx - 4, my + 4);
+            ctx.stroke();
           }
           ctx.restore();
         }
@@ -847,7 +858,7 @@ export function WorldCanvas({ universe }: Props): JSX.Element {
             <span className="tt-terrain">{t(`terrain.${hoverInfo.terrain}`)}</span>
             <span className="muted">({hoverTile.x}, {hoverTile.y})</span>
           </div>
-          {hoverInfo.city && <div className="tt-row">🏛 {hoverInfo.city.name}（{t(`level.${hoverInfo.city.level}`)}）</div>}
+          {hoverInfo.city && <div className="tt-row"><Landmark size={11} className="inline-icon" /> {hoverInfo.city.name}（{t(`level.${hoverInfo.city.level}`)}）</div>}
           {hoverInfo.owner && (
             <div className="tt-row">
               <span className="dot" style={{ background: hoverInfo.owner.color }} /> {hoverInfo.owner.name}
@@ -868,7 +879,7 @@ function MapLegend({ mode, snapshot }: { mode: MapMode; snapshot: Snapshot | nul
   return (
     <div className="map-legend">
       <div className="legend-title">{t(`mode.${mode}`)}</div>
-      <div className="legend-zoom-hint">{t('legend.zoomHint')}</div>
+      <div className="legend-zoom-hint"><ZoomIn size={10} className="inline-icon" /> {t('legend.zoomHint')}</div>
       {(mode === 'political' || mode === 'night') && snapshot && (
         <div className="legend-items">
           {snapshot.civs.filter((c) => c.alive).slice(0, 12).map((c) => (

@@ -28,6 +28,7 @@ import { configToShareUrl, exportConfig, importConfig } from '../utils/serializa
 import { fmtNum } from '../utils/format';
 import { useI18nStore, useT } from '../i18n';
 import { useLang } from '../i18n';
+import { STAT_ICONS } from './icons';
 
 const MAP_MODES: MapMode[] = ['political', 'night', 'population', 'terrain', 'resources', 'technology', 'economy', 'military', 'culture'];
 
@@ -92,8 +93,8 @@ export function SimulatorShell(): JSX.Element {
     if (!unlockedRef.current) unlockedRef.current = loadUnlocked();
     const fresh = checkAchievements(universe.snapshot, universe.events, unlockedRef.current);
     if (fresh.length > 0) {
-      const names = fresh.map((a) => `${a.icon} ${uiLang === 'zh' ? a.zh.name : a.en.name}`).join(' · ');
-      showToast(`🏆 ${t('ach.unlocked')}: ${names}`);
+      const names = fresh.map((a) => (uiLang === 'zh' ? a.zh.name : a.en.name)).join(' · ');
+      showToast(`${t('ach.unlocked')}: ${names}`);
     }
   }, [universe?.snapshot, universe?.events, uiLang, showToast, t]);
 
@@ -198,12 +199,12 @@ export function SimulatorShell(): JSX.Element {
         <span className="muted small">{universe.running ? t('top.running') : t('top.paused')}</span>
 
         <div className="topbar-stats">
-          <span className="stat-chip" title={t('top.population')}>👥 {fmtNum(totalPop)}</span>
-          <span className="stat-chip" title={t('top.civs')}>🏳 {alive.length}</span>
-          <span className="stat-chip" title={t('top.cities')}>🏛 {snapshot?.cities.length ?? 0}</span>
-          <span className="stat-chip" title={t('top.wars')}>⚔ {activeWars}</span>
-          <span className="stat-chip" title={t('top.alliances')}>🤝 {allianceCount}</span>
-          <span className="stat-chip" title={t('top.tech')}>💡 {maxTech}/11</span>
+          <span className="stat-chip" title={t('top.population')}><STAT_ICONS.population size={12} /> {fmtNum(totalPop)}</span>
+          <span className="stat-chip" title={t('top.civs')}><STAT_ICONS.civs size={12} /> {alive.length}</span>
+          <span className="stat-chip" title={t('top.cities')}><STAT_ICONS.cities size={12} /> {snapshot?.cities.length ?? 0}</span>
+          <span className="stat-chip" title={t('top.wars')}><STAT_ICONS.wars size={12} /> {activeWars}</span>
+          <span className="stat-chip" title={t('top.alliances')}><STAT_ICONS.alliances size={12} /> {allianceCount}</span>
+          <span className="stat-chip" title={t('top.tech')}><STAT_ICONS.tech size={12} /> {maxTech}/11</span>
         </div>
 
         <div className="topbar-actions">

@@ -1,6 +1,6 @@
 // Right-hand inspector: tabbed panels for everything that isn't the map.
 import { useMemo, useState } from 'react';
-import { Crosshair } from 'lucide-react';
+import { ArrowLeft, Crosshair, Swords } from 'lucide-react';
 import { Rule } from '../simulation/types';
 import { InspectorTab, Universe, useSimulatorStore } from '../state/simulatorStore';
 import { fmtNum, fmtPct } from '../utils/format';
@@ -136,7 +136,7 @@ function OverviewPanel({ universe }: { universe: Universe }): JSX.Element {
               <div key={w.id} className="war-row">
                 <span className="war-name">{w.name}</span>
                 <span>
-                  <b style={{ color: a?.color }}>{a?.name}</b> ⚔ <b style={{ color: b?.color }}>{b?.name}</b>
+                  <b style={{ color: a?.color }}>{a?.name}</b> <Swords size={11} className="inline-icon" /> <b style={{ color: b?.color }}>{b?.name}</b>
                   <span className="muted small"> · {t('ov.since', { y: w.startYear })}</span>
                 </span>
               </div>
@@ -205,7 +205,7 @@ function CitiesPanel({ universe }: { universe: Universe }): JSX.Element {
     return (
       <div className="city-detail">
         <div className="civ-panel-head">
-          <button className="icon-btn" onClick={() => selectCity(null)} title={t('nat.back')}>←</button>
+          <button className="icon-btn" onClick={() => selectCity(null)} title={t('nat.back')}><ArrowLeft size={14} /></button>
           <span className="civ-panel-name">{selected.name}</span>
           <span className="tag">{t(`level.${selected.level}`)}</span>
           <button className="icon-btn" onClick={() => focusOn(selected.x, selected.y)} title={t('nat.locate')}>

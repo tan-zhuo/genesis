@@ -4,12 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Universe, useSimulatorStore } from '../state/simulatorStore';
 import { WorldEvent } from '../simulation/types';
 import { useLang } from '../i18n';
-
-const ICONS: Record<string, string> = {
-  war: '⚔️', peace: '🕊', extinction: '💀', split: '💥', empire: '👑',
-  disaster: '🌋', divine: '⚡', birth: '🌱', technology: '💡', 'city-captured': '🏴',
-  prayer: '🙏', faith: '🕯', philosophy: '📜',
-};
+import { EVENT_ICONS } from './icons';
+import { ScrollText } from 'lucide-react';
 
 export function EventBanner({ universe }: { universe: Universe }): JSX.Element | null {
   const [current, setCurrent] = useState<WorldEvent | null>(null);
@@ -91,7 +87,12 @@ export function EventBanner({ universe }: { universe: Universe }): JSX.Element |
         setCurrent(null);
       }}
     >
-      <span className="event-banner-icon">{ICONS[current.type] ?? '📜'}</span>
+      <span className="event-banner-icon">
+        {(() => {
+          const Icon = EVENT_ICONS[current.type] ?? ScrollText;
+          return <Icon size={17} />;
+        })()}
+      </span>
       <span className="event-banner-year">{lang === 'zh' ? `${current.year} 年` : `Year ${current.year}`}</span>
       <span className="event-banner-title">{title}</span>
     </button>

@@ -3,28 +3,7 @@ import { useMemo, useState } from 'react';
 import { Universe, useSimulatorStore } from '../state/simulatorStore';
 import { WorldEvent, WorldEventType } from '../simulation/types';
 import { useLang, useT } from '../i18n';
-
-const TYPE_ICONS: Partial<Record<WorldEventType, string>> = {
-  birth: '🌱',
-  'city-founded': '🏛',
-  'city-captured': '🏴',
-  technology: '💡',
-  war: '⚔️',
-  peace: '🕊',
-  trade: '🪙',
-  migration: '👥',
-  revolution: '✊',
-  split: '💥',
-  collapse: '🏚',
-  extinction: '💀',
-  disaster: '🌋',
-  alliance: '🤝',
-  empire: '👑',
-  divine: '⚡',
-  prayer: '🙏',
-  faith: '🕯',
-  philosophy: '📜',
-};
+import { EVENT_ICONS } from './icons';
 
 const FILTERS: { id: string; key: string; types: WorldEventType[] }[] = [
   { id: 'all', key: 'tl.all', types: [] },
@@ -35,6 +14,11 @@ const FILTERS: { id: string; key: string; types: WorldEventType[] }[] = [
   { id: 'faith', key: 'tl.faith', types: ['prayer', 'faith', 'philosophy', 'divine'] },
   { id: 'world', key: 'tl.world', types: ['disaster', 'migration', 'trade', 'alliance'] },
 ];
+
+function EventIcon({ type }: { type: WorldEventType }): JSX.Element | null {
+  const Icon = EVENT_ICONS[type];
+  return Icon ? <Icon size={13} className="event-icon" /> : null;
+}
 
 export function Timeline({ universe }: { universe: Universe }): JSX.Element {
   const [filter, setFilter] = useState('all');
@@ -78,7 +62,7 @@ export function Timeline({ universe }: { universe: Universe }): JSX.Element {
           <button key={e.id} className={`event-item importance-${Math.min(9, e.importance)}`} onClick={() => clickEvent(e)}>
             <span className="event-year">{t('tl.year', { y: e.year.toLocaleString('en-US') })}</span>
             <span className="event-title">
-              {TYPE_ICONS[e.type] ?? '•'} {lang === 'zh' && e.titleZh ? e.titleZh : e.title}
+              <EventIcon type={e.type} /> {lang === 'zh' && e.titleZh ? e.titleZh : e.title}
             </span>
             <span className="event-desc">{lang === 'zh' && e.descriptionZh ? e.descriptionZh : e.description}</span>
           </button>

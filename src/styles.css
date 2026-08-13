@@ -33,6 +33,8 @@ button { font-family: inherit; color: inherit; background: none; border: none; c
 code { font-family: var(--mono); font-size: 0.85em; background: var(--bg-raised); padding: 1px 5px; border-radius: 3px; border: 1px solid var(--border); }
 
 .muted { color: var(--text-muted); }
+.inline-icon { display: inline-block; vertical-align: -0.12em; }
+.event-icon { display: inline-block; vertical-align: -0.15em; color: var(--text-muted); }
 .small { font-size: 12px; }
 .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
 
@@ -277,6 +279,9 @@ input[type='checkbox'] { accent-color: var(--accent); }
 .run-on { background: var(--good); box-shadow: 0 0 6px var(--good); }
 .topbar-stats { display: flex; gap: 6px; margin-left: 12px; flex-wrap: wrap; }
 .stat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   font-size: 12px;
   padding: 3px 8px;
   background: var(--bg-raised);
@@ -375,6 +380,7 @@ input[type='checkbox'] { accent-color: var(--accent); }
   writing-mode: initial;
 }
 .god-btn {
+  color: var(--text-muted);
   width: 32px;
   height: 32px;
   display: flex;
@@ -386,7 +392,8 @@ input[type='checkbox'] { accent-color: var(--accent); }
   transition: all 0.12s;
 }
 .god-btn:hover { background: var(--bg-hover); border-color: var(--border-strong); }
-.god-active { background: rgba(245, 165, 36, 0.15); border-color: var(--accent); box-shadow: 0 0 8px rgba(245, 165, 36, 0.35); }
+.god-btn:hover { color: var(--text); }
+.god-active { color: var(--accent); background: rgba(245, 165, 36, 0.15); border-color: var(--accent); box-shadow: 0 0 8px rgba(245, 165, 36, 0.35); }
 .god-hint {
   position: absolute;
   top: 100%;
@@ -421,7 +428,7 @@ input[type='checkbox'] { accent-color: var(--accent); }
   text-align: left;
 }
 .event-banner:hover { border-color: var(--accent); }
-.event-banner-icon { font-size: 18px; }
+.event-banner-icon { display: inline-flex; color: var(--accent); }
 .event-banner-year { font-family: var(--mono); font-size: 11px; color: var(--accent); white-space: nowrap; }
 .event-banner-title { font-weight: 600; font-size: 13px; }
 @keyframes bannerIn { from { opacity: 0; transform: translate(-50%, -8px); } }
@@ -438,7 +445,8 @@ input[type='checkbox'] { accent-color: var(--accent); }
   opacity: 0.5;
 }
 .ach-unlocked { opacity: 1; border-color: rgba(245, 165, 36, 0.45); }
-.ach-icon { font-size: 20px; line-height: 1.2; }
+.ach-icon { display: inline-flex; color: var(--text-muted); padding-top: 2px; }
+.ach-unlocked .ach-icon { color: var(--accent); }
 .ach-name { font-weight: 700; font-size: 13px; }
 .ach-unlocked .ach-name { color: var(--accent); }
 .ach-desc { font-size: 12px; color: var(--text-muted); line-height: 1.45; margin-top: 2px; }
@@ -461,6 +469,7 @@ input[type='checkbox'] { accent-color: var(--accent); }
   z-index: 6;
 }
 .scenario-chip-name { font-weight: 700; }
+.scenario-chip-icon { display: inline-flex; color: var(--accent); }
 .scenario-win { border-color: var(--good); color: var(--good); }
 .scenario-fail { border-color: var(--danger); color: var(--danger); }
 .scenario-modal { max-width: 480px; text-align: center; }
@@ -505,12 +514,12 @@ input[type='checkbox'] { accent-color: var(--accent); }
 .prayer-flag { color: var(--accent); animation: pulse 1.6s infinite; }
 .epitaph-row { display: flex; gap: 9px; width: 100%; text-align: left; padding: 8px; border-radius: var(--radius); border-left: 2px solid var(--border-strong); background: var(--bg-raised); margin-bottom: 6px; }
 .epitaph-row:hover { background: var(--bg-hover); }
-.epitaph-marker { font-size: 15px; }
+.epitaph-marker { display: inline-flex; color: var(--text-muted); padding-top: 2px; }
 .epitaph-name { font-size: 12px; font-weight: 700; }
 .epitaph-text { font-size: 12px; color: var(--text-muted); line-height: 1.55; font-style: italic; margin-top: 2px; }
 .doctrine-legend { display: flex; flex-direction: column; gap: 6px; }
 .doctrine-item { display: flex; gap: 9px; font-size: 12px; align-items: flex-start; }
-.doctrine-item > span { font-size: 15px; }
+.doctrine-item > span { display: inline-flex; color: var(--text-muted); padding-top: 1px; }
 
 /* ---------- Controls bar ---------- */
 .controls-bar {
@@ -632,6 +641,7 @@ input[type='checkbox'] { accent-color: var(--accent); }
 .stat-bar-track { height: 6px; background: var(--bg-raised); border-radius: 3px; overflow: hidden; }
 .stat-bar-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
 .stat-bar-value { font-family: var(--mono); text-align: right; }
+.resource-row > span { display: inline-flex; align-items: center; gap: 4px; }
 .resource-row { display: flex; gap: 12px; flex-wrap: wrap; font-size: 12px; font-family: var(--mono); color: var(--text-muted); margin: 10px 0; }
 
 .relations-box { margin-top: 12px; }

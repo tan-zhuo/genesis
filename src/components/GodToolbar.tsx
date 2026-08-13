@@ -3,17 +3,18 @@ import { useEffect } from 'react';
 import { InterventionType } from '../simulation/types';
 import { useSimulatorStore } from '../state/simulatorStore';
 import { useT } from '../i18n';
+import { GOD_TOOL_ICONS } from './icons';
 
-export const GOD_TOOLS: { id: InterventionType; icon: string; radius: number }[] = [
-  { id: 'meteor', icon: '☄️', radius: 4 },
-  { id: 'plague', icon: '🦠', radius: 14 },
-  { id: 'quake', icon: '🌋', radius: 6 },
-  { id: 'blight', icon: '🥀', radius: 7 },
-  { id: 'bless', icon: '✨', radius: 7 },
-  { id: 'spawnCiv', icon: '🏕', radius: 1 },
-  { id: 'goldenAge', icon: '🌟', radius: 0 },
-  { id: 'inciteWar', icon: '🗡', radius: 0 },
-  { id: 'forcePeace', icon: '🕊', radius: 0 },
+export const GOD_TOOLS: { id: InterventionType; radius: number }[] = [
+  { id: 'meteor', radius: 4 },
+  { id: 'plague', radius: 14 },
+  { id: 'quake', radius: 6 },
+  { id: 'blight', radius: 7 },
+  { id: 'bless', radius: 7 },
+  { id: 'spawnCiv', radius: 1 },
+  { id: 'goldenAge', radius: 0 },
+  { id: 'inciteWar', radius: 0 },
+  { id: 'forcePeace', radius: 0 },
 ];
 
 export function GodToolbar(): JSX.Element {
@@ -33,16 +34,19 @@ export function GodToolbar(): JSX.Element {
   return (
     <div className="god-toolbar" data-tutorial="god">
       <div className="god-toolbar-label">{t('god.title')}</div>
-      {GOD_TOOLS.map((tool) => (
-        <button
-          key={tool.id}
-          className={`god-btn ${godTool === tool.id ? 'god-active' : ''}`}
-          onClick={() => setGodTool(godTool === tool.id ? null : tool.id)}
-          title={`${t(`god.${tool.id}`)} — ${t(`god.${tool.id}.desc`)}`}
-        >
-          <span className="god-icon">{tool.icon}</span>
-        </button>
-      ))}
+      {GOD_TOOLS.map((tool) => {
+        const Icon = GOD_TOOL_ICONS[tool.id];
+        return (
+          <button
+            key={tool.id}
+            className={`god-btn ${godTool === tool.id ? 'god-active' : ''}`}
+            onClick={() => setGodTool(godTool === tool.id ? null : tool.id)}
+            title={`${t(`god.${tool.id}`)} — ${t(`god.${tool.id}.desc`)}`}
+          >
+            <Icon size={16} />
+          </button>
+        );
+      })}
       {godTool && (
         <div className="god-hint">
           {t(`god.${godTool}`)}: {t('god.clickMap')}

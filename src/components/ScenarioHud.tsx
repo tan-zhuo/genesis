@@ -3,6 +3,8 @@ import { Universe, useSimulatorStore } from '../state/simulatorStore';
 import { getScenario } from '../utils/scenarios';
 import { useLang, useT } from '../i18n';
 import { fmtNum } from '../utils/format';
+import { SCENARIO_ICONS } from './icons';
+import { Flag } from 'lucide-react';
 
 export function ScenarioHud({ universe }: { universe: Universe }): JSX.Element | null {
   const t = useT();
@@ -22,7 +24,12 @@ export function ScenarioHud({ universe }: { universe: Universe }): JSX.Element |
   return (
     <>
       <div className={`scenario-chip ${sc.outcome === 'win' ? 'scenario-win' : sc.outcome === 'fail' ? 'scenario-fail' : ''}`} title={text.desc}>
-        <span>{def.icon}</span>
+        <span className="scenario-chip-icon">
+          {(() => {
+            const Icon = SCENARIO_ICONS[def.id] ?? Flag;
+            return <Icon size={13} />;
+          })()}
+        </span>
         <span className="scenario-chip-name">{text.name}</span>
         {sc.outcome === 'win' && <span>✓</span>}
         {sc.outcome === 'fail' && <span>✕</span>}
@@ -32,7 +39,7 @@ export function ScenarioHud({ universe }: { universe: Universe }): JSX.Element |
         <div className="modal-overlay">
           <div className="modal scenario-modal">
             <div className={`scenario-verdict ${sc.outcome === 'win' ? 'verdict-win' : 'verdict-fail'}`}>
-              {def.icon} {sc.outcome === 'win' ? t('sc.win') : t('sc.fail')}
+              {sc.outcome === 'win' ? t('sc.win') : t('sc.fail')}
             </div>
             <h2 className="scenario-modal-name">{text.name}</h2>
             <p className="scenario-modal-desc">{text.desc}</p>

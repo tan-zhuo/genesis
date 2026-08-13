@@ -3,6 +3,7 @@ import { Universe } from '../state/simulatorStore';
 import { TECHNOLOGIES } from '../simulation/Technology';
 import { useSimulatorStore } from '../state/simulatorStore';
 import { useLang, useT } from '../i18n';
+import { FlaskConical } from 'lucide-react';
 
 export function TechnologyTree({ universe }: { universe: Universe }): JSX.Element {
   const snapshot = universe.snapshot;
@@ -40,7 +41,7 @@ export function TechnologyTree({ universe }: { universe: Universe }): JSX.Elemen
             <div key={tech.id} className={`tech-node ${researched ? 'tech-done' : ''} ${isNext ? 'tech-next' : ''}`}>
               <div className="tech-node-head">
                 <span className="tech-name">{lang === 'zh' ? tech.nameZh : tech.name}</span>
-                <span className="tech-cost muted">{tech.cost.toLocaleString('en-US')} 🔬</span>
+                <span className="tech-cost muted">{tech.cost.toLocaleString('en-US')} <FlaskConical size={11} className="inline-icon" /></span>
               </div>
               <div className="tech-blurb">{lang === 'zh' ? tech.blurbZh : tech.blurb}</div>
               {isNext && focus && (

@@ -4,6 +4,7 @@ import { Globe2, Compass, ChevronRight, Languages } from 'lucide-react';
 import { useSimulatorStore } from '../state/simulatorStore';
 import { WORLD_PRESETS } from '../simulation/presets';
 import { SCENARIOS } from '../utils/scenarios';
+import { SCENARIO_ICONS } from './icons';
 import { useI18nStore, useT } from '../i18n';
 
 export function Landing(): JSX.Element {
@@ -128,7 +129,13 @@ export function Landing(): JSX.Element {
                 onClick={() => startScenario(sc.id)}
                 title={lang === 'zh' ? sc.zh.desc : sc.en.desc}
               >
-                <span>{sc.icon} {lang === 'zh' ? sc.zh.name : sc.en.name}</span>
+                <span className="scenario-card-label">
+                  {(() => {
+                    const Icon = SCENARIO_ICONS[sc.id];
+                    return Icon ? <Icon size={13} className="inline-icon" /> : null;
+                  })()}{' '}
+                  {lang === 'zh' ? sc.zh.name : sc.en.name}
+                </span>
                 <ChevronRight size={14} />
               </button>
             ))}

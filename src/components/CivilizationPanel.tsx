@@ -7,6 +7,7 @@ import { useT } from '../i18n';
 import { fmtNum, fmtPct } from '../utils/format';
 import { LineChart } from './LineChart';
 import { civProfile } from './CivEditor';
+import { RESOURCE_ICONS } from './icons';
 
 function StatBar({ label, value, color }: { label: string; value: number; color?: string }): JSX.Element {
   return (
@@ -74,11 +75,11 @@ export function CivilizationPanel({ universe, civ }: { universe: Universe; civ: 
       </div>
 
       <div className="resource-row">
-        <span>🌾 {fmtNum(civ.food)}</span>
-        <span>🪵 {fmtNum(civ.wood)}</span>
-        <span>🪨 {fmtNum(civ.stone)}</span>
-        <span>⛏ {fmtNum(civ.iron)}</span>
-        <span>🪙 {fmtNum(civ.gold)}</span>
+        <span><RESOURCE_ICONS.food size={12} /> {fmtNum(civ.food)}</span>
+        <span><RESOURCE_ICONS.wood size={12} /> {fmtNum(civ.wood)}</span>
+        <span><RESOURCE_ICONS.stone size={12} /> {fmtNum(civ.stone)}</span>
+        <span><RESOURCE_ICONS.iron size={12} /> {fmtNum(civ.iron)}</span>
+        <span><RESOURCE_ICONS.gold size={12} /> {fmtNum(civ.gold)}</span>
       </div>
 
       {history && history.years.length > 2 && (
