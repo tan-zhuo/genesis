@@ -64,17 +64,20 @@ export function runCities(world: WorldState, civ: Civilization, rng: SeededRando
     }
     if (tooClose) continue;
     const city = foundCity(world, civ, t, world.year, rng);
-    addEvent(
-      world,
-      world.year,
-      'city-founded',
-      [civ.id],
-      `${city.name} founded`,
-      `The ${demonym(civ.name)} founded ${city.level === 'capital' ? 'their capital ' : ''}${city.name} with ${Math.round(m.population[t]).toLocaleString('en-US')} inhabitants.`,
-      city.level === 'capital' ? 6 : 4,
+    const popStr = Math.round(m.population[t]).toLocaleString('en-US');
+    const isCap = city.level === 'capital';
+    addEvent(world, {
+      year: world.year,
+      type: 'city-founded',
+      civIds: [civ.id],
+      title: `${city.name} founded`,
+      description: `The ${demonym(civ.name)} founded ${isCap ? 'their capital ' : ''}${city.name} with ${popStr} inhabitants.`,
+      titleZh: `${city.name} 建城`,
+      descriptionZh: `${civ.name}人建立了${isCap ? '他们的首都' : ''}${city.name}，初有居民 ${popStr} 人。`,
+      importance: isCap ? 6 : 4,
       x,
       y,
-    );
+    });
     break; // at most one new city per civ per year
   }
 
@@ -87,17 +90,20 @@ export function runCities(world: WorldState, civ: Civilization, rng: SeededRando
     const prev = c.level;
     c.level = levelFor(c.population, civ.capitalCityId === c.id);
     if (prev !== c.level && (c.level === 'town' || c.level === 'city')) {
-      addEvent(
-        world,
-        world.year,
-        'city-founded',
-        [civ.id],
-        `${c.name} grows into a ${c.level}`,
-        `${c.name} now holds ${Math.round(c.population).toLocaleString('en-US')} people and has become a major ${c.level} of ${civ.name}.`,
-        c.level === 'city' ? 5 : 3,
-        c.x,
-        c.y,
-      );
+      const popStr = Math.round(c.population).toLocaleString('en-US');
+      const levelZh = c.level === 'city' ? '大城市' : '城镇';
+      addEvent(world, {
+        year: world.year,
+        type: 'city-founded',
+        civIds: [civ.id],
+        title: `${c.name} grows into a ${c.level}`,
+        description: `${c.name} now holds ${popStr} people and has become a major ${c.level} of ${civ.name}.`,
+        titleZh: `${c.name} 发展为${levelZh}`,
+        descriptionZh: `${c.name}如今拥有 ${popStr} 人口，已成为${civ.name}的重要${levelZh}。`,
+        importance: c.level === 'city' ? 5 : 3,
+        x: c.x,
+        y: c.y,
+      });
     }
     c.foodProduction = m.fertility[c.tile] * 500 * tech.food;
     c.industry = (c.population / 1000) * tech.industry;

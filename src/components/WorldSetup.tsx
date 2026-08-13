@@ -10,10 +10,12 @@ import { CivEditor } from './CivEditor';
 import { RuleBuilder } from './RuleBuilder';
 import { importConfig } from '../utils/serialization';
 import { Tutorial } from './Tutorial';
+import { useT } from '../i18n';
 
 let randomizeCounter = 1;
 
 export function WorldSetup(): JSX.Element {
+  const t = useT();
   const setScreen = useSimulatorStore((s) => s.setScreen);
   const createUniverse = useSimulatorStore((s) => s.createUniverse);
   const showToast = useSimulatorStore((s) => s.showToast);
@@ -39,7 +41,7 @@ export function WorldSetup(): JSX.Element {
 
   const removeCiv = (i: number): void => {
     if (config.civs.length <= 2) {
-      showToast('A world needs at least 2 civilizations.');
+      showToast(t('setup.needTwo'));
       return;
     }
     setConfig((c) => ({ ...c, civs: c.civs.filter((_, j) => j !== i) }));
@@ -60,7 +62,7 @@ export function WorldSetup(): JSX.Element {
 
   const start = (): void => {
     if (config.civs.length < 2) {
-      showToast('Add at least 2 civilizations.');
+      showToast(t('setup.addTwo'));
       return;
     }
     createUniverse(config, undefined, true);
@@ -77,9 +79,9 @@ export function WorldSetup(): JSX.Element {
       file.text().then((text) => {
         try {
           setConfig(importConfig(text));
-          showToast('Configuration imported.');
+          showToast(t('setup.imported'));
         } catch (err) {
-          showToast(`Import failed: ${err instanceof Error ? err.message : 'invalid file'}`);
+          showToast(t('setup.importFailed', { err: err instanceof Error ? err.message : 'invalid file' }));
         }
       });
     };
@@ -93,28 +95,28 @@ export function WorldSetup(): JSX.Element {
       <Tutorial />
       <header className="setup-header">
         <button className="btn btn-ghost btn-sm" onClick={() => setScreen('landing')}>
-          <ArrowLeft size={14} /> Back
+          <ArrowLeft size={14} /> {t('setup.back')}
         </button>
-        <h1>Create a World</h1>
+        <h1>{t('setup.title')}</h1>
         <div className="setup-header-actions">
           <button className="btn btn-ghost btn-sm" onClick={importFile}>
-            <Upload size={14} /> Import config
+            <Upload size={14} /> {t('setup.import')}
           </button>
           <button className="btn btn-primary" onClick={start} data-tutorial="start">
-            <Play size={15} /> Create World &amp; Start
+            <Play size={15} /> {t('setup.start')}
           </button>
         </div>
       </header>
 
       <div className="setup-tabs">
         <button className={`tab ${section === 'world' ? 'tab-active' : ''}`} onClick={() => setSection('world')} data-tutorial="world">
-          1 · World
+          {t('setup.tabWorld')}
         </button>
         <button className={`tab ${section === 'civs' ? 'tab-active' : ''}`} onClick={() => setSection('civs')} data-tutorial="civs">
-          2 · Civilizations <span className="badge">{config.civs.length}</span>
+          {t('setup.tabCivs')} <span className="badge">{config.civs.length}</span>
         </button>
         <button className={`tab ${section === 'rules' ? 'tab-active' : ''}`} onClick={() => setSection('rules')} data-tutorial="rules">
-          3 · Rules <span className="badge">{config.rules.length}</span>
+          {t('setup.tabRules')} <span className="badge">{config.rules.length}</span>
         </button>
       </div>
 
@@ -122,17 +124,17 @@ export function WorldSetup(): JSX.Element {
         {section === 'world' && (
           <div className="panel setup-panel">
             <div className="field-row">
-              <label>Seed</label>
+              <label>{t('setup.seed')}</label>
               <div className="seed-row">
                 <input className="input" value={config.seed} maxLength={64} onChange={(e) => patch({ seed: e.target.value || '1' })} />
-                <button className="icon-btn" onClick={randomSeed} title="Random seed">
+                <button className="icon-btn" onClick={randomSeed} title="🎲">
                   <Dice5 size={15} />
                 </button>
               </div>
-              <p className="hint">Same seed + same configuration always produces the exact same history.</p>
+              <p className="hint">{t('setup.seedHint')}</p>
             </div>
             <div className="field-row">
-              <label>Map size — {config.width} × {config.height} ({civTiles.toLocaleString('en-US')} tiles)</label>
+              <label>{t('setup.mapSize', { w: config.width, h: config.height, n: civTiles.toLocaleString('en-US') })}</label>
               <div className="size-btns">
                 {[120, 160, 200, 260].map((s) => (
                   <button
@@ -146,23 +148,23 @@ export function WorldSetup(): JSX.Element {
               </div>
             </div>
             <div className="field-row">
-              <label>Ocean level — {Math.round(config.seaLevel * 100)}%</label>
+              <label>{t('setup.ocean', { v: Math.round(config.seaLevel * 100) })}</label>
               <input type="range" min={30} max={70} value={config.seaLevel * 100} onChange={(e) => patch({ seaLevel: Number(e.target.value) / 100 })} />
             </div>
             <div className="field-row">
-              <label>Resource richness — {config.resourceRichness.toFixed(1)}×</label>
+              <label>{t('setup.resources', { v: config.resourceRichness.toFixed(1) })}</label>
               <input type="range" min={0} max={20} value={config.resourceRichness * 10} onChange={(e) => patch({ resourceRichness: Number(e.target.value) / 10 })} />
             </div>
             <div className="field-row">
-              <label>Disaster frequency — {config.disasterFrequency === 0 ? 'never' : `${config.disasterFrequency.toFixed(1)}×`}</label>
+              <label>{t('setup.disasters', { v: config.disasterFrequency === 0 ? t('setup.never') : `${config.disasterFrequency.toFixed(1)}×` })}</label>
               <input type="range" min={0} max={20} value={config.disasterFrequency * 10} onChange={(e) => patch({ disasterFrequency: Number(e.target.value) / 10 })} />
             </div>
             <div className="field-row">
-              <label>Start from preset</label>
+              <label>{t('setup.fromPreset')}</label>
               <div className="size-btns">
                 {WORLD_PRESETS.map((p) => (
-                  <button key={p.id} className="chip" title={p.description} onClick={() => setConfig(p.config())}>
-                    {p.name}
+                  <button key={p.id} className="chip" title={t(`preset.${p.id}.desc`)} onClick={() => setConfig(p.config())}>
+                    {t(`preset.${p.id}.name`)}
                   </button>
                 ))}
               </div>
@@ -186,7 +188,7 @@ export function WorldSetup(): JSX.Element {
               ))}
               {config.civs.length < 20 && (
                 <button className="civ-tab civ-tab-add" onClick={addCiv}>
-                  <Plus size={13} /> Add
+                  <Plus size={13} /> {t('setup.add')}
                 </button>
               )}
             </div>
@@ -203,9 +205,7 @@ export function WorldSetup(): JSX.Element {
 
         {section === 'rules' && (
           <div className="panel setup-panel-wide">
-            <p className="hint">
-              Rules are evaluated for every civilization, every year. They nudge behavior — they never dictate outcomes.
-            </p>
+            <p className="hint">{t('setup.rulesHint')}</p>
             <RuleBuilder rules={config.rules} civs={config.civs} onChange={(rules) => patch({ rules })} />
           </div>
         )}

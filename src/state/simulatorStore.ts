@@ -5,6 +5,7 @@ import { create } from 'zustand';
 import { MapStatic, Snapshot, WorldConfig, WorldEvent } from '../simulation/types';
 import { trimEvents } from '../simulation/World';
 import { MainToWorker, WorkerToMain } from '../worker/protocol';
+import { translate, useI18nStore } from '../i18n';
 
 export type MapMode = 'political' | 'population' | 'terrain' | 'resources' | 'technology' | 'economy' | 'military' | 'culture';
 
@@ -129,7 +130,7 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
         }
         case 'error': {
           console.error('[simulation worker]', msg.message);
-          get().showToast(`Simulation error: ${msg.message}`);
+          get().showToast(translate(useI18nStore.getState().lang, 'toast.simError', { msg: msg.message }));
           patchUniverse(universeId, { running: false, replaying: false, runToTarget: null });
           break;
         }
@@ -139,7 +140,7 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
       console.error('Worker crashed', e);
       const u = get().universes.find((x) => x.id === universeId);
       if (!u) return;
-      get().showToast('Simulation worker crashed — restarting it.');
+      get().showToast(translate(useI18nStore.getState().lang, 'toast.workerCrash'));
       // Restart the worker and rebuild the world from config (deterministic).
       try {
         u.worker.terminate();

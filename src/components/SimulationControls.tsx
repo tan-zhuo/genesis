@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { Pause, Play, StepForward, RotateCcw, History, FastForward } from 'lucide-react';
 import { Universe, useSimulatorStore } from '../state/simulatorStore';
+import { useT } from '../i18n';
 
 const SPEEDS = [1, 5, 20, 100, 1000, 10000];
 
@@ -15,6 +16,7 @@ export function SimulationControls({ universe }: { universe: Universe }): JSX.El
   const runToYear = useSimulatorStore((s) => s.runToYear);
   const showToast = useSimulatorStore((s) => s.showToast);
   const [runTo, setRunTo] = useState('10000');
+  const t = useT();
 
   const year = universe.snapshot?.year ?? 0;
   const running = universe.running;
@@ -22,7 +24,7 @@ export function SimulationControls({ universe }: { universe: Universe }): JSX.El
   const doRunTo = (): void => {
     const target = parseInt(runTo, 10);
     if (!Number.isFinite(target) || target <= year) {
-      showToast(`Target year must be greater than ${year}.`);
+      showToast(t('ctrl.runToInvalid', { y: year }));
       return;
     }
     runToYear(Math.min(target, 100000));
@@ -31,18 +33,18 @@ export function SimulationControls({ universe }: { universe: Universe }): JSX.El
   return (
     <div className="controls-bar" data-tutorial="controls">
       <div className="controls-left">
-        <button className="ctrl-btn ctrl-primary" onClick={running ? pause : play} title={running ? 'Pause' : 'Play'}>
+        <button className="ctrl-btn ctrl-primary" onClick={running ? pause : play} title={running ? t('ctrl.pause') : t('ctrl.play')}>
           {running ? <Pause size={16} /> : <Play size={16} />}
         </button>
-        <button className="ctrl-btn" onClick={step} title="Step one year" disabled={running}>
+        <button className="ctrl-btn" onClick={step} title={t('ctrl.step')} disabled={running}>
           <StepForward size={15} />
         </button>
         <button
           className="ctrl-btn"
           onClick={() => {
-            if (window.confirm('Reset the world to Year 0? History will be recomputed from the same seed.')) reset();
+            if (window.confirm(t('ctrl.resetConfirm'))) reset();
           }}
-          title="Reset to year 0"
+          title={t('ctrl.reset')}
         >
           <RotateCcw size={15} />
         </button>
@@ -50,11 +52,11 @@ export function SimulationControls({ universe }: { universe: Universe }): JSX.El
           className="ctrl-btn"
           onClick={replay}
           disabled={year === 0 || universe.replaying}
-          title="Replay: re-run from year 0 to now — deterministically identical"
+          title={t('ctrl.replay')}
         >
           <History size={15} />
         </button>
-        {universe.replaying && <span className="replay-note">replaying…</span>}
+        {universe.replaying && <span className="replay-note">{t('ctrl.replaying')}</span>}
       </div>
 
       <div className="speed-group">
@@ -70,14 +72,14 @@ export function SimulationControls({ universe }: { universe: Universe }): JSX.El
       </div>
 
       <div className="runto-group">
-        <span className="muted small">Run to</span>
+        <span className="muted small">{t('ctrl.runTo')}</span>
         <input
           className="input input-sm input-num"
           value={runTo}
           onChange={(e) => setRunTo(e.target.value.replace(/[^0-9]/g, ''))}
           onKeyDown={(e) => e.key === 'Enter' && doRunTo()}
         />
-        <button className="ctrl-btn" onClick={doRunTo} title="Run to year, then pause">
+        <button className="ctrl-btn" onClick={doRunTo} title={t('ctrl.runToGo')}>
           <FastForward size={15} />
         </button>
         {universe.runToTarget !== null && (
@@ -86,7 +88,7 @@ export function SimulationControls({ universe }: { universe: Universe }): JSX.El
       </div>
 
       <div className="controls-year">
-        Year <b>{year.toLocaleString('en-US')}</b>
+        {t('top.year')} <b>{year.toLocaleString('en-US')}</b>
       </div>
     </div>
   );

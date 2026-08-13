@@ -8,7 +8,9 @@ import { TERRAIN_INDEX } from './Terrain';
 interface DisasterDef {
   type: string;
   title: (region: string) => string;
+  titleZh: string;
   describe: (years: number, severity: number) => string;
+  describeZh: (years: number, severity: number) => string;
   weight: number;
   popLoss: [number, number]; // fraction range within radius
   foodPenalty: [number, number]; // production multiplier range
@@ -21,7 +23,9 @@ const DISASTERS: DisasterDef[] = [
   {
     type: 'drought',
     title: () => 'The Great Drought',
+    titleZh: '大旱灾',
     describe: (y, s) => `Rains failed and rivers thinned. Food production fell by ${Math.round(s * 100)}% for ${y} years.`,
+    describeZh: (y, s) => `雨季失约，河流干涸。粮食产量下降 ${Math.round(s * 100)}%，持续了 ${y} 年。`,
     weight: 30,
     popLoss: [0.02, 0.08],
     foodPenalty: [0.5, 0.75],
@@ -32,7 +36,9 @@ const DISASTERS: DisasterDef[] = [
   {
     type: 'flood',
     title: () => 'Catastrophic Floods',
+    titleZh: '特大洪水',
     describe: (y) => `Rivers burst their banks, drowning fields and villages. Recovery took ${y} years.`,
+    describeZh: (y) => `河水决堤，田野与村庄尽没于洪流。灾后恢复用了 ${y} 年。`,
     weight: 20,
     popLoss: [0.03, 0.1],
     foodPenalty: [0.65, 0.85],
@@ -43,7 +49,9 @@ const DISASTERS: DisasterDef[] = [
   {
     type: 'earthquake',
     title: () => 'The Great Earthquake',
+    titleZh: '大地震',
     describe: () => `The earth split and cities crumbled in moments.`,
+    describeZh: () => `大地开裂，城池在顷刻间倾覆。`,
     weight: 15,
     popLoss: [0.05, 0.15],
     foodPenalty: [0.85, 0.95],
@@ -54,7 +62,9 @@ const DISASTERS: DisasterDef[] = [
   {
     type: 'volcano',
     title: () => 'Volcanic Eruption',
+    titleZh: '火山爆发',
     describe: (y) => `Ash darkened the sky for ${y} years, poisoning harvests across the region.`,
+    describeZh: (y) => `火山灰遮蔽天空长达 ${y} 年，整个地区的收成尽毁。`,
     weight: 8,
     popLoss: [0.08, 0.2],
     foodPenalty: [0.5, 0.7],
@@ -65,7 +75,9 @@ const DISASTERS: DisasterDef[] = [
   {
     type: 'plague',
     title: () => 'The Great Plague',
+    titleZh: '大瘟疫',
     describe: (y, s) => `A terrible pestilence spread along the trade roads, killing ${Math.round(s * 100)}% of those it touched over ${y} years.`,
+    describeZh: (y, s) => `可怕的瘟疫沿着商路蔓延，${y} 年间夺走了所到之处 ${Math.round(s * 100)}% 的生命。`,
     weight: 18,
     popLoss: [0.15, 0.35],
     foodPenalty: [0.8, 0.95],
@@ -76,7 +88,9 @@ const DISASTERS: DisasterDef[] = [
   {
     type: 'meteor',
     title: () => 'A Star Falls',
+    titleZh: '天星坠落',
     describe: () => `A burning stone fell from the heavens, obliterating everything near its impact.`,
+    describeZh: () => `一块燃烧的巨石自天而降，将坠落之处的一切夷为平地。`,
     weight: 2,
     popLoss: [0.4, 0.8],
     foodPenalty: [0.4, 0.6],
@@ -87,7 +101,9 @@ const DISASTERS: DisasterDef[] = [
   {
     type: 'winter',
     title: () => 'The Long Winter',
+    titleZh: '漫长寒冬',
     describe: (y) => `Summer never came. Crops froze in the fields for ${y} consecutive years.`,
+    describeZh: (y) => `夏天再未到来。连续 ${y} 年，庄稼冻毙于田野之中。`,
     weight: 12,
     popLoss: [0.04, 0.12],
     foodPenalty: [0.55, 0.75],
@@ -169,15 +185,18 @@ export function runDisasters(world: WorldState, rng: SeededRandom): void {
   if (world.disasters.length > 20) world.disasters.shift();
 
   const affectedNames = civIds.map((id) => demonym(world.civs[parseInt(id.slice(4), 10)].name)).join(', ');
-  addEvent(
-    world,
-    world.year,
-    'disaster',
+  const affectedNamesZh = civIds.map((id) => world.civs[parseInt(id.slice(4), 10)].name).join('、');
+  const lostStr = Math.round(totalLost).toLocaleString('en-US');
+  addEvent(world, {
+    year: world.year,
+    type: 'disaster',
     civIds,
-    def.title(''),
-    `${def.describe(years, popLoss)}${totalLost > 100 ? ` Around ${Math.round(totalLost).toLocaleString('en-US')} people perished.` : ''}${affectedNames ? ` The ${affectedNames} suffered most.` : ''}`,
-    def.importance,
-    ex,
-    ey,
-  );
+    title: def.title(''),
+    description: `${def.describe(years, popLoss)}${totalLost > 100 ? ` Around ${lostStr} people perished.` : ''}${affectedNames ? ` The ${affectedNames} suffered most.` : ''}`,
+    titleZh: def.titleZh,
+    descriptionZh: `${def.describeZh(years, popLoss)}${totalLost > 100 ? `约 ${lostStr} 人罹难。` : ''}${affectedNamesZh ? `${affectedNamesZh}受灾最重。` : ''}`,
+    importance: def.importance,
+    x: ex,
+    y: ey,
+  });
 }

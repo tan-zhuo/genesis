@@ -4,6 +4,7 @@ import { GitBranch, Trash2 } from 'lucide-react';
 import { Universe, useSimulatorStore } from '../state/simulatorStore';
 import { fmtNum } from '../utils/format';
 import { LineChart, Series } from './LineChart';
+import { useT } from '../i18n';
 
 export function ComparePanel({ universe }: { universe: Universe }): JSX.Element {
   const universes = useSimulatorStore((s) => s.universes);
@@ -15,19 +16,20 @@ export function ComparePanel({ universe }: { universe: Universe }): JSX.Element 
   const removeUniverse = useSimulatorStore((s) => s.removeUniverse);
   const showToast = useSimulatorStore((s) => s.showToast);
   const [seedEdit, setSeedEdit] = useState('');
+  const t = useT();
 
   const other = universes.find((u) => u.id === compareUniverseId && u.id !== universe.id) ?? null;
 
   const branch = (mutate: 'same' | 'seed'): void => {
     if (universes.length >= 4) {
-      showToast('Maximum 4 parallel universes.');
+      showToast(t('cmp.max'));
       return;
     }
     const config = structuredClone(universe.config);
     if (mutate === 'seed' && seedEdit.trim()) config.seed = seedEdit.trim();
     const name = `Universe ${String.fromCharCode(65 + universes.length)}`;
     branchUniverse(universe.id, config, name);
-    showToast(`${name} created${mutate === 'seed' ? ` with seed ${config.seed}` : ' — edit its rules or civs, then compare'}.`);
+    showToast(t('cmp.created', { name, extra: mutate === 'seed' ? t('cmp.createdSeed', { seed: config.seed }) : t('cmp.createdSame') }));
   };
 
   const metrics = (u: Universe): { label: string; value: string }[] => {
@@ -36,13 +38,13 @@ export function ComparePanel({ universe }: { universe: Universe }): JSX.Element 
     const alive = s.civs.filter((c) => c.alive);
     const totalWars = u.events.filter((e) => e.type === 'war').length;
     return [
-      { label: 'Year', value: s.year.toLocaleString('en-US') },
-      { label: 'Population', value: fmtNum(alive.reduce((sum, c) => sum + c.population, 0)) },
-      { label: 'Civilizations', value: `${alive.length}` },
-      { label: 'Cities', value: `${s.cities.length}` },
-      { label: 'Wars fought', value: `${totalWars}` },
-      { label: 'Max technology', value: `${Math.max(0, ...alive.map((c) => c.technologyLevel))}/11` },
-      { label: 'Extinctions', value: `${s.civs.filter((c) => !c.alive).length}` },
+      { label: t('cmp.year'), value: s.year.toLocaleString('en-US') },
+      { label: t('cmp.population'), value: fmtNum(alive.reduce((sum, c) => sum + c.population, 0)) },
+      { label: t('cmp.civilizations'), value: `${alive.length}` },
+      { label: t('cmp.cities'), value: `${s.cities.length}` },
+      { label: t('cmp.warsFought'), value: `${totalWars}` },
+      { label: t('cmp.maxTech'), value: `${Math.max(0, ...alive.map((c) => c.technologyLevel))}/11` },
+      { label: t('cmp.extinctions'), value: `${s.civs.filter((c) => !c.alive).length}` },
     ];
   };
 
@@ -66,27 +68,25 @@ export function ComparePanel({ universe }: { universe: Universe }): JSX.Element 
 
   return (
     <div className="compare-panel">
-      <div className="section-title">Parallel universes</div>
-      <p className="hint">
-        Branch this universe (same seed &amp; config), tweak its rules or civilizations, and watch history diverge.
-      </p>
+      <div className="section-title">{t('cmp.title')}</div>
+      <p className="hint">{t('cmp.hint')}</p>
 
       <div className="universe-list">
         {universes.map((u) => (
           <div key={u.id} className={`universe-row ${u.id === activeUniverseId ? 'universe-active' : ''}`}>
             <button className="universe-name" onClick={() => setActiveUniverse(u.id)}>
-              {u.name} <span className="muted small">seed {u.config.seed} · year {u.snapshot?.year ?? 0}</span>
+              {u.name} <span className="muted small">{t('cmp.seedYear', { seed: u.config.seed, y: u.snapshot?.year ?? 0 })}</span>
             </button>
             {u.id !== universe.id && (
               <button
                 className={`chip ${compareUniverseId === u.id ? 'chip-active' : ''}`}
                 onClick={() => setCompareUniverse(compareUniverseId === u.id ? null : u.id)}
               >
-                compare
+                {t('cmp.compare')}
               </button>
             )}
             {universes.length > 1 && (
-              <button className="icon-btn" onClick={() => removeUniverse(u.id)} title="Delete universe">
+              <button className="icon-btn" onClick={() => removeUniverse(u.id)} title={t('cmp.delete')}>
                 <Trash2 size={13} />
               </button>
             )}
@@ -96,17 +96,17 @@ export function ComparePanel({ universe }: { universe: Universe }): JSX.Element 
 
       <div className="branch-actions">
         <button className="btn btn-ghost btn-sm" onClick={() => branch('same')}>
-          <GitBranch size={13} /> Branch (same seed)
+          <GitBranch size={13} /> {t('cmp.branchSame')}
         </button>
         <div className="seed-row">
           <input
             className="input input-sm"
-            placeholder="new seed…"
+            placeholder={t('cmp.seedPlaceholder')}
             value={seedEdit}
             onChange={(e) => setSeedEdit(e.target.value)}
           />
           <button className="btn btn-ghost btn-sm" onClick={() => branch('seed')} disabled={!seedEdit.trim()}>
-            <GitBranch size={13} /> Branch with seed
+            <GitBranch size={13} /> {t('cmp.branchSeed')}
           </button>
         </div>
       </div>
@@ -133,10 +133,10 @@ export function ComparePanel({ universe }: { universe: Universe }): JSX.Element 
               ))}
             </div>
           </div>
-          {popSeries.length === 2 && <LineChart title="Population: both universes" series={popSeries} />}
+          {popSeries.length === 2 && <LineChart title={t('cmp.bothPop')} series={popSeries} />}
         </>
       ) : (
-        universes.length > 1 && <div className="empty-note">Pick a universe above to compare against.</div>
+        universes.length > 1 && <div className="empty-note">{t('cmp.pick')}</div>
       )}
     </div>
   );

@@ -12,6 +12,7 @@ import {
   Resource,
   Tile,
   TERRAINS,
+  TERRAIN_ZH,
   Traits,
   WorldConfig,
   WorldEvent,
@@ -150,29 +151,34 @@ export function compactTiles(world: WorldState, civ: Civilization): void {
   civ.tilesDirty = false;
 }
 
-export function addEvent(
-  world: WorldState,
-  year: number,
-  type: WorldEventType,
-  civIds: string[],
-  title: string,
-  description: string,
-  importance: number,
-  x?: number,
-  y?: number,
-): WorldEvent {
+export interface EventInput {
+  year: number;
+  type: WorldEventType;
+  civIds: string[];
+  title: string;
+  description: string;
+  titleZh: string;
+  descriptionZh: string;
+  importance: number;
+  x?: number;
+  y?: number;
+}
+
+export function addEvent(world: WorldState, input: EventInput): WorldEvent {
   world.eventCounter++;
   const ev: WorldEvent = {
     id: `ev-${world.eventCounter}`,
-    year,
-    type,
-    civilizationIds: civIds,
-    title,
-    description,
-    importance,
+    year: input.year,
+    type: input.type,
+    civilizationIds: input.civIds,
+    title: input.title,
+    description: input.description,
+    titleZh: input.titleZh,
+    descriptionZh: input.descriptionZh,
+    importance: input.importance,
   };
-  if (x !== undefined) ev.x = x;
-  if (y !== undefined) ev.y = y;
+  if (input.x !== undefined) ev.x = input.x;
+  if (input.y !== undefined) ev.y = input.y;
   world.events.push(ev);
   trimEvents(world.events);
   return ev;
@@ -360,17 +366,20 @@ export function createWorld(config: WorldConfig): WorldState {
     const per = civ.population / civ.tiles.length;
     for (const t of civ.tiles) map.population[t] = per;
 
-    addEvent(
-      world,
-      0,
-      'birth',
-      [civ.id],
-      `${civ.name} founded`,
-      `The people of ${civ.name} settled in a ${TERRAINS[map.terrain[start]]} region and began their history.`,
-      7,
-      sx,
-      sy,
-    );
+    const terrainEn = TERRAINS[map.terrain[start]];
+    const terrainZh = TERRAIN_ZH[terrainEn];
+    addEvent(world, {
+      year: 0,
+      type: 'birth',
+      civIds: [civ.id],
+      title: `${civ.name} founded`,
+      description: `The people of ${civ.name} settled in a ${terrainEn} region and began their history.`,
+      titleZh: `${civ.name} 建立`,
+      descriptionZh: `${civ.name}的人民在一片${terrainZh}地带定居下来，开启了他们的历史。`,
+      importance: 7,
+      x: sx,
+      y: sy,
+    });
   }
 
   return world;

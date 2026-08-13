@@ -1,14 +1,18 @@
 // Landing page: cinematic entry with a slowly-drifting world-lights canvas.
 import { useEffect, useRef } from 'react';
-import { Globe2, Compass, ChevronRight } from 'lucide-react';
+import { Globe2, Compass, ChevronRight, Languages } from 'lucide-react';
 import { useSimulatorStore } from '../state/simulatorStore';
 import { WORLD_PRESETS } from '../simulation/presets';
+import { useI18nStore, useT } from '../i18n';
 
 export function Landing(): JSX.Element {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const setScreen = useSimulatorStore((s) => s.setScreen);
   const createUniverse = useSimulatorStore((s) => s.createUniverse);
   const setTutorialStep = useSimulatorStore((s) => s.setTutorialStep);
+  const t = useT();
+  const lang = useI18nStore((s) => s.lang);
+  const setLang = useI18nStore((s) => s.setLang);
 
   // Ambient background: drifting "civilization lights". Pure decoration —
   // Math.random is fine here, it never touches the simulation.
@@ -34,15 +38,15 @@ export function Landing(): JSX.Element {
         s: 0.2 + Math.random() * 0.5,
       });
     }
-    let t = 0;
+    let time = 0;
     const draw = (): void => {
-      t += 0.008;
+      time += 0.008;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       for (const d of dots) {
-        const alpha = 0.25 + 0.55 * (0.5 + 0.5 * Math.sin(t * d.s * 4 + d.p));
-        const drift = Math.sin(t * d.s + d.p) * 6;
+        const alpha = 0.25 + 0.55 * (0.5 + 0.5 * Math.sin(time * d.s * 4 + d.p));
+        const drift = Math.sin(time * d.s + d.p) * 6;
         ctx.beginPath();
-        ctx.arc(d.x + drift, d.y + Math.cos(t * d.s * 0.7 + d.p) * 4, d.r, 0, Math.PI * 2);
+        ctx.arc(d.x + drift, d.y + Math.cos(time * d.s * 0.7 + d.p) * 4, d.r, 0, Math.PI * 2);
         ctx.fillStyle = `rgba(245, 180, 80, ${alpha * 0.7})`;
         ctx.fill();
       }
@@ -78,26 +82,31 @@ export function Landing(): JSX.Element {
   return (
     <div className="landing">
       <canvas ref={canvasRef} className="landing-canvas" />
+      <button className="lang-toggle" onClick={() => setLang(lang === 'en' ? 'zh' : 'en')} title="Language / 语言">
+        <Languages size={14} /> {lang === 'en' ? '中文' : 'EN'}
+      </button>
       <div className="landing-content">
         <div className="landing-brand">CIVILIZATION<br />SIMULATOR</div>
-        <p className="landing-tagline">Build the rules. Run the world. Watch history emerge.</p>
+        <p className="landing-tagline">{t('landing.tagline')}</p>
         <p className="landing-sub">
-          Create a world. Define its rules.<br />Let history unfold.
+          {t('landing.sub1')}
+          <br />
+          {t('landing.sub2')}
         </p>
         <div className="landing-actions">
           <button className="btn btn-primary btn-lg" onClick={startCreate}>
-            <Globe2 size={18} /> Create New World
+            <Globe2 size={18} /> {t('landing.create')}
           </button>
           <button className="btn btn-ghost btn-lg" onClick={startExample}>
-            <Compass size={18} /> Explore Example World
+            <Compass size={18} /> {t('landing.example')}
           </button>
         </div>
         <div className="landing-presets">
-          <div className="landing-presets-label">or begin from a preset</div>
+          <div className="landing-presets-label">{t('landing.presets')}</div>
           <div className="preset-row">
             {WORLD_PRESETS.slice(1).map((p) => (
-              <button key={p.id} className="preset-card" onClick={() => startPreset(p.id)} title={p.description}>
-                <span>{p.name}</span>
+              <button key={p.id} className="preset-card" onClick={() => startPreset(p.id)} title={t(`preset.${p.id}.desc`)}>
+                <span>{t(`preset.${p.id}.name`)}</span>
                 <ChevronRight size={14} />
               </button>
             ))}

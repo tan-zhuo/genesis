@@ -1,8 +1,11 @@
-# Civilization Simulator
+# Civilization Simulator · 文明演化模拟器
 
 > **Build the rules. Run the world. Watch history emerge.**
+> **制定规则，运转世界，见证历史涌现。**
 
-A pure-frontend civilization evolution sandbox. You are not a player — you are the observer. Define a world, define a handful of civilizations and simple rules, press start, and watch thousands of years of emergent history: migration, cities, technology, trade, diplomacy, wars, empires, civil wars, extinctions — and new peoples rising from the ruins.
+**English** | [中文说明](#中文说明)
+
+A pure-frontend civilization evolution sandbox with a fully bilingual (English / 中文) interface — even the generated historical events and the world-history narrative are bilingual. You are not a player — you are the observer. Define a world, define a handful of civilizations and simple rules, press start, and watch thousands of years of emergent history: migration, cities, technology, trade, diplomacy, wars, empires, civil wars, extinctions — and new peoples rising from the ruins.
 
 ![screenshot](docs/screenshot.png)
 
@@ -112,3 +115,46 @@ Only the *recipe* is ever serialized: seed + world config + civilization configs
 - First version intentionally avoids WebGPU, backends, LLMs, and per-agent simulation — the point is *simple rules, deterministic simulation, emergent history, and a readable map*.
 - The event log is capped (~8,000 entries) by dropping low-importance old events; major history is always kept.
 - If all civilizations die, the world keeps simulating — scattered survivors in the wilderness can found new nations ("dark age → rebirth"), so deep time stays interesting.
+- **Bilingual by design**: UI chrome is translated through a lightweight dictionary (`src/i18n/`), while simulation-generated event text is stored *bilingually inside each event at generation time* — so switching the display language never touches determinism, and a replayed history is identical in both languages.
+
+---
+
+# 中文说明
+
+一个纯前端的文明演化沙盒，界面完整支持**中英双语**（右上角一键切换，包括模拟生成的历史事件与世界史叙事）。你不是玩家，而是观察者：定义一个世界、几个文明和一组简单规则，按下开始，然后看数千年的历史自行涌现 —— 迁徙、城市、科技、贸易、外交、战争、帝国、内战、灭亡，以及废墟之上崛起的新民族。
+
+## 快速开始
+
+```bash
+npm install
+npm run dev      # 打开 http://localhost:5173
+```
+
+其他命令：`npm test`（单元测试）· `npm run build`（类型检查 + 生产构建）· `npm run lint`。
+
+第一次使用：点击**探索示例世界** —— 一个 200×200、5 个文明的世界立即开始模拟。在"运行至"输入 `10000` 并按 ⏩，几秒内快进一万年。
+
+## 你可以做什么
+
+- 创建世界：种子、地图尺寸（120–260）、海洋比例、资源丰富度、灾难频率
+- 创建 2–20 个文明，用滑杆定义性格（侵略、贸易、科学、迁徙、扩张、外交、生育率、冒险精神）与初始科技
+- 用可视化规则编辑器搭建 IF/THEN 规则（无需写代码），或加载模板（和平、军国、重商、科研、游牧……）
+- 控制时间：暂停 / 播放 / 单步 / 1x–10,000x / 运行至指定年份 / 重置
+- **重放（Replay）**：从元年重演历史 —— 结果逐比特一致
+- **平行宇宙**：分支当前世界（同种子或改规则/种子），并排对比人口、城市、战争、科技
+- 检视一切：地块、国家（历史曲线与外交关系）、城市、科技树、事件时间线、世界统计
+- 保存/读取（浏览器存储）、导出/导入 JSON 配置、复制分享链接（任何地方打开都能重现同一段历史）
+- 阅读自动生成的**世界历史**叙事并导出为文本
+
+## 架构与设计
+
+- **引擎与 React 完全解耦**：`src/simulation/` 是纯 TypeScript，从不 import React；模拟运行在 Web Worker（`src/worker/`）中，主线程只负责 UI、Canvas 与交互。Worker 以约 11Hz 向 UI 发送轻量快照（typed array 传输 + 长序列抽稀），与模拟速度无关。
+- **确定性模拟（硬性保证）**：唯一随机源是种子化 PRNG（xmur3 哈希 → sfc32）；ESLint 规则禁止引擎内使用 `Math.random()` / `Date.now()`。每个模拟年派生独立 RNG（`hash(seed::year::N)`），不跨年携带 RNG 状态 —— 因此从任意年份续跑与从头直跑完全一致，重放与宇宙分支天然可靠。`simulateYear()` 内部 16 个阶段的顺序固定不变。
+- **规则系统**：规则是数据而非代码。每年对每个文明求值 14 种指标（人口、人均粮食、稳定度、邻国实力、年份、气候……），命中的规则累加为当年的行为倾向修正（迁徙驱动、开战概率、科研倍率、建城阈值……）。规则从不直接决定结果，只改变概率，历史从相互作用中涌现。修改规则后会在新规则下从元年确定性重演。
+- **性能模型**：地图为结构化数组（`Uint8Array`/`Float32Array`），非 4 万个对象；文明资源产出增量缓存；人口为宏观聚合模型（每年一次地块归一化保证守恒）。200×200 地图上一万年在 Worker 内约 3–5 秒模拟完成，UI 全程 60 FPS。
+- **序列化与分享**：只序列化"配方"（种子 + 世界/文明/规则配置 + 引擎版本，仅几 KB）。存档、JSON 导出与分享链接（`?seed=…&config=<base64url>`）全部通过重新运行确定性模拟来重建世界；导入内容逐字段校验并钳制，损坏输入优雅降级而非崩溃。
+- **双语实现**：UI 文案走轻量字典（`src/i18n/`）；模拟生成的事件文本在**生成时同时写入中英两份**存入事件对象 —— 切换显示语言不触碰确定性，重放历史在两种语言下完全一致。
+
+## 测试
+
+`src/simulation/__tests__/` 覆盖：PRNG 确定性、同种子同配置产生逐项一致的世界、重放事件年份完全一致、2000 年人口无 NaN/∞/负数、战争必然结束（硬上限远低于 50 年）、建城与扩张、敌对世界中出现分裂与灭亡、配置导出→导入后模拟结果一致、非法配置校验与钳制、规则可测量地改变历史，外加一个一万年冒烟/性能测试。

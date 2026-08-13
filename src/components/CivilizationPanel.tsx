@@ -2,7 +2,8 @@
 import { ArrowLeft, Crosshair, Skull } from 'lucide-react';
 import { Universe, useSimulatorStore } from '../state/simulatorStore';
 import { CivSummary } from '../simulation/types';
-import { techEraName } from '../simulation/Technology';
+import { techEraKey } from '../simulation/Technology';
+import { useT } from '../i18n';
 import { fmtNum, fmtPct } from '../utils/format';
 import { LineChart } from './LineChart';
 import { civProfile } from './CivEditor';
@@ -20,6 +21,7 @@ function StatBar({ label, value, color }: { label: string; value: number; color?
 }
 
 export function CivilizationPanel({ universe, civ }: { universe: Universe; civ: CivSummary }): JSX.Element {
+  const t = useT();
   const selectCiv = useSimulatorStore((s) => s.selectCiv);
   const focusOn = useSimulatorStore((s) => s.focusOn);
   const snapshot = universe.snapshot;
@@ -38,37 +40,37 @@ export function CivilizationPanel({ universe, civ }: { universe: Universe; civ: 
   return (
     <div className="civ-panel">
       <div className="civ-panel-head">
-        <button className="icon-btn" onClick={() => selectCiv(null)} title="Back to list">
+        <button className="icon-btn" onClick={() => selectCiv(null)} title={t('nat.back')}>
           <ArrowLeft size={14} />
         </button>
         <span className="civ-panel-name" style={{ color: civ.color }}>{civ.name.toUpperCase()}</span>
         {!civ.alive && (
-          <span className="tag tag-dead"><Skull size={11} /> extinct {civ.deathYear !== null ? `· year ${civ.deathYear}` : ''}</span>
+          <span className="tag tag-dead"><Skull size={11} /> {t('nat.extinct')} {civ.deathYear !== null ? `· ${civ.deathYear}` : ''}</span>
         )}
-        <button className="icon-btn" onClick={() => focusOn(Math.round(civ.cx), Math.round(civ.cy))} title="Locate on map" disabled={!civ.alive}>
+        <button className="icon-btn" onClick={() => focusOn(Math.round(civ.cx), Math.round(civ.cy))} title={t('nat.locate')} disabled={!civ.alive}>
           <Crosshair size={14} />
         </button>
       </div>
 
       <div className="profile-tags">
-        {civProfile(civ.traits).map((t) => (
-          <span className="tag" key={t}>{t}</span>
+        {civProfile(civ.traits).map((tag) => (
+          <span className="tag" key={tag}>{t(`tag.${tag}`)}</span>
         ))}
       </div>
 
       <div className="big-stats">
-        <div className="big-stat"><span className="big-stat-value">{fmtNum(civ.population)}</span><span className="big-stat-label">Population</span></div>
-        <div className="big-stat"><span className="big-stat-value">{fmtPct(civ.territoryPct)}</span><span className="big-stat-label">Territory</span></div>
-        <div className="big-stat"><span className="big-stat-value">{civ.cityCount}</span><span className="big-stat-label">Cities</span></div>
-        <div className="big-stat"><span className="big-stat-value">{techEraName(civ.technologyLevel)}</span><span className="big-stat-label">Era</span></div>
+        <div className="big-stat"><span className="big-stat-value">{fmtNum(civ.population)}</span><span className="big-stat-label">{t('ov.population')}</span></div>
+        <div className="big-stat"><span className="big-stat-value">{fmtPct(civ.territoryPct)}</span><span className="big-stat-label">{t('nat.territory')}</span></div>
+        <div className="big-stat"><span className="big-stat-value">{civ.cityCount}</span><span className="big-stat-label">{t('ov.cities')}</span></div>
+        <div className="big-stat"><span className="big-stat-value">{t(`era.${techEraKey(civ.technologyLevel)}`)}</span><span className="big-stat-label">{t('nat.era')}</span></div>
       </div>
 
       <div className="stat-bars">
-        <StatBar label="Economy" value={civ.economy} />
-        <StatBar label="Military" value={Math.min(100, civ.military)} color="#e5484d" />
-        <StatBar label="Stability" value={civ.stability} color="#30a46c" />
-        <StatBar label="Happiness" value={civ.happiness} color="#f5a524" />
-        <StatBar label="Culture" value={civ.culture} color="#8e4ec6" />
+        <StatBar label={t('nat.economy')} value={civ.economy} />
+        <StatBar label={t('nat.military')} value={Math.min(100, civ.military)} color="#e5484d" />
+        <StatBar label={t('nat.stability')} value={civ.stability} color="#30a46c" />
+        <StatBar label={t('nat.happiness')} value={civ.happiness} color="#f5a524" />
+        <StatBar label={t('nat.culture')} value={civ.culture} color="#8e4ec6" />
       </div>
 
       <div className="resource-row">
@@ -81,16 +83,16 @@ export function CivilizationPanel({ universe, civ }: { universe: Universe; civ: 
 
       {history && history.years.length > 2 && (
         <>
-          <LineChart title="Population" series={[{ label: civ.name, color: civ.color, xs: history.years, ys: history.population }]} />
-          <LineChart title="Territory (tiles)" series={[{ label: civ.name, color: civ.color, xs: history.years, ys: history.territory }]} />
-          <LineChart title="Technology level" series={[{ label: civ.name, color: civ.color, xs: history.years, ys: history.technology }]} />
-          <LineChart title="Economy" series={[{ label: civ.name, color: civ.color, xs: history.years, ys: history.economy }]} />
+          <LineChart title={t('nat.popHistory')} series={[{ label: civ.name, color: civ.color, xs: history.years, ys: history.population }]} />
+          <LineChart title={t('nat.terrHistory')} series={[{ label: civ.name, color: civ.color, xs: history.years, ys: history.territory }]} />
+          <LineChart title={t('nat.techHistory')} series={[{ label: civ.name, color: civ.color, xs: history.years, ys: history.technology }]} />
+          <LineChart title={t('nat.ecoHistory')} series={[{ label: civ.name, color: civ.color, xs: history.years, ys: history.economy }]} />
         </>
       )}
 
       {relations.length > 0 && (
         <div className="relations-box">
-          <div className="section-title">Relations</div>
+          <div className="section-title">{t('nat.relations')}</div>
           {relations.map((r) => (
             <button className="relation-row" key={r.other.id} onClick={() => selectCiv(r.other.id)}>
               <span className="dot" style={{ background: r.other.color }} />
@@ -98,7 +100,7 @@ export function CivilizationPanel({ universe, civ }: { universe: Universe; civ: 
               <span className={`relation-value ${r.value > 0 ? 'pos' : r.value < 0 ? 'neg' : ''}`}>
                 {r.value > 0 ? '+' : ''}{Math.round(r.value)}
               </span>
-              <span className={`relation-status status-${r.status}`}>{r.status}</span>
+              <span className={`relation-status status-${r.status}`}>{t(`status.${r.status}`)}</span>
             </button>
           ))}
         </div>

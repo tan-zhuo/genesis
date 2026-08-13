@@ -3,24 +3,26 @@ import { useMemo } from 'react';
 import { Universe } from '../state/simulatorStore';
 import { LineChart, Series } from './LineChart';
 import { fmtNum } from '../utils/format';
+import { useT } from '../i18n';
 
 export function Statistics({ universe }: { universe: Universe }): JSX.Element {
   const snapshot = universe.snapshot;
   const stats = snapshot?.stats ?? [];
+  const t = useT();
 
   const worldSeries = useMemo(() => {
     const xs = stats.map((s) => s.year);
     return {
-      population: [{ label: 'World population', color: '#f5a524', xs, ys: stats.map((s) => s.population) }],
+      population: [{ label: t('st.worldPop'), color: '#f5a524', xs, ys: stats.map((s) => s.population) }],
       civs: [
-        { label: 'Civilizations', color: '#3b82f6', xs, ys: stats.map((s) => s.civilizations) },
-        { label: 'Active wars', color: '#e5484d', xs, ys: stats.map((s) => s.wars) },
-        { label: 'Alliances', color: '#30a46c', xs, ys: stats.map((s) => s.alliances) },
+        { label: t('st.civsSeries'), color: '#3b82f6', xs, ys: stats.map((s) => s.civilizations) },
+        { label: t('st.warsSeries'), color: '#e5484d', xs, ys: stats.map((s) => s.wars) },
+        { label: t('st.alliancesSeries'), color: '#30a46c', xs, ys: stats.map((s) => s.alliances) },
       ],
-      cities: [{ label: 'Cities', color: '#12a594', xs, ys: stats.map((s) => s.cities) }],
-      tech: [{ label: 'Max technology', color: '#8e4ec6', xs, ys: stats.map((s) => s.technologies) }],
+      cities: [{ label: t('st.citiesSeries'), color: '#12a594', xs, ys: stats.map((s) => s.cities) }],
+      tech: [{ label: t('st.maxTech'), color: '#8e4ec6', xs, ys: stats.map((s) => s.technologies) }],
     };
-  }, [stats]);
+  }, [stats, t]);
 
   const civPopSeries: Series[] = useMemo(() => {
     if (!snapshot) return [];
@@ -55,28 +57,34 @@ export function Statistics({ universe }: { universe: Universe }): JSX.Element {
       buckets.set(c, (buckets.get(c) ?? 0) + 1);
     }
     const xs = [...buckets.keys()].sort((a, b) => a - b);
-    return [{ label: 'Wars per century', color: '#e5484d', xs: xs.map((c) => c * 100), ys: xs.map((c) => buckets.get(c) ?? 0) }];
+    return [{ label: t('st.warsPerCentury'), color: '#e5484d', xs: xs.map((c) => c * 100), ys: xs.map((c) => buckets.get(c) ?? 0) }];
   }, [snapshot, universe.events]);
 
   const largest = snapshot?.civs.filter((c) => c.alive).sort((a, b) => b.territory - a.territory)[0];
 
-  if (stats.length < 3) return <div className="empty-note">Run the simulation to gather statistics.</div>;
+  if (stats.length < 3) return <div className="empty-note">{t('st.needData')}</div>;
 
   return (
     <div className="stats-panel">
-      <LineChart title="Population over time" series={worldSeries.population} />
-      <LineChart title="Civilizations · wars · alliances" series={worldSeries.civs} />
-      <LineChart title="Cities over time" series={worldSeries.cities} />
-      <LineChart title="Technology progress" series={worldSeries.tech} yFormat={(v) => `${Math.round(v)}`} />
+      <LineChart title={t('st.popOverTime')} series={worldSeries.population} />
+      <LineChart title={t('st.civsWars')} series={worldSeries.civs} />
+      <LineChart title={t('st.citiesOverTime')} series={worldSeries.cities} />
+      <LineChart title={t('st.techProgress')} series={worldSeries.tech} yFormat={(v) => `${Math.round(v)}`} />
       {warsPerCentury.length > 0 && warsPerCentury[0].xs.length > 1 && (
-        <LineChart title="Wars per century" series={warsPerCentury} yFormat={(v) => `${Math.round(v)}`} />
+        <LineChart title={t('st.warsPerCentury')} series={warsPerCentury} yFormat={(v) => `${Math.round(v)}`} />
       )}
-      {civPopSeries.length > 0 && <LineChart title="Population by civilization" series={civPopSeries} />}
-      {civTerritorySeries.length > 0 && <LineChart title="Territory by civilization" series={civTerritorySeries} yFormat={fmtNum} />}
+      {civPopSeries.length > 0 && <LineChart title={t('st.popByCiv')} series={civPopSeries} />}
+      {civTerritorySeries.length > 0 && <LineChart title={t('st.terrByCiv')} series={civTerritorySeries} yFormat={fmtNum} />}
       {largest && (
         <div className="callout">
-          Largest empire: <b style={{ color: largest.color }}>{largest.name}</b> — {largest.territory.toLocaleString('en-US')} tiles
-          ({largest.territoryPct.toFixed(1)}% of land), {fmtNum(largest.population)} people.
+          <b style={{ color: largest.color }}>
+            {t('st.largest', {
+              name: largest.name,
+              tiles: largest.territory.toLocaleString('en-US'),
+              pct: largest.territoryPct.toFixed(1),
+              pop: fmtNum(largest.population),
+            })}
+          </b>
         </div>
       )}
     </div>

@@ -2,12 +2,15 @@
 import { Universe } from '../state/simulatorStore';
 import { TECHNOLOGIES } from '../simulation/Technology';
 import { useSimulatorStore } from '../state/simulatorStore';
+import { useLang, useT } from '../i18n';
 
 export function TechnologyTree({ universe }: { universe: Universe }): JSX.Element {
   const snapshot = universe.snapshot;
   const selectedCivId = useSimulatorStore((s) => s.selectedCivId);
   const selectCiv = useSimulatorStore((s) => s.selectCiv);
-  if (!snapshot) return <div className="empty-note">Waiting for the world…</div>;
+  const t = useT();
+  const lang = useLang();
+  if (!snapshot) return <div className="empty-note">{t('tech.waiting')}</div>;
 
   const civs = snapshot.civs.filter((c) => c.alive);
   const focus = civs.find((c) => c.id === selectedCivId) ?? null;
@@ -15,7 +18,7 @@ export function TechnologyTree({ universe }: { universe: Universe }): JSX.Elemen
   return (
     <div className="tech-tree">
       <div className="tech-civ-select">
-        <button className={`chip ${!focus ? 'chip-active' : ''}`} onClick={() => selectCiv(null)}>All</button>
+        <button className={`chip ${!focus ? 'chip-active' : ''}`} onClick={() => selectCiv(null)}>{t('tech.all')}</button>
         {civs.map((c) => (
           <button
             key={c.id}
@@ -36,10 +39,10 @@ export function TechnologyTree({ universe }: { universe: Universe }): JSX.Elemen
           return (
             <div key={tech.id} className={`tech-node ${researched ? 'tech-done' : ''} ${isNext ? 'tech-next' : ''}`}>
               <div className="tech-node-head">
-                <span className="tech-name">{tech.name}</span>
+                <span className="tech-name">{lang === 'zh' ? tech.nameZh : tech.name}</span>
                 <span className="tech-cost muted">{tech.cost.toLocaleString('en-US')} 🔬</span>
               </div>
-              <div className="tech-blurb">{tech.blurb}</div>
+              <div className="tech-blurb">{lang === 'zh' ? tech.blurbZh : tech.blurb}</div>
               {isNext && focus && (
                 <div className="tech-progress">
                   <div className="tech-progress-fill" style={{ width: `${progress * 100}%`, background: focus.color }} />

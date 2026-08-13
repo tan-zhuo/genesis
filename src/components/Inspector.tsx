@@ -4,7 +4,8 @@ import { Crosshair } from 'lucide-react';
 import { Rule } from '../simulation/types';
 import { InspectorTab, Universe, useSimulatorStore } from '../state/simulatorStore';
 import { fmtNum, fmtPct } from '../utils/format';
-import { techEraName } from '../simulation/Technology';
+import { techEraKey } from '../simulation/Technology';
+import { useT } from '../i18n';
 import { CivilizationPanel } from './CivilizationPanel';
 import { Timeline } from './Timeline';
 import { Statistics } from './Statistics';
@@ -12,27 +13,19 @@ import { TechnologyTree } from './TechnologyTree';
 import { ComparePanel } from './ComparePanel';
 import { RuleBuilder } from './RuleBuilder';
 
-const TABS: { id: InspectorTab; label: string }[] = [
-  { id: 'overview', label: 'Overview' },
-  { id: 'nations', label: 'Nations' },
-  { id: 'cities', label: 'Cities' },
-  { id: 'technology', label: 'Technology' },
-  { id: 'history', label: 'History' },
-  { id: 'stats', label: 'Statistics' },
-  { id: 'rules', label: 'Rules' },
-  { id: 'compare', label: 'Universes' },
-];
+const TABS: InspectorTab[] = ['overview', 'nations', 'cities', 'technology', 'history', 'stats', 'rules', 'compare'];
 
 export function Inspector({ universe }: { universe: Universe }): JSX.Element {
   const tab = useSimulatorStore((s) => s.inspectorTab);
   const setTab = useSimulatorStore((s) => s.setInspectorTab);
+  const t = useT();
 
   return (
     <aside className="inspector" data-tutorial="inspector">
       <div className="tabs inspector-tabs">
-        {TABS.map((t) => (
-          <button key={t.id} className={`tab ${tab === t.id ? 'tab-active' : ''}`} onClick={() => setTab(t.id)}>
-            {t.label}
+        {TABS.map((id) => (
+          <button key={id} className={`tab ${tab === id ? 'tab-active' : ''}`} onClick={() => setTab(id)}>
+            {t(`tab.${id === 'compare' ? 'compare' : id}`)}
           </button>
         ))}
       </div>
@@ -52,21 +45,22 @@ export function Inspector({ universe }: { universe: Universe }): JSX.Element {
 
 function SelectedTileCard({ universe }: { universe: Universe }): JSX.Element | null {
   const selectedTile = useSimulatorStore((s) => s.selectedTile);
+  const t = useT();
   const { mapStatic, snapshot } = universe;
   const info = useMemo(() => {
     if (!selectedTile || !mapStatic || !snapshot) return null;
     const i = selectedTile.y * mapStatic.width + selectedTile.x;
-    const terrainNames = ['Ocean', 'Plains', 'Forest', 'Desert', 'Mountain', 'Tundra'];
+    const terrainKeys = ['ocean', 'plains', 'forest', 'desert', 'mountain', 'tundra'];
     const ownerIdx = snapshot.owner[i];
     const bits = mapStatic.resources[i];
     const res: string[] = [];
-    if (bits & 1) res.push('Food');
-    if (bits & 2) res.push('Wood');
-    if (bits & 4) res.push('Stone');
-    if (bits & 8) res.push('Iron');
-    if (bits & 16) res.push('Gold');
+    if (bits & 1) res.push('food');
+    if (bits & 2) res.push('wood');
+    if (bits & 4) res.push('stone');
+    if (bits & 8) res.push('iron');
+    if (bits & 16) res.push('gold');
     return {
-      terrain: terrainNames[mapStatic.terrain[i]],
+      terrain: terrainKeys[mapStatic.terrain[i]],
       fertility: mapStatic.fertility[i],
       temperature: mapStatic.temperature[i],
       owner: ownerIdx >= 0 ? snapshot.civs[ownerIdx] : null,
@@ -79,15 +73,15 @@ function SelectedTileCard({ universe }: { universe: Universe }): JSX.Element | n
   if (!info || !selectedTile) return null;
   return (
     <div className="tile-card">
-      <div className="section-title">Tile ({selectedTile.x}, {selectedTile.y})</div>
-      <div className="kv"><span>Terrain</span><b>{info.terrain}</b></div>
-      <div className="kv"><span>Fertility</span><b>{Math.round(info.fertility * 100)}%</b></div>
-      {info.pop >= 1 && <div className="kv"><span>Population</span><b>{Math.round(info.pop).toLocaleString('en-US')}</b></div>}
+      <div className="section-title">{t('tile.title', { x: selectedTile.x, y: selectedTile.y })}</div>
+      <div className="kv"><span>{t('tile.terrain')}</span><b>{t(`terrain.${info.terrain}`)}</b></div>
+      <div className="kv"><span>{t('tile.fertility')}</span><b>{Math.round(info.fertility * 100)}%</b></div>
+      {info.pop >= 1 && <div className="kv"><span>{t('tile.population')}</span><b>{Math.round(info.pop).toLocaleString('en-US')}</b></div>}
       {info.owner && (
-        <div className="kv"><span>Owner</span><b style={{ color: info.owner.color }}>{info.owner.name}</b></div>
+        <div className="kv"><span>{t('tile.owner')}</span><b style={{ color: info.owner.color }}>{info.owner.name}</b></div>
       )}
-      {info.city && <div className="kv"><span>City</span><b>{info.city.name}</b></div>}
-      {info.res.length > 0 && <div className="kv"><span>Resources</span><b>{info.res.join(', ')}</b></div>}
+      {info.city && <div className="kv"><span>{t('tile.city')}</span><b>{info.city.name}</b></div>}
+      {info.res.length > 0 && <div className="kv"><span>{t('tile.resources')}</span><b>{info.res.map((r) => t(`res.${r}`)).join(', ')}</b></div>}
     </div>
   );
 }
@@ -96,7 +90,8 @@ function OverviewPanel({ universe }: { universe: Universe }): JSX.Element {
   const snapshot = universe.snapshot;
   const selectCiv = useSimulatorStore((s) => s.selectCiv);
   const setTab = useSimulatorStore((s) => s.setInspectorTab);
-  if (!snapshot) return <div className="empty-note">Generating world…</div>;
+  const t = useT();
+  if (!snapshot) return <div className="empty-note">{t('ov.generating')}</div>;
   const alive = snapshot.civs.filter((c) => c.alive);
   const totalPop = alive.reduce((s, c) => s + c.population, 0);
   const activeWars = snapshot.wars.filter((w) => w.endYear === null);
@@ -106,32 +101,32 @@ function OverviewPanel({ universe }: { universe: Universe }): JSX.Element {
     <div>
       <SelectedTileCard universe={universe} />
       <div className="big-stats">
-        <div className="big-stat"><span className="big-stat-value">{fmtNum(totalPop)}</span><span className="big-stat-label">Population</span></div>
-        <div className="big-stat"><span className="big-stat-value">{alive.length}</span><span className="big-stat-label">Civilizations</span></div>
-        <div className="big-stat"><span className="big-stat-value">{snapshot.cities.length}</span><span className="big-stat-label">Cities</span></div>
-        <div className="big-stat"><span className="big-stat-value">{activeWars.length}</span><span className="big-stat-label">Active wars</span></div>
+        <div className="big-stat"><span className="big-stat-value">{fmtNum(totalPop)}</span><span className="big-stat-label">{t('ov.population')}</span></div>
+        <div className="big-stat"><span className="big-stat-value">{alive.length}</span><span className="big-stat-label">{t('ov.civilizations')}</span></div>
+        <div className="big-stat"><span className="big-stat-value">{snapshot.cities.length}</span><span className="big-stat-label">{t('ov.cities')}</span></div>
+        <div className="big-stat"><span className="big-stat-value">{activeWars.length}</span><span className="big-stat-label">{t('ov.activeWars')}</span></div>
       </div>
 
-      <div className="section-title">Nations by population</div>
+      <div className="section-title">{t('ov.byPop')}</div>
       {sorted.map((c) => (
         <button key={c.id} className="civ-row" onClick={() => { selectCiv(c.id); setTab('nations'); }}>
           <span className="dot" style={{ background: c.color }} />
           <span className="civ-row-name">{c.name}</span>
-          <span className="muted small">{techEraName(c.technologyLevel)}</span>
+          <span className="muted small">{t(`era.${techEraKey(c.technologyLevel)}`)}</span>
           <span className="civ-row-pop">{fmtNum(c.population)}</span>
           <span className="civ-row-territory muted">{fmtPct(c.territoryPct)}</span>
         </button>
       ))}
       {alive.length === 0 && (
         <div className="empty-note">
-          All civilizations have perished. The world is silent.
-          {snapshot.year > 0 && ' Reset or replay to watch history again.'}
+          {t('ov.allDead')}
+          {snapshot.year > 0 && t('ov.allDeadHint')}
         </div>
       )}
 
       {activeWars.length > 0 && (
         <>
-          <div className="section-title">Active wars</div>
+          <div className="section-title">{t('ov.warsSection')}</div>
           {activeWars.map((w) => {
             const a = snapshot.civs.find((c) => c.id === w.attackerId);
             const b = snapshot.civs.find((c) => c.id === w.defenderId);
@@ -140,7 +135,7 @@ function OverviewPanel({ universe }: { universe: Universe }): JSX.Element {
                 <span className="war-name">{w.name}</span>
                 <span>
                   <b style={{ color: a?.color }}>{a?.name}</b> ⚔ <b style={{ color: b?.color }}>{b?.name}</b>
-                  <span className="muted small"> · since year {w.startYear}</span>
+                  <span className="muted small"> · {t('ov.since', { y: w.startYear })}</span>
                 </span>
               </div>
             );
@@ -155,7 +150,8 @@ function NationsPanel({ universe }: { universe: Universe }): JSX.Element {
   const snapshot = universe.snapshot;
   const selectedCivId = useSimulatorStore((s) => s.selectedCivId);
   const selectCiv = useSimulatorStore((s) => s.selectCiv);
-  if (!snapshot) return <div className="empty-note">Generating world…</div>;
+  const t = useT();
+  if (!snapshot) return <div className="empty-note">{t('ov.generating')}</div>;
 
   const selected = snapshot.civs.find((c) => c.id === selectedCivId);
   if (selected) return <CivilizationPanel universe={universe} civ={selected} />;
@@ -169,13 +165,13 @@ function NationsPanel({ universe }: { universe: Universe }): JSX.Element {
         <button key={c.id} className="civ-row" onClick={() => selectCiv(c.id)}>
           <span className="dot" style={{ background: c.color }} />
           <span className="civ-row-name">{c.name}</span>
-          <span className="muted small">{c.cityCount} cities</span>
+          <span className="muted small">{t('nat.citiesCount', { n: c.cityCount })}</span>
           <span className="civ-row-pop">{fmtNum(c.population)}</span>
         </button>
       ))}
       {dead.length > 0 && (
         <>
-          <div className="section-title">Fallen civilizations</div>
+          <div className="section-title">{t('nat.fallen')}</div>
           {dead.map((c) => (
             <button key={c.id} className="civ-row civ-row-dead" onClick={() => selectCiv(c.id)}>
               <span className="dot" style={{ background: c.color }} />
@@ -196,7 +192,8 @@ function CitiesPanel({ universe }: { universe: Universe }): JSX.Element {
   const selectedCityId = useSimulatorStore((s) => s.selectedCityId);
   const selectCity = useSimulatorStore((s) => s.selectCity);
   const focusOn = useSimulatorStore((s) => s.focusOn);
-  if (!snapshot) return <div className="empty-note">Generating world…</div>;
+  const t = useT();
+  if (!snapshot) return <div className="empty-note">{t('ov.generating')}</div>;
 
   const cities = [...snapshot.cities].sort((a, b) => b.population - a.population);
   const selected = cities.find((c) => c.id === selectedCityId);
@@ -206,33 +203,33 @@ function CitiesPanel({ universe }: { universe: Universe }): JSX.Element {
     return (
       <div className="city-detail">
         <div className="civ-panel-head">
-          <button className="icon-btn" onClick={() => selectCity(null)} title="Back">←</button>
+          <button className="icon-btn" onClick={() => selectCity(null)} title={t('nat.back')}>←</button>
           <span className="civ-panel-name">{selected.name}</span>
-          <span className="tag">{selected.level}</span>
-          <button className="icon-btn" onClick={() => focusOn(selected.x, selected.y)} title="Locate">
+          <span className="tag">{t(`level.${selected.level}`)}</span>
+          <button className="icon-btn" onClick={() => focusOn(selected.x, selected.y)} title={t('nat.locate')}>
             <Crosshair size={14} />
           </button>
         </div>
-        <div className="kv"><span>Owner</span><b style={{ color: owner?.color }}>{owner?.name ?? 'none'}</b></div>
-        <div className="kv"><span>Population</span><b>{fmtNum(selected.population)}</b></div>
-        <div className="kv"><span>Founded</span><b>Year {selected.foundedYear}</b></div>
-        <div className="kv"><span>Food production</span><b>{fmtNum(selected.foodProduction)}</b></div>
-        <div className="kv"><span>Industry</span><b>{fmtNum(selected.industry)}</b></div>
-        <div className="kv"><span>Science</span><b>{fmtNum(selected.science)}</b></div>
+        <div className="kv"><span>{t('city.owner')}</span><b style={{ color: owner?.color }}>{owner?.name ?? '—'}</b></div>
+        <div className="kv"><span>{t('city.population')}</span><b>{fmtNum(selected.population)}</b></div>
+        <div className="kv"><span>{t('city.founded')}</span><b>{t('city.foundedYear', { y: selected.foundedYear })}</b></div>
+        <div className="kv"><span>{t('city.food')}</span><b>{fmtNum(selected.foodProduction)}</b></div>
+        <div className="kv"><span>{t('city.industry')}</span><b>{fmtNum(selected.industry)}</b></div>
+        <div className="kv"><span>{t('city.science')}</span><b>{fmtNum(selected.science)}</b></div>
       </div>
     );
   }
 
   return (
     <div>
-      {cities.length === 0 && <div className="empty-note">No cities yet. Cities appear when a tile's population passes ~3,000.</div>}
+      {cities.length === 0 && <div className="empty-note">{t('city.none')}</div>}
       {cities.slice(0, 80).map((c) => {
         const owner = snapshot.civs.find((cv) => cv.id === c.ownerId);
         return (
           <button key={c.id} className="civ-row" onClick={() => { selectCity(c.id); focusOn(c.x, c.y); }}>
             <span className="dot" style={{ background: owner?.color ?? '#888' }} />
             <span className="civ-row-name">{c.name}</span>
-            <span className="muted small">{c.level}</span>
+            <span className="muted small">{t(`level.${c.level}`)}</span>
             <span className="civ-row-pop">{fmtNum(c.population)}</span>
           </button>
         );
@@ -244,6 +241,7 @@ function CitiesPanel({ universe }: { universe: Universe }): JSX.Element {
 function RulesPanel({ universe }: { universe: Universe }): JSX.Element {
   const updateRules = useSimulatorStore((s) => s.updateRules);
   const showToast = useSimulatorStore((s) => s.showToast);
+  const t = useT();
   const [draft, setDraft] = useState<Rule[] | null>(null);
   const civIds = (universe.snapshot?.civs ?? []).filter((c) => c.alive).map((c) => ({ id: c.id, name: c.name }));
   const rules = draft ?? universe.config.rules;
@@ -251,10 +249,7 @@ function RulesPanel({ universe }: { universe: Universe }): JSX.Element {
 
   return (
     <div>
-      <p className="hint">
-        Applying rule changes re-runs history from Year 0 under the new rules (deterministically), then fast-forwards
-        to the current year. Watch how differently the same world unfolds.
-      </p>
+      <p className="hint">{t('rules.hint')}</p>
       <RuleBuilder rules={rules} civs={universe.config.civs} civIds={civIds} onChange={setDraft} />
       <div className="rules-apply">
         <button
@@ -264,15 +259,15 @@ function RulesPanel({ universe }: { universe: Universe }): JSX.Element {
             if (draft) {
               updateRules(draft);
               setDraft(null);
-              showToast('Rules applied — recomputing history…');
+              showToast(t('rules.applied'));
             }
           }}
         >
-          Apply rules &amp; re-simulate
+          {t('rules.apply')}
         </button>
         {dirty && (
           <button className="btn btn-ghost btn-sm" onClick={() => setDraft(null)}>
-            Discard changes
+            {t('rules.discard')}
           </button>
         )}
       </div>

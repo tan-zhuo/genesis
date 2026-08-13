@@ -583,6 +583,25 @@ input[type='checkbox'] { accent-color: var(--accent); }
 .summary-headline { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; margin-bottom: 18px; }
 .summary-narrative p { margin-bottom: 12px; line-height: 1.65; font-size: 14px; color: #cdd5e1; }
 
+.lang-toggle {
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 20px;
+  background: rgba(13, 17, 25, 0.75);
+  color: var(--text-muted);
+  font-size: 12px;
+  z-index: 5;
+}
+.lang-toggle:hover { color: var(--text); border-color: var(--accent-dim); }
+.lang-btn { width: auto; padding: 0 7px; gap: 3px; }
+.lang-label { font-size: 11px; font-weight: 700; }
+
 /* ---------- Toast / tutorial ---------- */
 .toast {
   position: fixed;

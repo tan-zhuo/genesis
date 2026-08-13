@@ -25,17 +25,19 @@ export function runEmpireAndCollapse(world: WorldState, civ: Civilization, landT
   const share = civ.territory / Math.max(1, landTiles);
   if (!civ.isEmpire && share > 0.12 && civ.cityIds.length >= 3) {
     civ.isEmpire = true;
-    addEvent(
-      world,
-      world.year,
-      'empire',
-      [civ.id],
-      `The ${civ.name} Empire rises`,
-      `Controlling ${(share * 100).toFixed(1)}% of the known world with ${civ.cityIds.length} cities, ${civ.name} proclaimed itself an empire.`,
-      8,
-      civ.territory > 0 ? Math.round(civ.sumX / civ.territory) : undefined,
-      civ.territory > 0 ? Math.round(civ.sumY / civ.territory) : undefined,
-    );
+    const pct = (share * 100).toFixed(1);
+    addEvent(world, {
+      year: world.year,
+      type: 'empire',
+      civIds: [civ.id],
+      title: `The ${civ.name} Empire rises`,
+      description: `Controlling ${pct}% of the known world with ${civ.cityIds.length} cities, ${civ.name} proclaimed itself an empire.`,
+      titleZh: `${civ.name}帝国崛起`,
+      descriptionZh: `坐拥已知世界 ${pct}% 的土地与 ${civ.cityIds.length} 座城市，${civ.name}宣布称帝。`,
+      importance: 8,
+      x: civ.territory > 0 ? Math.round(civ.sumX / civ.territory) : undefined,
+      y: civ.territory > 0 ? Math.round(civ.sumY / civ.territory) : undefined,
+    });
   }
   if (civ.isEmpire && share < 0.06) civ.isEmpire = false;
 
@@ -58,15 +60,16 @@ export function runEmpireAndCollapse(world: WorldState, civ: Civilization, landT
     civ.population *= 0.92;
     civ.stability = Math.min(100, civ.stability + 15);
     civ.lowStabilityYears = 0;
-    addEvent(
-      world,
-      world.year,
-      'revolution',
-      [civ.id],
-      `Uprising in ${civ.name}`,
-      `Years of hardship boiled over into revolt. The old order of ${civ.name} was overthrown, and a new regime restored a fragile calm.`,
-      5,
-    );
+    addEvent(world, {
+      year: world.year,
+      type: 'revolution',
+      civIds: [civ.id],
+      title: `Uprising in ${civ.name}`,
+      description: `Years of hardship boiled over into revolt. The old order of ${civ.name} was overthrown, and a new regime restored a fragile calm.`,
+      titleZh: `${civ.name}爆发起义`,
+      descriptionZh: `多年的困苦终于酿成暴动。${civ.name}的旧秩序被推翻，新政权勉强恢复了平静。`,
+      importance: 5,
+    });
   }
 }
 
@@ -118,19 +121,24 @@ export function runRebirth(world: WorldState, rng: SeededRandom): void {
     for (const t of civ.tiles) m.population[t] += boost;
     civ.population += 300;
   }
-  addEvent(
-    world,
-    world.year,
-    'birth',
-    [civ.id],
-    `${civ.name} emerges`,
-    aliveCount === 0
-      ? `Out of a silent world, survivors gathered among old ruins. They call themselves the ${demonym(civ.name)} — and history begins again.`
-      : `In the unclaimed wilds, scattered peoples united into a new nation: ${civ.name}.`,
-    8,
-    bx,
-    by,
-  );
+  addEvent(world, {
+    year: world.year,
+    type: 'birth',
+    civIds: [civ.id],
+    title: `${civ.name} emerges`,
+    description:
+      aliveCount === 0
+        ? `Out of a silent world, survivors gathered among old ruins. They call themselves the ${demonym(civ.name)} — and history begins again.`
+        : `In the unclaimed wilds, scattered peoples united into a new nation: ${civ.name}.`,
+    titleZh: `${civ.name}崛起`,
+    descriptionZh:
+      aliveCount === 0
+        ? `在一片死寂的世界上，幸存者聚集于古老的废墟之间。他们自称${civ.name}人 — 历史再次开始。`
+        : `在无主的荒野中，散落的部族联合成一个新的国家：${civ.name}。`,
+    importance: 8,
+    x: bx,
+    y: by,
+  });
 }
 
 export function splitCivilization(world: WorldState, civ: Civilization, rng: SeededRandom): Civilization | null {
@@ -265,17 +273,19 @@ export function splitCivilization(world: WorldState, civ: Civilization, rng: See
   civ.lowStabilityYears = 0;
   civ.isEmpire = false;
 
-  addEvent(
-    world,
-    world.year,
-    'split',
-    [civ.id, rebel.id],
-    `${civ.name} fractures — ${rebel.name} is born`,
-    `Civil war tore ${civ.name} apart. The ${demonym(rebel.name)} broke away with ${rebel.cityIds.length} cities and ${Math.round(rebel.population).toLocaleString('en-US')} people, declaring independence.`,
-    9,
-    seedTile % m.width,
-    Math.floor(seedTile / m.width),
-  );
+  const rebelPopStr = Math.round(rebel.population).toLocaleString('en-US');
+  addEvent(world, {
+    year: world.year,
+    type: 'split',
+    civIds: [civ.id, rebel.id],
+    title: `${civ.name} fractures — ${rebel.name} is born`,
+    description: `Civil war tore ${civ.name} apart. The ${demonym(rebel.name)} broke away with ${rebel.cityIds.length} cities and ${rebelPopStr} people, declaring independence.`,
+    titleZh: `${civ.name}分裂 — ${rebel.name}诞生`,
+    descriptionZh: `内战撕裂了${civ.name}。${rebel.name}人带着 ${rebel.cityIds.length} 座城市与 ${rebelPopStr} 人口宣布独立。`,
+    importance: 9,
+    x: seedTile % m.width,
+    y: Math.floor(seedTile / m.width),
+  });
 
   // The divorce is rarely amicable.
   world.relations[civ.index][rebel.index] = -70;

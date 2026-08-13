@@ -4,6 +4,7 @@ import { WorldSetup } from './components/WorldSetup';
 import { SimulatorShell } from './components/SimulatorShell';
 import { useSimulatorStore } from './state/simulatorStore';
 import { configFromUrl } from './utils/serialization';
+import { translate, useI18nStore } from './i18n';
 
 export default function App(): JSX.Element {
   const screen = useSimulatorStore((s) => s.screen);
@@ -17,7 +18,7 @@ export default function App(): JSX.Element {
     if (cfg) {
       createUniverse(cfg, 'Shared World', true);
       setScreen('simulator');
-      showToast(`Loaded shared world (seed ${cfg.seed})`);
+      showToast(translate(useI18nStore.getState().lang, 'toast.sharedLoaded', { seed: cfg.seed }));
       window.history.replaceState(null, '', window.location.pathname);
     }
   }, []);

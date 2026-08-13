@@ -7,6 +7,15 @@ export type Terrain = 'ocean' | 'plains' | 'forest' | 'desert' | 'mountain' | 't
 
 export const TERRAINS: Terrain[] = ['ocean', 'plains', 'forest', 'desert', 'mountain', 'tundra'];
 
+export const TERRAIN_ZH: Record<Terrain, string> = {
+  ocean: '海洋',
+  plains: '平原',
+  forest: '森林',
+  desert: '沙漠',
+  mountain: '山地',
+  tundra: '冻原',
+};
+
 export type Resource = 'food' | 'wood' | 'stone' | 'iron' | 'gold';
 export const RESOURCES: Resource[] = ['food', 'wood', 'stone', 'iron', 'gold'];
 
@@ -199,8 +208,10 @@ export interface WorldEvent {
   year: number;
   type: WorldEventType;
   civilizationIds: string[];
-  title: string;
-  description: string;
+  title: string; // English
+  description: string; // English
+  titleZh?: string; // 中文标题（生成时写入，与显示语言无关，保证确定性）
+  descriptionZh?: string; // 中文描述
   importance: number; // 1-10
   x?: number;
   y?: number;

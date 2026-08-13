@@ -76,15 +76,16 @@ export function runResearch(world: WorldState, civ: Civilization, rng: SeededRan
     civ.researchedTechs.push(upcoming.id);
     civ.technologyLevel = civ.researchedTechs.length;
     const t = TECH_BY_ID.get(upcoming.id);
-    addEvent(
-      world,
-      world.year,
-      'technology',
-      [civ.id],
-      `${civ.name} discovers ${upcoming.name}`,
-      `The ${demonym(civ.name)} mastered ${upcoming.name}. ${t?.blurb ?? ''}`,
-      upcoming.id === 'agriculture' || upcoming.id === 'industry' || upcoming.id === 'ai' ? 7 : 5,
-    );
+    addEvent(world, {
+      year: world.year,
+      type: 'technology',
+      civIds: [civ.id],
+      title: `${civ.name} discovers ${upcoming.name}`,
+      description: `The ${demonym(civ.name)} mastered ${upcoming.name}. ${t?.blurb ?? ''}`,
+      titleZh: `${civ.name}掌握了「${upcoming.nameZh}」`,
+      descriptionZh: `${civ.name}人掌握了${upcoming.nameZh}。${t?.blurbZh ?? ''}`,
+      importance: upcoming.id === 'agriculture' || upcoming.id === 'industry' || upcoming.id === 'ai' ? 7 : 5,
+    });
   }
 }
 

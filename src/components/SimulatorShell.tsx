@@ -4,6 +4,7 @@ import {
   BookOpen,
   Download,
   Home,
+  Languages,
   Link2,
   PanelLeftClose,
   PanelLeftOpen,
@@ -17,20 +18,15 @@ import { Inspector } from './Inspector';
 import { HistorySummary } from './HistorySummary';
 import { configToShareUrl, exportConfig, importConfig } from '../utils/serialization';
 import { fmtNum } from '../utils/format';
+import { useI18nStore, useT } from '../i18n';
 
-const MAP_MODES: { id: MapMode; label: string }[] = [
-  { id: 'political', label: 'Political' },
-  { id: 'population', label: 'Population' },
-  { id: 'terrain', label: 'Terrain' },
-  { id: 'resources', label: 'Resources' },
-  { id: 'technology', label: 'Technology' },
-  { id: 'economy', label: 'Economy' },
-  { id: 'military', label: 'Military' },
-  { id: 'culture', label: 'Culture' },
-];
+const MAP_MODES: MapMode[] = ['political', 'population', 'terrain', 'resources', 'technology', 'economy', 'military', 'culture'];
 
 export function SimulatorShell(): JSX.Element {
   const universe = useActiveUniverse();
+  const t = useT();
+  const lang = useI18nStore((s) => s.lang);
+  const setLang = useI18nStore((s) => s.setLang);
   const setScreen = useSimulatorStore((s) => s.setScreen);
   const mapMode = useSimulatorStore((s) => s.mapMode);
   const setMapMode = useSimulatorStore((s) => s.setMapMode);
@@ -67,8 +63,8 @@ export function SimulatorShell(): JSX.Element {
   if (!universe) {
     return (
       <div className="sim-empty">
-        <p>No universe loaded.</p>
-        <button className="btn btn-primary" onClick={() => setScreen('landing')}>Back to start</button>
+        <p>{t('misc.noUniverse')}</p>
+        <button className="btn btn-primary" onClick={() => setScreen('landing')}>{t('misc.backToStart')}</button>
       </div>
     );
   }
@@ -86,9 +82,9 @@ export function SimulatorShell(): JSX.Element {
       const name = `${universe.name} · seed ${universe.config.seed} · year ${snapshot?.year ?? 0}`;
       saves.unshift({ name, config: universe.config, savedAt: new Date().toISOString() });
       localStorage.setItem('civsim.saves', JSON.stringify(saves.slice(0, 20)));
-      showToast(`Saved "${name}" (browser storage).`);
+      showToast(t('toast.saved', { name }));
     } catch {
-      showToast('Save failed — browser storage unavailable.');
+      showToast(t('toast.saveFailed'));
     }
   };
 
@@ -96,20 +92,20 @@ export function SimulatorShell(): JSX.Element {
     try {
       const saves = JSON.parse(localStorage.getItem('civsim.saves') ?? '[]') as { name: string; config: unknown }[];
       if (saves.length === 0) {
-        showToast('No saved worlds yet.');
+        showToast(t('toast.noSaves'));
         return;
       }
       const names = saves.map((s, i) => `${i + 1}. ${s.name}`).join('\n');
-      const pick = window.prompt(`Load which world?\n${names}\n\nEnter a number:`, '1');
+      const pick = window.prompt(t('toast.loadPrompt', { list: names }), '1');
       if (!pick) return;
       const idx = parseInt(pick, 10) - 1;
       const save = saves[idx];
       if (!save) return;
       const cfg = importConfig(JSON.stringify(save.config));
       createUniverse(cfg, `Loaded ${String.fromCharCode(65 + universes.length)}`, true);
-      showToast(`Loaded "${save.name}".`);
+      showToast(t('toast.loaded', { name: save.name }));
     } catch (err) {
-      showToast(`Load failed: ${err instanceof Error ? err.message : 'corrupt save'}`);
+      showToast(t('toast.loadFailed', { err: err instanceof Error ? err.message : 'corrupt save' }));
     }
   };
 
@@ -134,9 +130,9 @@ export function SimulatorShell(): JSX.Element {
         try {
           const cfg = importConfig(text);
           createUniverse(cfg, `Imported ${String.fromCharCode(65 + universes.length)}`, true);
-          showToast('World imported — simulation starting.');
+          showToast(t('toast.imported'));
         } catch (err) {
-          showToast(`Import failed: ${err instanceof Error ? err.message : 'invalid file'}`);
+          showToast(t('setup.importFailed', { err: err instanceof Error ? err.message : 'invalid file' }));
         }
       });
     };
@@ -147,30 +143,30 @@ export function SimulatorShell(): JSX.Element {
     const url = configToShareUrl(universe.config);
     navigator.clipboard
       .writeText(url)
-      .then(() => showToast('Share link copied — same seed, same history, anywhere.'))
-      .catch(() => window.prompt('Copy this link:', url));
+      .then(() => showToast(t('toast.shareCopied')))
+      .catch(() => window.prompt(t('toast.sharePrompt'), url));
   };
 
   return (
     <div className="sim-root">
       <header className="topbar">
-        <button className="icon-btn" onClick={() => setScreen('landing')} title="Home">
+        <button className="icon-btn" onClick={() => setScreen('landing')} title={t('top.home')}>
           <Home size={16} />
         </button>
         <span className="topbar-title">Civilization Simulator</span>
         <span className="topbar-year">
-          Year <b>{(snapshot?.year ?? 0).toLocaleString('en-US')}</b>
+          {t('top.year')} <b>{(snapshot?.year ?? 0).toLocaleString('en-US')}</b>
         </span>
         <span className={`run-dot ${universe.running ? 'run-on' : ''}`} />
-        <span className="muted small">{universe.running ? 'Running' : 'Paused'}</span>
+        <span className="muted small">{universe.running ? t('top.running') : t('top.paused')}</span>
 
         <div className="topbar-stats">
-          <span className="stat-chip" title="World population">👥 {fmtNum(totalPop)}</span>
-          <span className="stat-chip" title="Civilizations">🏳 {alive.length}</span>
-          <span className="stat-chip" title="Cities">🏛 {snapshot?.cities.length ?? 0}</span>
-          <span className="stat-chip" title="Active wars">⚔ {activeWars}</span>
-          <span className="stat-chip" title="Alliances">🤝 {allianceCount}</span>
-          <span className="stat-chip" title="Max technologies">💡 {maxTech}/11</span>
+          <span className="stat-chip" title={t('top.population')}>👥 {fmtNum(totalPop)}</span>
+          <span className="stat-chip" title={t('top.civs')}>🏳 {alive.length}</span>
+          <span className="stat-chip" title={t('top.cities')}>🏛 {snapshot?.cities.length ?? 0}</span>
+          <span className="stat-chip" title={t('top.wars')}>⚔ {activeWars}</span>
+          <span className="stat-chip" title={t('top.alliances')}>🤝 {allianceCount}</span>
+          <span className="stat-chip" title={t('top.tech')}>💡 {maxTech}/11</span>
         </div>
 
         <div className="topbar-actions">
@@ -179,29 +175,33 @@ export function SimulatorShell(): JSX.Element {
               className="input input-sm"
               value={universe.id}
               onChange={(e) => setActiveUniverse(e.target.value)}
-              title="Active universe"
+              title={t('top.universe')}
             >
               {universes.map((u) => (
                 <option key={u.id} value={u.id}>{u.name}</option>
               ))}
             </select>
           )}
-          <button className="icon-btn" onClick={() => setShowSummary(true)} title="World history summary">
+          <button className="icon-btn lang-btn" onClick={() => setLang(lang === 'en' ? 'zh' : 'en')} title="Language / 语言">
+            <Languages size={14} />
+            <span className="lang-label">{lang === 'en' ? '中' : 'EN'}</span>
+          </button>
+          <button className="icon-btn" onClick={() => setShowSummary(true)} title={t('top.summary')}>
             <BookOpen size={15} />
           </button>
-          <button className="icon-btn" onClick={saveWorld} title="Save world (browser)">
+          <button className="icon-btn" onClick={saveWorld} title={t('top.save')}>
             <Save size={15} />
           </button>
-          <button className="icon-btn" onClick={loadWorld} title="Load saved world">
+          <button className="icon-btn" onClick={loadWorld} title={t('top.load')}>
             <Upload size={15} />
           </button>
-          <button className="icon-btn" onClick={exportJson} title="Export config JSON">
+          <button className="icon-btn" onClick={exportJson} title={t('top.export')}>
             <Download size={15} />
           </button>
-          <button className="icon-btn" onClick={importJson} title="Import config JSON">
+          <button className="icon-btn" onClick={importJson} title={t('top.importJson')}>
             <Upload size={15} style={{ transform: 'rotate(180deg)' }} />
           </button>
-          <button className="icon-btn" onClick={shareLink} title="Copy share link">
+          <button className="icon-btn" onClick={shareLink} title={t('top.share')}>
             <Link2 size={15} />
           </button>
         </div>
@@ -209,28 +209,28 @@ export function SimulatorShell(): JSX.Element {
 
       <div className="sim-main">
         <aside className={`sidebar ${sidebarOpen ? '' : 'sidebar-closed'}`}>
-          <button className="icon-btn sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)} title="Toggle sidebar">
+          <button className="icon-btn sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)} title={t('misc.toggleSidebar')}>
             {sidebarOpen ? <PanelLeftClose size={15} /> : <PanelLeftOpen size={15} />}
           </button>
           {sidebarOpen && (
             <>
-              <div className="section-title">Map mode</div>
+              <div className="section-title">{t('side.mapMode')}</div>
               <div className="mode-list">
                 {MAP_MODES.map((m) => (
                   <button
-                    key={m.id}
-                    className={`mode-btn ${mapMode === m.id ? 'mode-active' : ''}`}
-                    onClick={() => setMapMode(m.id)}
+                    key={m}
+                    className={`mode-btn ${mapMode === m ? 'mode-active' : ''}`}
+                    onClick={() => setMapMode(m)}
                   >
-                    {m.label}
+                    {t(`mode.${m}`)}
                   </button>
                 ))}
               </div>
-              <div className="section-title">World</div>
-              <div className="kv small"><span>Seed</span><b>{universe.config.seed}</b></div>
-              <div className="kv small"><span>Size</span><b>{universe.config.width}×{universe.config.height}</b></div>
-              <div className="kv small"><span>Rules</span><b>{universe.config.rules.length}</b></div>
-              <div className="kv small"><span>Universe</span><b>{universe.name}</b></div>
+              <div className="section-title">{t('side.world')}</div>
+              <div className="kv small"><span>{t('side.seed')}</span><b>{universe.config.seed}</b></div>
+              <div className="kv small"><span>{t('side.size')}</span><b>{universe.config.width}×{universe.config.height}</b></div>
+              <div className="kv small"><span>{t('side.rules')}</span><b>{universe.config.rules.length}</b></div>
+              <div className="kv small"><span>{t('side.universe')}</span><b>{universe.name}</b></div>
             </>
           )}
         </aside>

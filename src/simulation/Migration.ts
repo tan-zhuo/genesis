@@ -70,17 +70,19 @@ export function runMigration(world: WorldState, civ: Civilization, foodRatio: nu
     m.population[source] -= moving;
     m.population[best] += moving;
     if (moving > 400 && rng.chance(0.25)) {
-      addEvent(
-        world,
-        world.year,
-        'migration',
-        [civ.id],
-        `${demonym(civ.name)} migrate`,
-        `Seeking better land, ${Math.round(moving).toLocaleString('en-US')} ${demonym(civ.name)} settled new territory.`,
-        3,
-        best % m.width,
-        Math.floor(best / m.width),
-      );
+      const n = Math.round(moving).toLocaleString('en-US');
+      addEvent(world, {
+        year: world.year,
+        type: 'migration',
+        civIds: [civ.id],
+        title: `${demonym(civ.name)} migrate`,
+        description: `Seeking better land, ${n} ${demonym(civ.name)} settled new territory.`,
+        titleZh: `${civ.name}人迁徙`,
+        descriptionZh: `为寻找更好的土地，${n} 名${civ.name}人开拓了新的疆域。`,
+        importance: 3,
+        x: best % m.width,
+        y: Math.floor(best / m.width),
+      });
     }
   } else if (destOwner === civ.index) {
     // Internal resettlement.
@@ -96,17 +98,19 @@ export function runMigration(world: WorldState, civ: Civilization, foodRatio: nu
     world.relations[civ.index][destOwner] += 1;
     world.relations[destOwner][civ.index] += 1;
     if (moving > 500 && rng.chance(0.3)) {
-      addEvent(
-        world,
-        world.year,
-        'migration',
-        [civ.id, other.id],
-        `Migration into ${other.name}`,
-        `${Math.round(moving).toLocaleString('en-US')} ${demonym(civ.name)} crossed the border and were absorbed into ${other.name}.`,
-        4,
-        best % m.width,
-        Math.floor(best / m.width),
-      );
+      const n = Math.round(moving).toLocaleString('en-US');
+      addEvent(world, {
+        year: world.year,
+        type: 'migration',
+        civIds: [civ.id, other.id],
+        title: `Migration into ${other.name}`,
+        description: `${n} ${demonym(civ.name)} crossed the border and were absorbed into ${other.name}.`,
+        titleZh: `移民涌入${other.name}`,
+        descriptionZh: `${n} 名${civ.name}人越过边境，被${other.name}接纳吸收。`,
+        importance: 4,
+        x: best % m.width,
+        y: Math.floor(best / m.width),
+      });
     }
   }
 }

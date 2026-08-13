@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { MapMode, Universe, useSimulatorStore } from '../state/simulatorStore';
 import { MapStatic, Snapshot, WorldEvent } from '../simulation/types';
 import { TERRAINS } from '../simulation/types';
+import { useT } from '../i18n';
 
 const TERRAIN_COLORS: [number, number, number][] = [
   [16, 32, 54], // ocean
@@ -38,6 +39,7 @@ interface Props {
 }
 
 export function WorldCanvas({ universe }: Props): JSX.Element {
+  const t = useT();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const terrainCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -518,11 +520,11 @@ export function WorldCanvas({ universe }: Props): JSX.Element {
     const city = snapshot.cities.find((c) => c.x === hoverTile.x && c.y === hoverTile.y);
     const bits = mapStatic.resources[i];
     const res: string[] = [];
-    if (bits & 1) res.push('Food');
-    if (bits & 2) res.push('Wood');
-    if (bits & 4) res.push('Stone');
-    if (bits & 8) res.push('Iron');
-    if (bits & 16) res.push('Gold');
+    if (bits & 1) res.push('food');
+    if (bits & 2) res.push('wood');
+    if (bits & 4) res.push('stone');
+    if (bits & 8) res.push('iron');
+    if (bits & 16) res.push('gold');
     return { terrain, owner, pop, city, res, fertility: mapStatic.fertility[i] };
   }, [hoverTile, mapStatic, snapshot]);
 
@@ -546,18 +548,18 @@ export function WorldCanvas({ universe }: Props): JSX.Element {
           }}
         >
           <div className="tt-row tt-head">
-            <span className="tt-terrain">{hoverInfo.terrain}</span>
+            <span className="tt-terrain">{t(`terrain.${hoverInfo.terrain}`)}</span>
             <span className="muted">({hoverTile.x}, {hoverTile.y})</span>
           </div>
-          {hoverInfo.city && <div className="tt-row">🏛 {hoverInfo.city.name} ({hoverInfo.city.level})</div>}
+          {hoverInfo.city && <div className="tt-row">🏛 {hoverInfo.city.name}（{t(`level.${hoverInfo.city.level}`)}）</div>}
           {hoverInfo.owner && (
             <div className="tt-row">
               <span className="dot" style={{ background: hoverInfo.owner.color }} /> {hoverInfo.owner.name}
             </div>
           )}
-          <div className="tt-row muted">Fertility {Math.round(hoverInfo.fertility * 100)}%</div>
-          {hoverInfo.pop >= 1 && <div className="tt-row muted">Population {Math.round(hoverInfo.pop).toLocaleString('en-US')}</div>}
-          {hoverInfo.res.length > 0 && <div className="tt-row muted">Resources: {hoverInfo.res.join(', ')}</div>}
+          <div className="tt-row muted">{t('tile.fertility')} {Math.round(hoverInfo.fertility * 100)}%</div>
+          {hoverInfo.pop >= 1 && <div className="tt-row muted">{t('tile.population')} {Math.round(hoverInfo.pop).toLocaleString('en-US')}</div>}
+          {hoverInfo.res.length > 0 && <div className="tt-row muted">{t('tile.resources')}: {hoverInfo.res.map((r) => t(`res.${r}`)).join(', ')}</div>}
         </div>
       )}
       <MapLegend mode={mapMode} snapshot={snapshot} mapStatic={mapStatic} />
@@ -566,9 +568,10 @@ export function WorldCanvas({ universe }: Props): JSX.Element {
 }
 
 function MapLegend({ mode, snapshot }: { mode: MapMode; snapshot: Snapshot | null; mapStatic: MapStatic | null }): JSX.Element {
+  const t = useT();
   return (
     <div className="map-legend">
-      <div className="legend-title">{mode}</div>
+      <div className="legend-title">{t(`mode.${mode}`)}</div>
       {mode === 'political' && snapshot && (
         <div className="legend-items">
           {snapshot.civs.filter((c) => c.alive).slice(0, 12).map((c) => (
@@ -580,32 +583,32 @@ function MapLegend({ mode, snapshot }: { mode: MapMode; snapshot: Snapshot | nul
       )}
       {mode === 'terrain' && (
         <div className="legend-items">
-          {TERRAINS.map((t, i) => (
-            <div className="legend-item" key={t}>
-              <span className="dot" style={{ background: `rgb(${TERRAIN_COLORS[i].join(',')})` }} /> {t}
+          {TERRAINS.map((terr, i) => (
+            <div className="legend-item" key={terr}>
+              <span className="dot" style={{ background: `rgb(${TERRAIN_COLORS[i].join(',')})` }} /> {t(`terrain.${terr}`)}
             </div>
           ))}
         </div>
       )}
       {mode === 'population' && (
         <div className="legend-items">
-          <div className="legend-item"><span className="dot" style={{ background: 'rgba(255,190,40,0.35)' }} /> sparse</div>
-          <div className="legend-item"><span className="dot" style={{ background: 'rgb(255,80,40)' }} /> dense</div>
+          <div className="legend-item"><span className="dot" style={{ background: 'rgba(255,190,40,0.35)' }} /> {t('legend.sparse')}</div>
+          <div className="legend-item"><span className="dot" style={{ background: 'rgb(255,80,40)' }} /> {t('legend.dense')}</div>
         </div>
       )}
       {mode === 'resources' && (
         <div className="legend-items">
-          <div className="legend-item"><span className="dot" style={{ background: 'rgb(120,200,90)' }} /> food</div>
-          <div className="legend-item"><span className="dot" style={{ background: 'rgb(160,116,60)' }} /> wood</div>
-          <div className="legend-item"><span className="dot" style={{ background: 'rgb(150,150,160)' }} /> stone</div>
-          <div className="legend-item"><span className="dot" style={{ background: 'rgb(200,120,120)' }} /> iron</div>
-          <div className="legend-item"><span className="dot" style={{ background: 'rgb(240,200,70)' }} /> gold</div>
+          <div className="legend-item"><span className="dot" style={{ background: 'rgb(120,200,90)' }} /> {t('res.food')}</div>
+          <div className="legend-item"><span className="dot" style={{ background: 'rgb(160,116,60)' }} /> {t('res.wood')}</div>
+          <div className="legend-item"><span className="dot" style={{ background: 'rgb(150,150,160)' }} /> {t('res.stone')}</div>
+          <div className="legend-item"><span className="dot" style={{ background: 'rgb(200,120,120)' }} /> {t('res.iron')}</div>
+          <div className="legend-item"><span className="dot" style={{ background: 'rgb(240,200,70)' }} /> {t('res.gold')}</div>
         </div>
       )}
       {(mode === 'technology' || mode === 'economy' || mode === 'military' || mode === 'culture') && (
         <div className="legend-items">
-          <div className="legend-item"><span className="dot" style={{ background: 'rgba(60,140,220,0.35)' }} /> low</div>
-          <div className="legend-item"><span className="dot" style={{ background: 'rgb(100,255,220)' }} /> high</div>
+          <div className="legend-item"><span className="dot" style={{ background: 'rgba(60,140,220,0.35)' }} /> {t('legend.low')}</div>
+          <div className="legend-item"><span className="dot" style={{ background: 'rgb(100,255,220)' }} /> {t('legend.high')}</div>
         </div>
       )}
     </div>

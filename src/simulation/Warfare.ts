@@ -63,17 +63,18 @@ export function declareWar(world: WorldState, a: Civilization, b: Civilization, 
   world.relations[b.index][a.index] = -85;
   world.alliances[a.index][b.index] = false;
   world.alliances[b.index][a.index] = false;
-  addEvent(
-    world,
-    world.year,
-    'war',
-    [a.id, b.id],
-    `${name} begins`,
-    `${a.name} declared war on ${b.name} after years of rising tension along their borders.`,
-    8,
-    b.territory > 0 ? Math.round(b.sumX / b.territory) : undefined,
-    b.territory > 0 ? Math.round(b.sumY / b.territory) : undefined,
-  );
+  addEvent(world, {
+    year: world.year,
+    type: 'war',
+    civIds: [a.id, b.id],
+    title: `${name} begins`,
+    description: `${a.name} declared war on ${b.name} after years of rising tension along their borders.`,
+    titleZh: `${a.name}对${b.name}宣战`,
+    descriptionZh: `边境紧张局势多年累积之后，${a.name}向${b.name}宣战（史称 ${name}）。`,
+    importance: 8,
+    x: b.territory > 0 ? Math.round(b.sumX / b.territory) : undefined,
+    y: b.territory > 0 ? Math.round(b.sumY / b.territory) : undefined,
+  });
   return war;
 }
 
@@ -170,17 +171,18 @@ export function runWars(world: WorldState, rng: SeededRandom): void {
             loser.capitalCityId = loser.cityIds[0] ?? null;
           }
           if (city.level === 'capital') city.level = 'city';
-          addEvent(
-            world,
-            world.year,
-            'city-captured',
-            [winner.id, loser.id],
-            `${city.name} falls to ${winner.name}`,
-            `After fierce fighting in ${war.name}, the city of ${city.name} was captured by ${demonym(winner.name)} forces.`,
-            7,
-            city.x,
-            city.y,
-          );
+          addEvent(world, {
+            year: world.year,
+            type: 'city-captured',
+            civIds: [winner.id, loser.id],
+            title: `${city.name} falls to ${winner.name}`,
+            description: `After fierce fighting in ${war.name}, the city of ${city.name} was captured by ${demonym(winner.name)} forces.`,
+            titleZh: `${city.name}陷落，落入${winner.name}之手`,
+            descriptionZh: `经过惨烈的战斗，${city.name}被${winner.name}军队攻占。`,
+            importance: 7,
+            x: city.x,
+            y: city.y,
+          });
         }
       }
     }
@@ -235,25 +237,27 @@ export function runWars(world: WorldState, rng: SeededRandom): void {
           const tribute = Math.min(vanquished.gold * 0.3, 500);
           vanquished.gold -= tribute;
           victor.gold += tribute;
-          addEvent(
-            world,
-            world.year,
-            'peace',
-            [a.id, b.id],
-            `${war.name} ends in victory for ${victor.name}`,
-            `After ${duration} years of fighting, ${vanquished.name} sued for peace. ${victor.name} gained territory and tribute.`,
-            7,
-          );
+          addEvent(world, {
+            year: world.year,
+            type: 'peace',
+            civIds: [a.id, b.id],
+            title: `${war.name} ends in victory for ${victor.name}`,
+            description: `After ${duration} years of fighting, ${vanquished.name} sued for peace. ${victor.name} gained territory and tribute.`,
+            titleZh: `战争结束，${victor.name}获胜`,
+            descriptionZh: `${duration} 年的战争之后，${vanquished.name}求和。${victor.name}获得了领土与赔款。`,
+            importance: 7,
+          });
         } else {
-          addEvent(
-            world,
-            world.year,
-            'peace',
-            [a.id, b.id],
-            `${war.name} ends in stalemate`,
-            `Exhausted after ${duration} years, ${a.name} and ${b.name} signed a peace treaty with no clear victor.`,
-            6,
-          );
+          addEvent(world, {
+            year: world.year,
+            type: 'peace',
+            civIds: [a.id, b.id],
+            title: `${war.name} ends in stalemate`,
+            description: `Exhausted after ${duration} years, ${a.name} and ${b.name} signed a peace treaty with no clear victor.`,
+            titleZh: `${a.name}与${b.name}停战`,
+            descriptionZh: `鏖战 ${duration} 年后两败俱伤，${a.name}与${b.name}签署了没有胜者的和约。`,
+            importance: 6,
+          });
         }
       }
     }
@@ -289,15 +293,17 @@ function annihilate(world: WorldState, civ: Civilization, conqueror: Civilizatio
   civ.deathYear = world.year;
   civ.capitalCityId = null;
   war.endYear = world.year;
-  addEvent(
-    world,
-    world.year,
-    'extinction',
-    [civ.id, conqueror.id],
-    `${civ.name} is destroyed`,
-    `${war.name} ended with the total conquest of ${civ.name}. After ${world.year - civ.foundedYear} years of history, the ${demonym(civ.name)} ceased to exist as a nation. Their lands now belong to ${conqueror.name}.`,
-    10,
-  );
+  const age = world.year - civ.foundedYear;
+  addEvent(world, {
+    year: world.year,
+    type: 'extinction',
+    civIds: [civ.id, conqueror.id],
+    title: `${civ.name} is destroyed`,
+    description: `${war.name} ended with the total conquest of ${civ.name}. After ${age} years of history, the ${demonym(civ.name)} ceased to exist as a nation. Their lands now belong to ${conqueror.name}.`,
+    titleZh: `${civ.name}灭亡`,
+    descriptionZh: `战争以${civ.name}被彻底征服而告终。延续 ${age} 年的${civ.name}就此亡国，其疆土尽归${conqueror.name}所有。`,
+    importance: 10,
+  });
 }
 
 /** Starvation-driven collapse outside war (no conqueror). */
@@ -319,13 +325,15 @@ export function checkExtinction(world: WorldState, civ: Civilization): void {
   civ.capitalCityId = null;
   civ.alive = false;
   civ.deathYear = world.year;
-  addEvent(
-    world,
-    world.year,
-    'extinction',
-    [civ.id],
-    `${civ.name} fades away`,
-    `Famine and decline extinguished ${civ.name}. Its lands returned to wilderness after ${world.year - civ.foundedYear} years.`,
-    9,
-  );
+  const age = world.year - civ.foundedYear;
+  addEvent(world, {
+    year: world.year,
+    type: 'extinction',
+    civIds: [civ.id],
+    title: `${civ.name} fades away`,
+    description: `Famine and decline extinguished ${civ.name}. Its lands returned to wilderness after ${age} years.`,
+    titleZh: `${civ.name}悄然消逝`,
+    descriptionZh: `饥荒与衰败耗尽了${civ.name}的生机。延续 ${age} 年后，它的土地重归荒野。`,
+    importance: 9,
+  });
 }

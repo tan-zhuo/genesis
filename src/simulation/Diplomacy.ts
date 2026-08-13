@@ -102,15 +102,17 @@ export function runTrade(world: WorldState, rng: SeededRandom): void {
             if (!existing) {
               world.tradeRoutes.push({ fromId: seller.id, toId: buyer.id, give: res, receive: 'gold', sinceYear: world.year });
               if (rng.chance(0.5)) {
-                addEvent(
-                  world,
-                  world.year,
-                  'trade',
-                  [seller.id, buyer.id],
-                  `Trade opens between ${seller.name} and ${buyer.name}`,
-                  `${seller.name} began exporting ${res} to ${buyer.name} in exchange for gold. Both economies benefit.`,
-                  3,
-                );
+                const RES_ZH: Record<string, string> = { food: '粮食', wood: '木材', stone: '石料', iron: '铁', gold: '黄金' };
+                addEvent(world, {
+                  year: world.year,
+                  type: 'trade',
+                  civIds: [seller.id, buyer.id],
+                  title: `Trade opens between ${seller.name} and ${buyer.name}`,
+                  description: `${seller.name} began exporting ${res} to ${buyer.name} in exchange for gold. Both economies benefit.`,
+                  titleZh: `${seller.name}与${buyer.name}开通贸易`,
+                  descriptionZh: `${seller.name}开始向${buyer.name}出口${RES_ZH[res] ?? res}以换取黄金，两国经济都从中受益。`,
+                  importance: 3,
+                });
               }
             }
             done = true;
@@ -176,28 +178,30 @@ export function runDiplomacy(world: WorldState, rng: SeededRandom): void {
         if (rng.chance(0.05)) {
           world.alliances[i][j] = true;
           world.alliances[j][i] = true;
-          addEvent(
-            world,
-            world.year,
-            'alliance',
-            [a.id, b.id],
-            `${a.name} and ${b.name} form an alliance`,
-            `After years of friendship and trade, ${a.name} and ${b.name} signed a pact of mutual defense.`,
-            6,
-          );
+          addEvent(world, {
+            year: world.year,
+            type: 'alliance',
+            civIds: [a.id, b.id],
+            title: `${a.name} and ${b.name} form an alliance`,
+            description: `After years of friendship and trade, ${a.name} and ${b.name} signed a pact of mutual defense.`,
+            titleZh: `${a.name}与${b.name}结为同盟`,
+            descriptionZh: `多年的友谊与贸易之后，${a.name}与${b.name}签署了共同防御条约。`,
+            importance: 6,
+          });
         }
       } else if (world.alliances[i][j] && (rel < 35 || atWar)) {
         world.alliances[i][j] = false;
         world.alliances[j][i] = false;
-        addEvent(
-          world,
-          world.year,
-          'peace',
-          [a.id, b.id],
-          `The alliance between ${a.name} and ${b.name} dissolves`,
-          `Diverging interests ended the long-standing pact between ${a.name} and ${b.name}.`,
-          4,
-        );
+        addEvent(world, {
+          year: world.year,
+          type: 'peace',
+          civIds: [a.id, b.id],
+          title: `The alliance between ${a.name} and ${b.name} dissolves`,
+          description: `Diverging interests ended the long-standing pact between ${a.name} and ${b.name}.`,
+          titleZh: `${a.name}与${b.name}的同盟解体`,
+          descriptionZh: `利益的分歧终结了${a.name}与${b.name}之间长久的盟约。`,
+          importance: 4,
+        });
       }
     }
   }
