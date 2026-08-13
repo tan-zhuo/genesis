@@ -1,0 +1,183 @@
+// Natural disasters: seeded, configurable frequency, regional impact.
+import { SeededRandom } from './Random';
+import { demonym } from './names';
+import { WorldState } from './types';
+import { addEvent } from './World';
+import { TERRAIN_INDEX } from './Terrain';
+
+interface DisasterDef {
+  type: string;
+  title: (region: string) => string;
+  describe: (years: number, severity: number) => string;
+  weight: number;
+  popLoss: [number, number]; // fraction range within radius
+  foodPenalty: [number, number]; // production multiplier range
+  years: [number, number];
+  radius: [number, number];
+  importance: number;
+}
+
+const DISASTERS: DisasterDef[] = [
+  {
+    type: 'drought',
+    title: () => 'The Great Drought',
+    describe: (y, s) => `Rains failed and rivers thinned. Food production fell by ${Math.round(s * 100)}% for ${y} years.`,
+    weight: 30,
+    popLoss: [0.02, 0.08],
+    foodPenalty: [0.5, 0.75],
+    years: [3, 9],
+    radius: [6, 14],
+    importance: 6,
+  },
+  {
+    type: 'flood',
+    title: () => 'Catastrophic Floods',
+    describe: (y) => `Rivers burst their banks, drowning fields and villages. Recovery took ${y} years.`,
+    weight: 20,
+    popLoss: [0.03, 0.1],
+    foodPenalty: [0.65, 0.85],
+    years: [1, 4],
+    radius: [4, 8],
+    importance: 5,
+  },
+  {
+    type: 'earthquake',
+    title: () => 'The Great Earthquake',
+    describe: () => `The earth split and cities crumbled in moments.`,
+    weight: 15,
+    popLoss: [0.05, 0.15],
+    foodPenalty: [0.85, 0.95],
+    years: [1, 2],
+    radius: [3, 7],
+    importance: 6,
+  },
+  {
+    type: 'volcano',
+    title: () => 'Volcanic Eruption',
+    describe: (y) => `Ash darkened the sky for ${y} years, poisoning harvests across the region.`,
+    weight: 8,
+    popLoss: [0.08, 0.2],
+    foodPenalty: [0.5, 0.7],
+    years: [2, 6],
+    radius: [5, 10],
+    importance: 7,
+  },
+  {
+    type: 'plague',
+    title: () => 'The Great Plague',
+    describe: (y, s) => `A terrible pestilence spread along the trade roads, killing ${Math.round(s * 100)}% of those it touched over ${y} years.`,
+    weight: 18,
+    popLoss: [0.15, 0.35],
+    foodPenalty: [0.8, 0.95],
+    years: [2, 5],
+    radius: [10, 20],
+    importance: 8,
+  },
+  {
+    type: 'meteor',
+    title: () => 'A Star Falls',
+    describe: () => `A burning stone fell from the heavens, obliterating everything near its impact.`,
+    weight: 2,
+    popLoss: [0.4, 0.8],
+    foodPenalty: [0.4, 0.6],
+    years: [3, 8],
+    radius: [2, 5],
+    importance: 9,
+  },
+  {
+    type: 'winter',
+    title: () => 'The Long Winter',
+    describe: (y) => `Summer never came. Crops froze in the fields for ${y} consecutive years.`,
+    weight: 12,
+    popLoss: [0.04, 0.12],
+    foodPenalty: [0.55, 0.75],
+    years: [2, 6],
+    radius: [8, 16],
+    importance: 6,
+  },
+];
+
+const TOTAL_WEIGHT = DISASTERS.reduce((s, d) => s + d.weight, 0);
+
+export function runDisasters(world: WorldState, rng: SeededRandom): void {
+  const freq = world.config.disasterFrequency;
+  if (freq <= 0) return;
+  if (!rng.chance(0.02 * freq)) return;
+
+  // Weighted pick
+  let roll = rng.next() * TOTAL_WEIGHT;
+  let def = DISASTERS[0];
+  for (const d of DISASTERS) {
+    roll -= d.weight;
+    if (roll <= 0) {
+      def = d;
+      break;
+    }
+  }
+
+  const m = world.map;
+  // Epicenter: prefer inhabited land so disasters matter.
+  let epicenter = -1;
+  for (let attempt = 0; attempt < 30; attempt++) {
+    const t = rng.nextInt(0, m.width * m.height - 1);
+    if (m.terrain[t] === TERRAIN_INDEX.ocean) continue;
+    epicenter = t;
+    if (m.owner[t] >= 0) break; // found inhabited land
+  }
+  if (epicenter < 0) return;
+
+  const ex = epicenter % m.width;
+  const ey = Math.floor(epicenter / m.width);
+  const radius = rng.nextInt(def.radius[0], def.radius[1]);
+  const years = rng.nextInt(def.years[0], def.years[1]);
+  const popLoss = rng.range(def.popLoss[0], def.popLoss[1]);
+  const foodPenalty = rng.range(def.foodPenalty[0], def.foodPenalty[1]);
+
+  // Apply population loss within radius; track affected civs.
+  const affected = new Map<number, number>(); // civIndex -> pop lost
+  for (let dy = -radius; dy <= radius; dy++) {
+    for (let dx = -radius; dx <= radius; dx++) {
+      if (dx * dx + dy * dy > radius * radius) continue;
+      const nx = ex + dx;
+      const ny = ey + dy;
+      if (nx < 0 || ny < 0 || nx >= m.width || ny >= m.height) continue;
+      const t = ny * m.width + nx;
+      const owner = m.owner[t];
+      if (m.population[t] > 0) {
+        const falloff = 1 - Math.sqrt(dx * dx + dy * dy) / (radius + 1);
+        const lost = m.population[t] * popLoss * falloff;
+        m.population[t] -= lost;
+        if (owner >= 0) affected.set(owner, (affected.get(owner) ?? 0) + lost);
+      }
+    }
+  }
+
+  const civIds: string[] = [];
+  let totalLost = 0;
+  for (const [idx, lost] of [...affected.entries()].sort((p, q) => p[0] - q[0])) {
+    const civ = world.civs[idx];
+    civ.population = Math.max(0, civ.population - lost);
+    civ.foodPenaltyUntil = world.year + years;
+    civ.foodPenaltyMult = foodPenalty;
+    civ.happiness = Math.max(0, civ.happiness - 10);
+    civ.stability = Math.max(0, civ.stability - 5);
+    civIds.push(civ.id);
+    totalLost += lost;
+  }
+
+  world.disasters.push({ untilYear: world.year + years, x: ex, y: ey, radius, type: def.type });
+  if (world.disasters.length > 20) world.disasters.shift();
+
+  const affectedNames = civIds.map((id) => demonym(world.civs[parseInt(id.slice(4), 10)].name)).join(', ');
+  addEvent(
+    world,
+    world.year,
+    'disaster',
+    civIds,
+    def.title(''),
+    `${def.describe(years, popLoss)}${totalLost > 100 ? ` Around ${Math.round(totalLost).toLocaleString('en-US')} people perished.` : ''}${affectedNames ? ` The ${affectedNames} suffered most.` : ''}`,
+    def.importance,
+    ex,
+    ey,
+  );
+}
