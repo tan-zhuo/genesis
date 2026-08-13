@@ -75,15 +75,36 @@ export function generateMap(config: WorldConfig): WorldMap {
 
   const scale = 4.5 / Math.max(width, height); // base noise frequency
 
-  // Continent centers: a few seeded blobs pull land together.
-  const blobCount = rng.nextInt(2, 4);
+  // Continent cores: N landmasses kept apart by rejection sampling, so worlds
+  // get real oceans between real continents instead of a single pangea.
+  const continentCount =
+    config.continents && config.continents > 0 ? Math.min(6, Math.round(config.continents)) : rng.nextInt(2, 5);
+  // Radius chosen so total land area stays ~30% of the map regardless of count
+  // (the steep mask falloff means land only reaches ~0.55 of the blob radius).
+  const baseR = 1.75 * Math.sqrt((0.33 * width * height) / (Math.PI * continentCount));
+  const minSep = baseR * 1.45; // centers this far apart -> tails rarely bridge
   const blobs: { x: number; y: number; r: number }[] = [];
-  for (let i = 0; i < blobCount; i++) {
-    blobs.push({
-      x: rng.range(0.22, 0.78) * width,
-      y: rng.range(0.22, 0.78) * height,
-      r: rng.range(0.28, 0.45) * Math.min(width, height),
-    });
+  for (let i = 0; i < continentCount; i++) {
+    let placed = false;
+    for (let attempt = 0; attempt < 80 && !placed; attempt++) {
+      const x = rng.range(0.16, 0.84) * width;
+      const y = rng.range(0.16, 0.84) * height;
+      let ok = true;
+      for (const b of blobs) {
+        if (Math.hypot(x - b.x, y - b.y) < minSep) {
+          ok = false;
+          break;
+        }
+      }
+      if (ok) {
+        blobs.push({ x, y, r: baseR * rng.range(0.75, 1.2) });
+        placed = true;
+      }
+    }
+    // Crowded map: place anyway (still deterministic), slightly smaller.
+    if (!placed) {
+      blobs.push({ x: rng.range(0.2, 0.8) * width, y: rng.range(0.2, 0.8) * height, r: baseR * 0.6 });
+    }
   }
 
   const seaLevel = config.seaLevel;
@@ -96,20 +117,20 @@ export function generateMap(config: WorldConfig): WorldMap {
       const wy = fbm(seedNum + 1555, x * scale * 2, y * scale * 2, 3) - 0.5;
       let e = fbm(seedNum, (x + wx * 30) * scale, (y + wy * 30) * scale, 5);
 
-      // Blob mask: distance to nearest continent center
+      // Blob mask: steep falloff keeps continents from bleeding into bridges
       let mask = 0;
       for (const b of blobs) {
         const dx = (x - b.x) / b.r;
         const dy = (y - b.y) / b.r;
         const d = Math.sqrt(dx * dx + dy * dy);
-        mask = Math.max(mask, 1 - d);
+        if (d < 1.4) mask = Math.max(mask, Math.pow(Math.max(0, 1 - d / 1.4), 1.35));
       }
       // Edge falloff keeps oceans at map borders
       const ex = Math.min(x, width - 1 - x) / (width * 0.5);
       const ey = Math.min(y, height - 1 - y) / (height * 0.5);
       const edge = Math.min(1, Math.min(ex, ey) * 3.2);
 
-      e = e * 0.55 + mask * 0.45;
+      e = e * 0.44 + mask * 0.56;
       e *= 0.35 + 0.65 * edge;
       elevation[i] = e;
 

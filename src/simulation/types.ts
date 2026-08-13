@@ -1,7 +1,7 @@
 // Core shared types for the simulation engine.
 // The engine is pure TypeScript: it must never import React or DOM types.
 
-export const SIM_VERSION = '1.2.0';
+export const SIM_VERSION = '1.3.0';
 
 export type Terrain = 'ocean' | 'plains' | 'forest' | 'desert' | 'mountain' | 'tundra';
 
@@ -350,6 +350,7 @@ export interface WorldConfig {
   rules: Rule[];
   interventions?: Intervention[];
   finiteResources?: boolean; // default true: mines exhaust, forests fall, soil tires
+  continents?: number; // 0/undefined = auto (2-5); otherwise 1-6 separated landmasses
 }
 
 // ---- Statistics / history ----

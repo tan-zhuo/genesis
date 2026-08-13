@@ -148,6 +148,23 @@ export function WorldSetup(): JSX.Element {
               </div>
             </div>
             <div className="field-row">
+              <label>{t('setup.continents')}</label>
+              <div className="size-btns">
+                <button className={`chip ${!config.continents ? 'chip-active' : ''}`} onClick={() => patch({ continents: 0 })}>
+                  {t('setup.auto')}
+                </button>
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <button
+                    key={n}
+                    className={`chip ${config.continents === n ? 'chip-active' : ''}`}
+                    onClick={() => patch({ continents: n })}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="field-row">
               <label>{t('setup.ocean', { v: Math.round(config.seaLevel * 100) })}</label>
               <input type="range" min={30} max={70} value={config.seaLevel * 100} onChange={(e) => patch({ seaLevel: Number(e.target.value) / 100 })} />
             </div>
