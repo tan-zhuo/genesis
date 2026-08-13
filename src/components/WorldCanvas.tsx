@@ -6,6 +6,14 @@ import { MapStatic, Snapshot, WorldEvent } from '../simulation/types';
 import { TERRAINS } from '../simulation/types';
 import { useT } from '../i18n';
 import { GOD_TOOLS } from './GodToolbar';
+import {
+  buildBuildingsCanvas,
+  buildDetailCanvas,
+  citySignature,
+  drawCaravans,
+  drawFrontFighters,
+  drawWalkers,
+} from './mapDetail';
 
 const TERRAIN_COLORS: [number, number, number][] = [
   [16, 32, 54], // ocean
@@ -47,6 +55,10 @@ export function WorldCanvas({ universe }: Props): JSX.Element {
   const overlayCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const warFrontCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const lightsCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const detailCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const buildingsCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const buildingsSigRef = useRef<string>('');
+  const warFrontTilesRef = useRef<number[]>([]);
   const targetViewRef = useRef<ViewTransform | null>(null);
   const viewRef = useRef<ViewTransform>({ x: 0, y: 0, scale: 3 });
   const [hoverTile, setHoverTile] = useState<{ x: number; y: number; sx: number; sy: number } | null>(null);
@@ -109,6 +121,9 @@ export function WorldCanvas({ universe }: Props): JSX.Element {
     }
     ctx.putImageData(img, 0, 0);
     terrainCanvasRef.current = c;
+    detailCanvasRef.current = buildDetailCanvas(mapStatic);
+    buildingsCanvasRef.current = null;
+    buildingsSigRef.current = '';
     // Center map on first load
     if (!initializedRef.current && wrapRef.current) {
       const rect = wrapRef.current.getBoundingClientRect();
@@ -138,6 +153,16 @@ export function WorldCanvas({ universe }: Props): JSX.Element {
     }
     if (seenEventsRef.current.size > 4000) seenEventsRef.current.clear();
   }, [snapshot]);
+
+  // --- Buildings layer: rebuilt only when cities/eras change ---
+  useEffect(() => {
+    if (!mapStatic || !snapshot) return;
+    const sig = citySignature(snapshot);
+    if (sig !== buildingsSigRef.current) {
+      buildingsSigRef.current = sig;
+      buildingsCanvasRef.current = buildBuildingsCanvas(mapStatic, snapshot);
+    }
+  }, [mapStatic, snapshot]);
 
   // --- Overlay layer per snapshot + mode ---
   const civColors = useMemo(() => {
@@ -188,6 +213,7 @@ export function WorldCanvas({ universe }: Props): JSX.Element {
     }
     const wfCtx = wf.getContext('2d')!;
     wfCtx.clearRect(0, 0, wf.width, wf.height);
+    const frontTiles: number[] = [];
 
     if (mapMode === 'political' || mapMode === 'night') {
       const W = mapStatic.width;
@@ -232,11 +258,13 @@ export function WorldCanvas({ universe }: Props): JSX.Element {
               wfImg.data[i * 4 + 1] = 90;
               wfImg.data[i * 4 + 2] = 40;
               wfImg.data[i * 4 + 3] = 255;
+              frontTiles.push(i);
             }
           }
         }
       }
       wfCtx.putImageData(wfImg, 0, 0);
+      warFrontTilesRef.current = frontTiles;
 
       // Night lights layer: brightness from population, hue from tech era.
       if (night) {
@@ -315,7 +343,7 @@ export function WorldCanvas({ universe }: Props): JSX.Element {
     if (!focusTile || !wrapRef.current || !mapStatic) return;
     const rect = wrapRef.current.getBoundingClientRect();
     const v = viewRef.current;
-    const targetScale = Math.max(v.scale, 5);
+    const targetScale = Math.max(v.scale, 12);
     targetViewRef.current = {
       scale: targetScale,
       x: rect.width / 2 - focusTile.x * targetScale,
@@ -377,7 +405,12 @@ export function WorldCanvas({ universe }: Props): JSX.Element {
       }
       const overlay = overlayCanvasRef.current;
       if (overlay && mapMode !== 'terrain') {
+        // At street-level zoom the political wash fades so the living ground
+        // (terrain detail, buildings, people) becomes the protagonist.
+        ctx.save();
+        if (!night && v.scale > 5) ctx.globalAlpha = Math.max(0.3, 1 - (v.scale - 5) * 0.09);
         ctx.drawImage(overlay, v.x, v.y, overlay.width * v.scale, overlay.height * v.scale);
+        ctx.restore();
       }
       // Night lights: soft halo pass + sharp core pass, additively blended.
       const lights = lightsCanvasRef.current;
@@ -394,6 +427,24 @@ export function WorldCanvas({ universe }: Props): JSX.Element {
         ctx.drawImage(lights, v.x, v.y, terrain.width * v.scale, terrain.height * v.scale);
         ctx.restore();
       }
+      // Close-up detail: terrain texture fades in, then buildings.
+      const detail = detailCanvasRef.current;
+      if (detail && terrain && v.scale >= 4 && !night) {
+        ctx.save();
+        ctx.imageSmoothingEnabled = true;
+        ctx.globalAlpha = Math.min(1, (v.scale - 4) / 3) * (mapMode === 'terrain' ? 1 : 0.85);
+        ctx.drawImage(detail, v.x, v.y, terrain.width * v.scale, terrain.height * v.scale);
+        ctx.restore();
+      }
+      const buildings = buildingsCanvasRef.current;
+      if (buildings && terrain && v.scale >= 3.2 && mapMode !== 'terrain') {
+        ctx.save();
+        ctx.imageSmoothingEnabled = true;
+        ctx.globalAlpha = Math.min(1, (v.scale - 3.2) / 2.5);
+        ctx.drawImage(buildings, v.x, v.y, terrain.width * v.scale, terrain.height * v.scale);
+        ctx.restore();
+      }
+
       // Burning war fronts
       const wfLayer = warFrontCanvasRef.current;
       if (wfLayer && terrain && (mapMode === 'political' || night)) {
@@ -478,19 +529,21 @@ export function WorldCanvas({ universe }: Props): JSX.Element {
           if (sx < -20 || sy < -20 || sx > rect.width + 20 || sy > rect.height + 20) continue;
           const r = city.level === 'capital' ? 5 : city.level === 'city' ? 4 : city.level === 'town' ? 3 : 2;
           const rr = Math.max(2, r * Math.min(1.6, v.scale / 3));
-          ctx.beginPath();
-          ctx.arc(sx, sy, rr, 0, Math.PI * 2);
-          ctx.fillStyle = '#f2f4f8';
-          ctx.fill();
-          ctx.lineWidth = 1.5;
-          ctx.strokeStyle = owner.color;
-          ctx.stroke();
-          if (city.level === 'capital') {
+          if (v.scale < 6.5) {
             ctx.beginPath();
-            ctx.arc(sx, sy, rr + 2.5, 0, Math.PI * 2);
-            ctx.strokeStyle = 'rgba(242,244,248,0.6)';
-            ctx.lineWidth = 1;
+            ctx.arc(sx, sy, rr, 0, Math.PI * 2);
+            ctx.fillStyle = '#f2f4f8';
+            ctx.fill();
+            ctx.lineWidth = 1.5;
+            ctx.strokeStyle = owner.color;
             ctx.stroke();
+            if (city.level === 'capital') {
+              ctx.beginPath();
+              ctx.arc(sx, sy, rr + 2.5, 0, Math.PI * 2);
+              ctx.strokeStyle = 'rgba(242,244,248,0.6)';
+              ctx.lineWidth = 1;
+              ctx.stroke();
+            }
           }
           if (v.scale >= 4 && (city.level === 'city' || city.level === 'capital')) {
             ctx.font = '10px "Segoe UI", sans-serif';
@@ -500,6 +553,17 @@ export function WorldCanvas({ universe }: Props): JSX.Element {
           }
         }
         ctx.restore();
+
+        // Living world: walkers, caravans, front-line fighters at close zoom.
+        if (mapStatic && v.scale >= 7.5 && mapMode !== 'terrain') {
+          drawWalkers(ctx, v, rect.width, rect.height, snap, mapStatic, performance.now());
+        }
+        if (v.scale >= 5 && (mapMode === 'political' || mapMode === 'night')) {
+          drawCaravans(ctx, v, snap.tradeRoutes, snap.civs, performance.now());
+          if (mapStatic && v.scale >= 6.5 && warFrontTilesRef.current.length > 0) {
+            drawFrontFighters(ctx, v, rect.width, rect.height, warFrontTilesRef.current, mapStatic, snap, performance.now());
+          }
+        }
 
         // Event pings: fading rings + glyphs at event location.
         const now = performance.now();
@@ -514,9 +578,34 @@ export function WorldCanvas({ universe }: Props): JSX.Element {
           const radius = 4 + age * 26;
           let color = 'rgba(240, 200, 90,';
           if (event.type === 'war' || event.type === 'city-captured') color = 'rgba(230, 70, 70,';
-          else if (event.type === 'disaster') color = 'rgba(250, 140, 40,';
+          else if (event.type === 'disaster' || event.type === 'divine') color = 'rgba(250, 140, 40,';
           else if (event.type === 'split' || event.type === 'extinction') color = 'rgba(200, 90, 230,';
           else if (event.type === 'city-founded') color = 'rgba(110, 220, 160,';
+          // Meteor strikes get a full falling-star + blast animation.
+          const isMeteor = event.title.includes('star') || event.titleZh?.includes('陨星');
+          if (isMeteor && age < 0.28) {
+            const fall = age / 0.28;
+            const startX = sx + 220;
+            const startY = sy - 340;
+            const mx = startX + (sx - startX) * fall;
+            const my = startY + (sy - startY) * fall;
+            ctx.strokeStyle = `rgba(255, 210, 120, ${0.9 - fall * 0.3})`;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(mx + 26, my - 40);
+            ctx.lineTo(mx, my);
+            ctx.stroke();
+            ctx.fillStyle = 'rgba(255, 240, 200, 1)';
+            ctx.beginPath();
+            ctx.arc(mx, my, 4.5, 0, Math.PI * 2);
+            ctx.fill();
+          } else if (isMeteor && age < 0.45) {
+            const flash = 1 - (age - 0.28) / 0.17;
+            ctx.fillStyle = `rgba(255, 240, 200, ${flash * 0.9})`;
+            ctx.beginPath();
+            ctx.arc(sx, sy, 14 + (1 - flash) * 30, 0, Math.PI * 2);
+            ctx.fill();
+          }
           ctx.beginPath();
           ctx.arc(sx, sy, radius, 0, Math.PI * 2);
           ctx.strokeStyle = `${color}${alpha * 0.8})`;
@@ -763,6 +852,7 @@ function MapLegend({ mode, snapshot }: { mode: MapMode; snapshot: Snapshot | nul
   return (
     <div className="map-legend">
       <div className="legend-title">{t(`mode.${mode}`)}</div>
+      <div className="legend-zoom-hint">{t('legend.zoomHint')}</div>
       {(mode === 'political' || mode === 'night') && snapshot && (
         <div className="legend-items">
           {snapshot.civs.filter((c) => c.alive).slice(0, 12).map((c) => (
