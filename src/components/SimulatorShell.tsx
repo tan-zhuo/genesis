@@ -287,13 +287,22 @@ export function SimulatorShell(): JSX.Element {
                 {MAP_MODES.map((m) => (
                   <button
                     key={m}
-                    className={`mode-btn ${mapMode === m ? 'mode-active' : ''}`}
-                    onClick={() => setMapMode(m)}
+                    className={`mode-btn ${mapMode === m && !planetView ? 'mode-active' : ''}`}
+                    onClick={() => {
+                      setMapMode(m);
+                      if (planetView) setPlanetView(false);
+                    }}
                   >
                     {t(`mode.${m}`)}
                   </button>
                 ))}
               </div>
+              <button
+                className={`planet-toggle ${planetView ? 'planet-toggle-active' : ''}`}
+                onClick={() => setPlanetView(!planetView)}
+              >
+                <Globe size={15} /> {t('planet.title')}
+              </button>
               <div className="section-title">{t('side.world')}</div>
               <div className="kv small"><span>{t('side.seed')}</span><b>{universe.config.seed}</b></div>
               <div className="kv small"><span>{t('side.size')}</span><b>{universe.config.width}×{universe.config.height}</b></div>
