@@ -39,6 +39,10 @@ export function buildDetailCanvas(map: MapStatic): HTMLCanvasElement {
           const x = ox + 1 + h2(i, 10 + k) * (P - 3);
           const y = oy + 2 + h2(i, 20 + k) * (P - 4);
           const s = 1.6 + h2(i, 30 + k) * 1.3;
+          ctx.fillStyle = 'rgba(10, 14, 20, 0.18)';
+          ctx.beginPath();
+          ctx.ellipse(x + s * 0.35, y + s * 0.75, s * 0.9, s * 0.3, 0, 0, Math.PI * 2);
+          ctx.fill();
           ctx.fillStyle = k % 2 ? 'rgba(30, 62, 36, 0.9)' : 'rgba(40, 78, 44, 0.9)';
           ctx.beginPath();
           ctx.moveTo(x, y - s * 1.6);
@@ -50,10 +54,14 @@ export function buildDetailCanvas(map: MapStatic): HTMLCanvasElement {
           ctx.fillRect(x - 0.4, y + s * 0.6, 0.9, 1.1);
         }
       } else if (terr === 4) {
-        // Mountain: peak with snowcap
+        // Mountain: peak rises with elevation, casts a base shadow
         const x = ox + P / 2 + (r1 - 0.5) * 2;
         const y = oy + P / 2 + 1;
-        const s = 2.4 + r2 * 1.6;
+        const s = 2.4 + r2 * 1.6 + Math.max(0, map.elevation[i] - 0.75) * 6;
+        ctx.fillStyle = 'rgba(10, 14, 20, 0.22)';
+        ctx.beginPath();
+        ctx.ellipse(x + s * 0.3, y + s * 0.72, s * 1.05, s * 0.32, 0, 0, Math.PI * 2);
+        ctx.fill();
         ctx.fillStyle = 'rgba(88, 84, 82, 0.95)';
         ctx.beginPath();
         ctx.moveTo(x, y - s);
@@ -116,6 +124,15 @@ export function buildDetailCanvas(map: MapStatic): HTMLCanvasElement {
   return c;
 }
 
+/** Darken/lighten a #rrggbb color. */
+function shade(hex: string, f: number): string {
+  const n = parseInt(hex.slice(1), 16);
+  const r = Math.min(255, Math.round(((n >> 16) & 255) * f));
+  const g = Math.min(255, Math.round(((n >> 8) & 255) * f));
+  const b = Math.min(255, Math.round((n & 255) * f));
+  return `rgb(${r},${g},${b})`;
+}
+
 // ---------- Buildings (rebuilt when the cities change) ----------
 
 interface BuildingStyle {
@@ -148,10 +165,13 @@ export function citySignature(snapshot: Snapshot): string {
 }
 
 export function buildBuildingsCanvas(map: MapStatic, snapshot: Snapshot): HTMLCanvasElement {
+  // Buildings are drawn at 2x supersampling so facades stay crisp at
+  // street-level zoom; layout math stays in DETAIL_PX coordinates.
   const c = document.createElement('canvas');
-  c.width = map.width * DETAIL_PX;
-  c.height = map.height * DETAIL_PX;
+  c.width = map.width * DETAIL_PX * 2;
+  c.height = map.height * DETAIL_PX * 2;
   const ctx = c.getContext('2d')!;
+  ctx.scale(2, 2);
   const P = DETAIL_PX;
 
   for (const city of snapshot.cities) {
@@ -173,32 +193,66 @@ export function buildBuildingsCanvas(map: MapStatic, snapshot: Snapshot): HTMLCa
       ctx.stroke();
     }
 
-    // Buildings ring the center
+    // Buildings ring the center — collected first, then painted back-to-front
+    // (y-sorted) in 2.5D cabinet projection: front face + darker side + roof.
+    const plots: { bx: number; by: number; k: number }[] = [];
     for (let k = 0; k < count; k++) {
       const ang = h2(seed, k) * Math.PI * 2;
       const dist = (0.25 + h2(seed, 100 + k) * 0.75) * spread * P * 0.8;
-      const bx = cx + Math.cos(ang) * dist;
-      const by = cy + Math.sin(ang) * dist;
+      plots.push({ bx: cx + Math.cos(ang) * dist, by: cy + Math.sin(ang) * dist, k });
+    }
+    plots.sort((a, b) => a.by - b.by);
+    for (const { bx, by, k } of plots) {
       const st = eraStyle(tech, k);
       const w = st.tall ? 2.2 + h2(seed, 200 + k) * 1.4 : 2.6 + h2(seed, 200 + k) * 2;
       const hgt = st.tall ? 4.5 + h2(seed, 300 + k) * 5 : 2.2 + h2(seed, 300 + k) * 1.6;
+      const d = Math.min(1.5, w * 0.42); // extrusion depth toward upper-right
 
+      // Ground shadow
+      ctx.fillStyle = 'rgba(10, 14, 20, 0.28)';
+      ctx.beginPath();
+      ctx.ellipse(bx + w * 0.18, by + 0.5, w * 0.78, w * 0.3, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Side face (right, in shadow)
+      ctx.fillStyle = shade(st.wall, 0.62);
+      ctx.beginPath();
+      ctx.moveTo(bx + w / 2, by);
+      ctx.lineTo(bx + w / 2 + d, by - d * 0.6);
+      ctx.lineTo(bx + w / 2 + d, by - hgt - d * 0.6);
+      ctx.lineTo(bx + w / 2, by - hgt);
+      ctx.closePath();
+      ctx.fill();
+
+      // Front face
       ctx.fillStyle = st.wall;
       ctx.fillRect(bx - w / 2, by - hgt, w, hgt);
+
       if (st.tall) {
-        // windows
+        // Flat rooftop (lit top face)
+        ctx.fillStyle = shade(st.roof, 1.12);
+        ctx.beginPath();
+        ctx.moveTo(bx - w / 2, by - hgt);
+        ctx.lineTo(bx + w / 2, by - hgt);
+        ctx.lineTo(bx + w / 2 + d, by - hgt - d * 0.6);
+        ctx.lineTo(bx - w / 2 + d, by - hgt - d * 0.6);
+        ctx.closePath();
+        ctx.fill();
+        // Windows
         ctx.fillStyle = 'rgba(255, 236, 160, 0.85)';
         for (let wy = by - hgt + 1; wy < by - 1; wy += 1.6) {
           ctx.fillRect(bx - w / 2 + 0.5, wy, 0.7, 0.7);
+          ctx.fillRect(bx - w / 2 + 1.6, wy, 0.7, 0.7);
         }
+        // Antenna
         ctx.strokeStyle = 'rgba(200, 214, 232, 0.8)';
         ctx.lineWidth = 0.5;
         ctx.beginPath();
-        ctx.moveTo(bx, by - hgt);
-        ctx.lineTo(bx, by - hgt - 1.4);
+        ctx.moveTo(bx + d * 0.5, by - hgt - d * 0.6);
+        ctx.lineTo(bx + d * 0.5, by - hgt - d * 0.6 - 1.6);
         ctx.stroke();
       } else {
-        // pitched roof
+        // Pitched roof: lit front slope + shadowed side slope
         ctx.fillStyle = st.roof;
         ctx.beginPath();
         ctx.moveTo(bx - w / 2 - 0.4, by - hgt);
@@ -206,8 +260,16 @@ export function buildBuildingsCanvas(map: MapStatic, snapshot: Snapshot): HTMLCa
         ctx.lineTo(bx, by - hgt - 1.8);
         ctx.closePath();
         ctx.fill();
+        ctx.fillStyle = shade(st.roof, 0.7);
+        ctx.beginPath();
+        ctx.moveTo(bx + w / 2 + 0.4, by - hgt);
+        ctx.lineTo(bx + w / 2 + 0.4 + d * 0.8, by - hgt - d * 0.5);
+        ctx.lineTo(bx + d * 0.8, by - hgt - 1.8 - d * 0.5);
+        ctx.lineTo(bx, by - hgt - 1.8);
+        ctx.closePath();
+        ctx.fill();
         ctx.fillStyle = 'rgba(255, 220, 130, 0.8)';
-        ctx.fillRect(bx - 0.5, by - hgt / 2 - 0.5, 1, 1); // window
+        ctx.fillRect(bx - 0.5, by - hgt / 2 - 0.5, 1, 1);
         if (st.chimney) {
           ctx.fillStyle = '#3c3a38';
           ctx.fillRect(bx + w / 2 - 0.8, by - hgt - 2.6, 0.9, 2.6);
@@ -217,7 +279,20 @@ export function buildBuildingsCanvas(map: MapStatic, snapshot: Snapshot): HTMLCa
 
     // Central landmark for capitals: golden-roofed hall + banner
     if (city.level === 'capital') {
-      ctx.fillStyle = tech > 9 ? '#b8c9de' : '#a08a5c';
+      ctx.fillStyle = 'rgba(10, 14, 20, 0.3)';
+      ctx.beginPath();
+      ctx.ellipse(cx + 0.8, cy + 0.6, 4.4, 1.6, 0, 0, Math.PI * 2);
+      ctx.fill();
+      const hallWall = tech > 9 ? '#b8c9de' : '#a08a5c';
+      ctx.fillStyle = shade(hallWall, 0.6);
+      ctx.beginPath();
+      ctx.moveTo(cx + 2.6, cy);
+      ctx.lineTo(cx + 4.0, cy - 0.9);
+      ctx.lineTo(cx + 4.0, cy - 5.3);
+      ctx.lineTo(cx + 2.6, cy - 4.4);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = hallWall;
       ctx.fillRect(cx - 2.6, cy - 4.4, 5.2, 4.4);
       ctx.fillStyle = '#e8c25a';
       ctx.beginPath();
@@ -286,6 +361,11 @@ export function drawWalkers(
         const ry = 0.22 + h2(i, k + 17) * 0.16;
         const px = v.x + (tx + 0.5 + Math.sin(t * speed + phase) * rx) * v.scale;
         const py = v.y + (ty + 0.5 + Math.cos(t * speed * 0.8 + phase * 1.7) * ry) * v.scale;
+        // ground shadow
+        ctx.fillStyle = 'rgba(8, 10, 16, 0.3)';
+        ctx.beginPath();
+        ctx.ellipse(px + size * 0.1, py + size * 0.55, size * 0.42, size * 0.16, 0, 0, Math.PI * 2);
+        ctx.fill();
         // body
         ctx.fillStyle = color;
         ctx.fillRect(px - size * 0.28, py - size * 0.5, size * 0.56, size);
