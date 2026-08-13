@@ -5,6 +5,7 @@ import { MapMode, Universe, useSimulatorStore } from '../state/simulatorStore';
 import { MapStatic, Snapshot, WorldEvent } from '../simulation/types';
 import { TERRAINS } from '../simulation/types';
 import { useT } from '../i18n';
+import { GOD_TOOLS } from './GodToolbar';
 
 const TERRAIN_COLORS: [number, number, number][] = [
   [16, 32, 54], // ocean
@@ -61,6 +62,13 @@ export function WorldCanvas({ universe }: Props): JSX.Element {
   const selectCity = useSimulatorStore((s) => s.selectCity);
   const selectTile = useSimulatorStore((s) => s.selectTile);
   const setInspectorTab = useSimulatorStore((s) => s.setInspectorTab);
+  const godTool = useSimulatorStore((s) => s.godTool);
+  const intervene = useSimulatorStore((s) => s.intervene);
+  const godToolRef = useRef(godTool);
+  const hoverTileRef = useRef<{ x: number; y: number } | null>(null);
+  useEffect(() => {
+    godToolRef.current = godTool;
+  }, [godTool]);
 
   const { mapStatic, snapshot } = universe;
 
@@ -372,6 +380,32 @@ export function WorldCanvas({ universe }: Props): JSX.Element {
           ctx.lineWidth = 1.5;
           ctx.strokeRect(v.x + selectedTile.x * v.scale, v.y + selectedTile.y * v.scale, v.scale, v.scale);
         }
+
+        // God-tool aim preview
+        const tool = godToolRef.current;
+        const aim = hoverTileRef.current;
+        if (tool && aim) {
+          const def = GOD_TOOLS.find((g) => g.id === tool);
+          const radius = Math.max(0.5, def?.radius ?? 1);
+          const gx = v.x + (aim.x + 0.5) * v.scale;
+          const gy = v.y + (aim.y + 0.5) * v.scale;
+          const pulse = 0.55 + 0.25 * Math.sin(performance.now() / 200);
+          ctx.save();
+          ctx.setLineDash([5, 4]);
+          ctx.strokeStyle = `rgba(245, 200, 90, ${pulse})`;
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.arc(gx, gy, radius * v.scale, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.beginPath();
+          ctx.moveTo(gx - 6, gy);
+          ctx.lineTo(gx + 6, gy);
+          ctx.moveTo(gx, gy - 6);
+          ctx.lineTo(gx, gy + 6);
+          ctx.stroke();
+          ctx.restore();
+        }
       }
     };
     raf = requestAnimationFrame(render);
@@ -456,6 +490,7 @@ export function WorldCanvas({ universe }: Props): JSX.Element {
         viewRef.current = { ...viewRef.current, x: drag.panX + dx, y: drag.panY + dy };
       }
       const tile = screenToTile(e.clientX, e.clientY);
+      hoverTileRef.current = tile;
       if (tile && wrapRef.current) {
         const rect = wrapRef.current.getBoundingClientRect();
         setHoverTile({ ...tile, sx: e.clientX - rect.left, sy: e.clientY - rect.top });
@@ -476,6 +511,10 @@ export function WorldCanvas({ universe }: Props): JSX.Element {
       // A click: select city > civ+tile.
       const tile = screenToTile(e.clientX, e.clientY);
       if (!tile) return;
+      if (godToolRef.current) {
+        intervene(godToolRef.current, tile.x, tile.y);
+        return;
+      }
       const v = viewRef.current;
       const clickRadius = Math.max(6, v.scale);
       const rect = wrapRef.current!.getBoundingClientRect();
@@ -507,7 +546,7 @@ export function WorldCanvas({ universe }: Props): JSX.Element {
         setInspectorTab('overview');
       }
     },
-    [snapshot, mapStatic, screenToTile, selectCiv, selectCity, selectTile, setInspectorTab],
+    [snapshot, mapStatic, screenToTile, selectCiv, selectCity, selectTile, setInspectorTab, intervene],
   );
 
   const hoverInfo = useMemo(() => {
@@ -531,7 +570,7 @@ export function WorldCanvas({ universe }: Props): JSX.Element {
   return (
     <div
       ref={wrapRef}
-      className="canvas-wrap"
+      className={`canvas-wrap ${godTool ? 'canvas-godmode' : ''}`}
       onWheel={onWheel}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}

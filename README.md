@@ -38,6 +38,9 @@ First run: click **Explore Example World** — a 200×200 world with 5 civilizat
 - Inspect everything: tiles, nations (with history charts and relations), cities, the tech tree, an event timeline, and world statistics
 - Save/load (browser storage), export/import JSON configs, and share a URL that reconstructs the identical world anywhere
 - Read the auto-generated **World History** narrative and export it as text
+- **Play god**: 9 divine intervention tools — hurl meteors, unleash plagues, split the earth, bless or blight the land, will new civilizations into being, spark golden ages, incite wars, force peace. Interventions are recorded into the world's recipe and replay deterministically — branch a universe to compare history *with and without* your meddling
+- **Achievements**: 16 observer milestones (witness the first war, an empire's rise, an extinction, reach AI, survive 10,000 years, wield the hand of god…), persisted across worlds
+- **Historic-moment banners**: major events (wars, collapses, empires, divine acts) slide in over the map — click to jump there, or enable auto-pause on historic events
 
 ## Architecture
 
@@ -145,6 +148,9 @@ npm run dev      # 打开 http://localhost:5173
 - 检视一切：地块、国家（历史曲线与外交关系）、城市、科技树、事件时间线、世界统计
 - 保存/读取（浏览器存储）、导出/导入 JSON 配置、复制分享链接（任何地方打开都能重现同一段历史）
 - 阅读自动生成的**世界历史**叙事并导出为文本
+- **扮演上帝**：9 种神之手干预工具 —— 掷陨星、放瘟疫、裂大地、赐福/枯萎土地、凭空创生文明、开启黄金时代、挑动战争、强制和平。干预会记入世界配方并确定性重放 —— 分支一个宇宙，对比"有你插手"和"没你插手"的两段历史
+- **成就系统**：16 个观察者里程碑（见证第一场战争、帝国崛起、文明灭绝、抵达 AI、模拟一万年、初次动用神之手……），跨世界持久保存
+- **历史时刻横幅**：重大事件（战争、灭亡、帝国、神迹）滑入地图上方 —— 点击即可跳转现场，也可开启"历史时刻自动暂停"
 
 ## 架构与设计
 

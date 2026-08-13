@@ -2,7 +2,7 @@
 // selection, and view options. React components read this store; the
 // simulation itself lives entirely in workers.
 import { create } from 'zustand';
-import { MapStatic, Snapshot, WorldConfig, WorldEvent } from '../simulation/types';
+import { InterventionType, MapStatic, Snapshot, WorldConfig, WorldEvent } from '../simulation/types';
 import { trimEvents } from '../simulation/World';
 import { MainToWorker, WorkerToMain } from '../worker/protocol';
 import { translate, useI18nStore } from '../i18n';
@@ -41,8 +41,11 @@ interface SimulatorState {
   inspectorTab: InspectorTab;
   sidebarOpen: boolean;
   showSummary: boolean;
+  showAchievements: boolean;
   tutorialStep: number; // -1 = off
   toast: string | null;
+  godTool: InterventionType | null;
+  pauseOnHistoric: boolean;
 
   setScreen: (s: Screen) => void;
   createUniverse: (config: WorldConfig, name?: string, autoplay?: boolean) => string;
@@ -68,8 +71,12 @@ interface SimulatorState {
   setInspectorTab: (t: InspectorTab) => void;
   setSidebarOpen: (open: boolean) => void;
   setShowSummary: (show: boolean) => void;
+  setShowAchievements: (show: boolean) => void;
   setTutorialStep: (step: number) => void;
   showToast: (msg: string) => void;
+  setGodTool: (tool: InterventionType | null) => void;
+  setPauseOnHistoric: (on: boolean) => void;
+  intervene: (tool: InterventionType, x: number, y: number) => void;
 }
 
 let universeCounter = 0;
@@ -117,9 +124,16 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
         case 'snapshot': {
           const events = u.events.concat(msg.snapshot.events);
           trimEvents(events);
+          // Keep the UI-side config's intervention log in sync so export,
+          // share links, and branches reproduce the player's actions.
+          const config =
+            msg.snapshot.interventions.length !== (u.config.interventions?.length ?? 0)
+              ? { ...u.config, interventions: msg.snapshot.interventions }
+              : u.config;
           patchUniverse(universeId, {
             snapshot: msg.snapshot,
             events,
+            config,
             running: msg.snapshot.running,
           });
           break;
@@ -167,8 +181,11 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
     inspectorTab: 'overview',
     sidebarOpen: true,
     showSummary: false,
+    showAchievements: false,
     tutorialStep: -1,
     toast: null,
+    godTool: null,
+    pauseOnHistoric: false,
 
     setScreen: (s) => set({ screen: s }),
 
@@ -295,6 +312,14 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
     setInspectorTab: (t) => set({ inspectorTab: t }),
     setSidebarOpen: (open) => set({ sidebarOpen: open }),
     setShowSummary: (show) => set({ showSummary: show }),
+    setShowAchievements: (show) => set({ showAchievements: show }),
+    setGodTool: (tool) => set({ godTool: tool }),
+    setPauseOnHistoric: (on) => set({ pauseOnHistoric: on }),
+    intervene: (tool, x, y) => {
+      const u = activeUniverse();
+      if (!u) return;
+      u.worker.postMessage({ type: 'intervene', interventionType: tool, x, y } satisfies MainToWorker);
+    },
     setTutorialStep: (step) => set({ tutorialStep: step }),
     showToast: (msg) => {
       set({ toast: msg });

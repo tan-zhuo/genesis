@@ -3,8 +3,10 @@
 // simulation results depend exclusively on (seed, config, year).
 import { createWorld, simulateYear } from '../simulation/engine';
 import { buildMapStatic, buildSnapshot } from '../simulation/snapshot';
-import { WorldConfig, WorldEvent, WorldState } from '../simulation/types';
+import { Intervention, WorldConfig, WorldEvent, WorldState } from '../simulation/types';
 import { MainToWorker, WorkerToMain } from './protocol';
+
+let interventionCounter = 0;
 
 let world: WorldState | null = null;
 let config: WorldConfig | null = null;
@@ -155,6 +157,30 @@ self.onmessage = (e: MessageEvent<MainToWorker>): void => {
           targetYear = toYear;
           running = true;
           scheduleLoop();
+        }
+        break;
+      }
+      case 'intervene': {
+        // Record the intervention to take effect at the START of the next
+        // simulated year (keeps replays deterministic), then — if paused —
+        // immediately step one year so the player sees the consequence.
+        if (!world || !config) return;
+        interventionCounter++;
+        const iv: Intervention = {
+          id: `iv-${interventionCounter}`,
+          year: world.year + 1,
+          type: msg.interventionType,
+        };
+        if (msg.x !== undefined) iv.x = msg.x;
+        if (msg.y !== undefined) iv.y = msg.y;
+        if (!config.interventions) config.interventions = [];
+        config.interventions.push(iv);
+        if (world.config !== config) {
+          world.config.interventions = config.interventions;
+        }
+        if (!running) {
+          simulateYear(world);
+          sendSnapshot();
         }
         break;
       }

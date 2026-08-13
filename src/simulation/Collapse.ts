@@ -18,6 +18,10 @@ export function seedCivNames(names: string[]): void {
   for (const n of names) civNamePool.add(n);
 }
 
+export function getCivNamePool(): Set<string> {
+  return civNamePool;
+}
+
 export function runEmpireAndCollapse(world: WorldState, civ: Civilization, landTiles: number, rng: SeededRandom): void {
   if (!civ.alive) return;
 

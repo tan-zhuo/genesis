@@ -201,7 +201,30 @@ export type WorldEventType =
   | 'extinction'
   | 'disaster'
   | 'alliance'
-  | 'empire';
+  | 'empire'
+  | 'divine';
+
+// ---- Divine interventions (the player's hand) ----
+// Interventions are part of the world's "recipe": they are recorded with the
+// year they take effect and replayed deterministically on reset/replay/branch.
+export type InterventionType =
+  | 'meteor'
+  | 'plague'
+  | 'quake'
+  | 'bless'
+  | 'blight'
+  | 'spawnCiv'
+  | 'inciteWar'
+  | 'forcePeace'
+  | 'goldenAge';
+
+export interface Intervention {
+  id: string;
+  year: number; // takes effect at the START of this simulated year
+  type: InterventionType;
+  x?: number;
+  y?: number;
+}
 
 export interface WorldEvent {
   id: string;
@@ -306,6 +329,7 @@ export interface WorldConfig {
   disasterFrequency: number; // 0..2
   civs: CivConfig[];
   rules: Rule[];
+  interventions?: Intervention[];
 }
 
 // ---- Statistics / history ----
@@ -432,6 +456,7 @@ export interface Snapshot {
   civHistories: Record<string, CivHistory>;
   events: WorldEvent[]; // full (capped) event log
   landTiles: number;
+  interventions: Intervention[]; // recorded divine interventions (part of the recipe)
 }
 
 export interface MapStatic {

@@ -27,6 +27,7 @@ import { runTrade, runDiplomacy } from './Diplomacy';
 import { runWarDeclarations, runWars, checkExtinction } from './Warfare';
 import { runEmpireAndCollapse, runRebirth, seedCivNames } from './Collapse';
 import { runDisasters } from './Events';
+import { runInterventions } from './Intervention';
 import { createWorld as createWorldBase } from './World';
 import { emptyModifiers, WorldConfig, WorldState } from './types';
 import { TERRAIN_INDEX } from './Terrain';
@@ -49,6 +50,9 @@ export function simulateYear(world: WorldState): WorldState {
   world.year++;
   const year = world.year;
   const rng = yearRng(world.seed, year);
+
+  // 0. Divine interventions recorded for this year (deterministic on replay)
+  runInterventions(world, rng);
 
   // 1. Rules
   for (const civ of world.civs) {

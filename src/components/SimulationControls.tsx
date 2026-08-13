@@ -15,6 +15,8 @@ export function SimulationControls({ universe }: { universe: Universe }): JSX.El
   const setSpeed = useSimulatorStore((s) => s.setSpeed);
   const runToYear = useSimulatorStore((s) => s.runToYear);
   const showToast = useSimulatorStore((s) => s.showToast);
+  const pauseOnHistoric = useSimulatorStore((s) => s.pauseOnHistoric);
+  const setPauseOnHistoric = useSimulatorStore((s) => s.setPauseOnHistoric);
   const [runTo, setRunTo] = useState('10000');
   const t = useT();
 
@@ -86,6 +88,11 @@ export function SimulationControls({ universe }: { universe: Universe }): JSX.El
           <span className="runto-progress">→ {universe.runToTarget.toLocaleString('en-US')}</span>
         )}
       </div>
+
+      <label className="check historic-check" title={t('ctrl.pauseHistoricHint')}>
+        <input type="checkbox" checked={pauseOnHistoric} onChange={(e) => setPauseOnHistoric(e.target.checked)} />
+        {t('ctrl.pauseHistoric')}
+      </label>
 
       <div className="controls-year">
         {t('top.year')} <b>{year.toLocaleString('en-US')}</b>

@@ -1,7 +1,7 @@
 // Config serialization: export/import JSON, share URLs.
 // Only the *recipe* (seed + configs) is serialized — never the full world
 // state. Opening a share link recomputes the identical world.
-import { Rule, RuleActionType, RuleMetric, RuleOperator, Traits, WorldConfig, CivConfig, SIM_VERSION } from '../simulation/types';
+import { Intervention, InterventionType, Rule, RuleActionType, RuleMetric, RuleOperator, Traits, WorldConfig, CivConfig, SIM_VERSION } from '../simulation/types';
 import { CIV_COLORS } from '../simulation/names';
 
 const METRICS: RuleMetric[] = [
@@ -81,6 +81,25 @@ function validRule(v: unknown, index: number): Rule | null {
   };
 }
 
+const INTERVENTION_TYPES: InterventionType[] = [
+  'meteor', 'plague', 'quake', 'bless', 'blight', 'spawnCiv', 'inciteWar', 'forcePeace', 'goldenAge',
+];
+
+function validIntervention(v: unknown, index: number): Intervention | null {
+  const o = (v ?? {}) as Record<string, unknown>;
+  if (!INTERVENTION_TYPES.includes(o.type as InterventionType)) return null;
+  const year = Math.round(clamp(o.year, 1, 1e6, -1));
+  if (year < 1) return null;
+  const iv: Intervention = {
+    id: str(o.id, `iv-imported-${index}`, 40),
+    year,
+    type: o.type as InterventionType,
+  };
+  if (typeof o.x === 'number') iv.x = Math.round(clamp(o.x, 0, 1000, 0));
+  if (typeof o.y === 'number') iv.y = Math.round(clamp(o.y, 0, 1000, 0));
+  return iv;
+}
+
 /** Validate arbitrary JSON into a safe WorldConfig. Throws on hopeless input. */
 export function validateConfig(raw: unknown): WorldConfig {
   if (raw === null || typeof raw !== 'object') throw new Error('Config must be an object');
@@ -88,6 +107,7 @@ export function validateConfig(raw: unknown): WorldConfig {
   const civsRaw = Array.isArray(o.civs) ? o.civs.slice(0, 20) : [];
   if (civsRaw.length < 2) throw new Error('Config needs at least 2 civilizations');
   const rulesRaw = Array.isArray(o.rules) ? o.rules.slice(0, 50) : [];
+  const interventionsRaw = Array.isArray(o.interventions) ? o.interventions.slice(0, 500) : [];
   return {
     simVersion: SIM_VERSION,
     seed: str(o.seed, '928374', 64),
@@ -98,6 +118,9 @@ export function validateConfig(raw: unknown): WorldConfig {
     disasterFrequency: clamp(o.disasterFrequency, 0, 2, 1),
     civs: civsRaw.map((c, i) => validCiv(c, i)),
     rules: rulesRaw.map((r, i) => validRule(r, i)).filter((r): r is Rule => r !== null),
+    interventions: interventionsRaw
+      .map((iv, i) => validIntervention(iv, i))
+      .filter((iv): iv is Intervention => iv !== null),
   };
 }
 

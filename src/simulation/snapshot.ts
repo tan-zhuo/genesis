@@ -161,5 +161,6 @@ export function buildSnapshot(
     civHistories,
     events: newEvents,
     landTiles,
+    interventions: [...(world.config.interventions ?? [])],
   };
 }

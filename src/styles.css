@@ -348,6 +348,102 @@ input[type='checkbox'] { accent-color: var(--accent); }
 .legend-items { display: flex; flex-direction: column; gap: 3px; max-height: 180px; overflow-y: auto; }
 .legend-item { display: flex; align-items: center; gap: 6px; color: var(--text-muted); text-transform: capitalize; }
 
+/* ---------- God tools & drama ---------- */
+.canvas-column { position: relative; }
+.canvas-godmode { cursor: crosshair; }
+.god-toolbar {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  align-items: center;
+  background: rgba(10, 14, 22, 0.88);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 7px 5px;
+  z-index: 6;
+}
+.god-toolbar-label {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 3px;
+  writing-mode: initial;
+}
+.god-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 5px;
+  border: 1px solid transparent;
+  font-size: 16px;
+  transition: all 0.12s;
+}
+.god-btn:hover { background: var(--bg-hover); border-color: var(--border-strong); }
+.god-active { background: rgba(245, 165, 36, 0.15); border-color: var(--accent); box-shadow: 0 0 8px rgba(245, 165, 36, 0.35); }
+.god-hint {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 6px;
+  white-space: nowrap;
+  background: rgba(10, 14, 22, 0.92);
+  border: 1px solid var(--accent-dim);
+  color: var(--accent);
+  border-radius: 4px;
+  padding: 4px 9px;
+  font-size: 11px;
+}
+
+.event-banner {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  max-width: min(520px, 80%);
+  background: rgba(12, 16, 26, 0.94);
+  border: 1px solid var(--accent-dim);
+  border-left: 3px solid var(--accent);
+  border-radius: 5px;
+  padding: 9px 16px;
+  z-index: 7;
+  animation: bannerIn 0.3s ease-out;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.55);
+  text-align: left;
+}
+.event-banner:hover { border-color: var(--accent); }
+.event-banner-icon { font-size: 18px; }
+.event-banner-year { font-family: var(--mono); font-size: 11px; color: var(--accent); white-space: nowrap; }
+.event-banner-title { font-weight: 600; font-size: 13px; }
+@keyframes bannerIn { from { opacity: 0; transform: translate(-50%, -8px); } }
+
+.ach-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px; }
+.ach-card {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  opacity: 0.5;
+}
+.ach-unlocked { opacity: 1; border-color: rgba(245, 165, 36, 0.45); }
+.ach-icon { font-size: 20px; line-height: 1.2; }
+.ach-name { font-weight: 700; font-size: 13px; }
+.ach-unlocked .ach-name { color: var(--accent); }
+.ach-desc { font-size: 12px; color: var(--text-muted); line-height: 1.45; margin-top: 2px; }
+
+.historic-check { font-size: 11px; white-space: nowrap; }
+
 /* ---------- Controls bar ---------- */
 .controls-bar {
   display: flex;

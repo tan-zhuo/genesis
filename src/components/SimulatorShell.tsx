@@ -1,10 +1,11 @@
 // The main simulator layout: top bar, sidebar, map, controls, inspector.
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import {
   BookOpen,
   Download,
   Home,
   Languages,
+  Trophy,
   Link2,
   PanelLeftClose,
   PanelLeftOpen,
@@ -16,9 +17,14 @@ import { WorldCanvas } from './WorldCanvas';
 import { SimulationControls } from './SimulationControls';
 import { Inspector } from './Inspector';
 import { HistorySummary } from './HistorySummary';
+import { GodToolbar } from './GodToolbar';
+import { EventBanner } from './EventBanner';
+import { AchievementsPanel } from './AchievementsPanel';
+import { checkAchievements, loadUnlocked } from '../utils/achievements';
 import { configToShareUrl, exportConfig, importConfig } from '../utils/serialization';
 import { fmtNum } from '../utils/format';
 import { useI18nStore, useT } from '../i18n';
+import { useLang } from '../i18n';
 
 const MAP_MODES: MapMode[] = ['political', 'population', 'terrain', 'resources', 'technology', 'economy', 'military', 'culture'];
 
@@ -33,7 +39,10 @@ export function SimulatorShell(): JSX.Element {
   const sidebarOpen = useSimulatorStore((s) => s.sidebarOpen);
   const setSidebarOpen = useSimulatorStore((s) => s.setSidebarOpen);
   const setShowSummary = useSimulatorStore((s) => s.setShowSummary);
+  const setShowAchievements = useSimulatorStore((s) => s.setShowAchievements);
   const showToast = useSimulatorStore((s) => s.showToast);
+  const uiLang = useLang();
+  const unlockedRef = useRef<Set<string> | null>(null);
   const universes = useSimulatorStore((s) => s.universes);
   const setActiveUniverse = useSimulatorStore((s) => s.setActiveUniverse);
   const createUniverse = useSimulatorStore((s) => s.createUniverse);
@@ -59,6 +68,17 @@ export function SimulatorShell(): JSX.Element {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onKey]);
+
+  // Achievement checks on every snapshot.
+  useEffect(() => {
+    if (!universe?.snapshot) return;
+    if (!unlockedRef.current) unlockedRef.current = loadUnlocked();
+    const fresh = checkAchievements(universe.snapshot, universe.events, unlockedRef.current);
+    if (fresh.length > 0) {
+      const names = fresh.map((a) => `${a.icon} ${uiLang === 'zh' ? a.zh.name : a.en.name}`).join(' · ');
+      showToast(`🏆 ${t('ach.unlocked')}: ${names}`);
+    }
+  }, [universe?.snapshot, universe?.events, uiLang, showToast, t]);
 
   if (!universe) {
     return (
@@ -186,6 +206,9 @@ export function SimulatorShell(): JSX.Element {
             <Languages size={14} />
             <span className="lang-label">{lang === 'en' ? '中' : 'EN'}</span>
           </button>
+          <button className="icon-btn" onClick={() => setShowAchievements(true)} title={t('ach.title')}>
+            <Trophy size={15} />
+          </button>
           <button className="icon-btn" onClick={() => setShowSummary(true)} title={t('top.summary')}>
             <BookOpen size={15} />
           </button>
@@ -237,6 +260,8 @@ export function SimulatorShell(): JSX.Element {
 
         <div className="canvas-column">
           <WorldCanvas universe={universe} />
+          <GodToolbar />
+          <EventBanner universe={universe} />
           <SimulationControls universe={universe} />
         </div>
 
@@ -244,6 +269,7 @@ export function SimulatorShell(): JSX.Element {
       </div>
 
       <HistorySummary universe={universe} />
+      <AchievementsPanel />
     </div>
   );
 }

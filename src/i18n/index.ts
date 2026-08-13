@@ -408,6 +408,35 @@ const en: Record<string, string> = {
   'misc.noUniverse': 'No universe loaded.',
   'misc.backToStart': 'Back to start',
   'misc.toggleSidebar': 'Toggle sidebar',
+
+  // God tools
+  'god.title': 'God Tools',
+  'god.clickMap': 'click the map to unleash',
+  'god.meteor': 'Meteor',
+  'god.meteor.desc': 'Hurl a burning star. Devastates a small area.',
+  'god.plague': 'Plague',
+  'god.plague.desc': 'Unleash a pestilence across a wide region.',
+  'god.quake': 'Earthquake',
+  'god.quake.desc': 'Tear the ground open beneath a region.',
+  'god.bless': 'Bless Land',
+  'god.bless.desc': 'Permanently enrich the soil in an area.',
+  'god.blight': 'Blight Land',
+  'god.blight.desc': 'Permanently poison the soil in an area.',
+  'god.spawnCiv': 'Create a People',
+  'god.spawnCiv.desc': 'Will a brand-new civilization into being on empty land.',
+  'god.goldenAge': 'Golden Age',
+  'god.goldenAge.desc': 'Grant the clicked nation harvests, calm, and inspiration.',
+  'god.inciteWar': 'Incite War',
+  'god.inciteWar.desc': 'Turn the clicked nation against its most hated neighbor.',
+  'god.forcePeace': 'Force Peace',
+  'god.forcePeace.desc': "End all of the clicked nation's wars at once.",
+
+  // Achievements
+  'ach.title': 'Achievements',
+  'ach.unlocked': 'Achievement unlocked',
+
+  'ctrl.pauseHistoric': 'Pause on historic events',
+  'ctrl.pauseHistoricHint': 'Automatically pause when something historic happens (war, collapse, empire…)',
 };
 
 const zh: Record<string, string> = {
@@ -763,6 +792,33 @@ const zh: Record<string, string> = {
   'misc.noUniverse': '没有已加载的宇宙。',
   'misc.backToStart': '回到首页',
   'misc.toggleSidebar': '折叠/展开侧栏',
+
+  'god.title': '神之手',
+  'god.clickMap': '点击地图施放',
+  'god.meteor': '陨星',
+  'god.meteor.desc': '掷下一颗燃烧的星辰，摧毁一小片区域。',
+  'god.plague': '瘟疫',
+  'god.plague.desc': '在大范围内释放一场瘟疫。',
+  'god.quake': '地震',
+  'god.quake.desc': '让一片区域的大地崩裂。',
+  'god.bless': '赐福大地',
+  'god.bless.desc': '永久提升一片区域的土地肥沃度。',
+  'god.blight': '枯萎大地',
+  'god.blight.desc': '永久毒化一片区域的土壤。',
+  'god.spawnCiv': '创生文明',
+  'god.spawnCiv.desc': '在无主之地上凭空造出一个全新的文明。',
+  'god.goldenAge': '黄金时代',
+  'god.goldenAge.desc': '赐予所点国家丰收、安定与灵感。',
+  'god.inciteWar': '挑动战争',
+  'god.inciteWar.desc': '让所点国家与它最仇视的邻国开战。',
+  'god.forcePeace': '强制和平',
+  'god.forcePeace.desc': '立即终结所点国家的所有战争。',
+
+  'ach.title': '成就',
+  'ach.unlocked': '成就解锁',
+
+  'ctrl.pauseHistoric': '历史时刻自动暂停',
+  'ctrl.pauseHistoricHint': '当发生历史性事件（战争、帝国、灭亡……）时自动暂停',
 };
 
 const DICTS: Record<Lang, Record<string, string>> = { en, zh };

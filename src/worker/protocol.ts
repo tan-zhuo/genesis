@@ -1,5 +1,5 @@
 // Messages between the UI thread and the simulation worker.
-import { MapStatic, Snapshot, WorldConfig } from '../simulation/types';
+import { InterventionType, MapStatic, Snapshot, WorldConfig } from '../simulation/types';
 
 export type MainToWorker =
   | { type: 'init'; config: WorldConfig }
@@ -10,6 +10,7 @@ export type MainToWorker =
   | { type: 'runTo'; year: number }
   | { type: 'reset' } // back to year 0 with same config
   | { type: 'replay'; toYear: number } // reset then run to year, verifying determinism
+  | { type: 'intervene'; interventionType: InterventionType; x?: number; y?: number }
   | { type: 'requestSnapshot' };
 
 export type WorkerToMain =
