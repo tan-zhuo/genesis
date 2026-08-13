@@ -457,6 +457,28 @@ input[type='checkbox'] { accent-color: var(--accent); }
 
 .historic-check { font-size: 11px; white-space: nowrap; }
 
+/* ---------- Planet view ---------- */
+.planet-view { position: relative; flex: 1; min-height: 0; }
+.planet-mount { position: absolute; inset: 0; }
+.planet-mount canvas { display: block; }
+.planet-hint {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(10, 14, 22, 0.85);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 5px 14px;
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  max-width: 92%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.planet-loading { flex: 1; display: flex; align-items: center; justify-content: center; color: var(--text-muted); }
+
 /* ---------- Research lab ---------- */
 .lab { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
 .lab-main { flex: 1; display: flex; gap: 16px; padding: 16px 18px; min-height: 0; overflow: hidden; }

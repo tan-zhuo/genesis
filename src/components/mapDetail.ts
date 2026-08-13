@@ -5,6 +5,57 @@ import { MapStatic, Snapshot, TradeRoute } from '../simulation/types';
 
 export const DETAIL_PX = 8; // detail-layer pixels per tile
 
+export const TERRAIN_RGB: [number, number, number][] = [
+  [16, 32, 54], // ocean
+  [96, 122, 70], // plains
+  [52, 88, 54], // forest
+  [172, 146, 92], // desert
+  [110, 104, 100], // mountain
+  [172, 182, 186], // tundra
+];
+
+/** Hillshaded terrain base layer (1px/tile) — shared by map and planet views. */
+export function buildTerrainCanvas(map: MapStatic): HTMLCanvasElement {
+  const c = document.createElement('canvas');
+  c.width = map.width;
+  c.height = map.height;
+  const ctx = c.getContext('2d')!;
+  const img = ctx.createImageData(map.width, map.height);
+  const W = map.width;
+  const H = map.height;
+  const elev = map.elevation;
+  for (let i = 0; i < map.terrain.length; i++) {
+    const t = map.terrain[i];
+    let [r, g, b] = TERRAIN_RGB[t];
+    const e = elev[i];
+    let shade = t === 0 ? 0.75 + e * 0.5 : 0.72 + e * 0.55;
+    if (t !== 0) {
+      const x = i % W;
+      const yy = (i / W) | 0;
+      const eL = x > 0 ? elev[i - 1] : e;
+      const eR = x < W - 1 ? elev[i + 1] : e;
+      const eU = yy > 0 ? elev[i - W] : e;
+      const eD = yy < H - 1 ? elev[i + W] : e;
+      const slope = eL - eR + (eU - eD);
+      shade *= Math.max(0.62, Math.min(1.38, 1 + slope * 5.5));
+    }
+    r = Math.min(255, r * shade);
+    g = Math.min(255, g * shade);
+    b = Math.min(255, b * shade);
+    if (map.river[i] && t !== 0) {
+      r = r * 0.55 + 40;
+      g = g * 0.6 + 60;
+      b = b * 0.4 + 110;
+    }
+    img.data[i * 4] = r;
+    img.data[i * 4 + 1] = g;
+    img.data[i * 4 + 2] = b;
+    img.data[i * 4 + 3] = 255;
+  }
+  ctx.putImageData(img, 0, 0);
+  return c;
+}
+
 /** Cheap deterministic hash -> [0,1) for visual placement. */
 function h2(a: number, b: number): number {
   let h = (a * 374761393 + b * 668265263) ^ 0x9e3779b9;

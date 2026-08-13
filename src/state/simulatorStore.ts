@@ -48,6 +48,7 @@ interface SimulatorState {
   godTool: InterventionType | null;
   pauseOnHistoric: boolean;
   cinema: boolean;
+  planetView: boolean;
 
   setScreen: (s: Screen) => void;
   createUniverse: (config: WorldConfig, name?: string, autoplay?: boolean, scenarioId?: string) => string;
@@ -81,6 +82,7 @@ interface SimulatorState {
   setGodTool: (tool: InterventionType | null) => void;
   setPauseOnHistoric: (on: boolean) => void;
   setCinema: (on: boolean) => void;
+  setPlanetView: (on: boolean) => void;
   intervene: (tool: InterventionType, x: number, y: number) => void;
 }
 
@@ -203,6 +205,7 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
     godTool: null,
     pauseOnHistoric: false,
     cinema: false,
+    planetView: false,
 
     setScreen: (s) => set({ screen: s }),
 
@@ -345,6 +348,7 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
     setGodTool: (tool) => set({ godTool: tool }),
     setPauseOnHistoric: (on) => set({ pauseOnHistoric: on }),
     setCinema: (on) => set({ cinema: on }),
+    setPlanetView: (on) => set({ planetView: on }),
     intervene: (tool, x, y) => {
       const u = activeUniverse();
       if (!u) return;

@@ -523,6 +523,9 @@ const en: Record<string, string> = {
   'lab.p.disasterFrequency': 'Disaster frequency',
   'lab.p.resourceRichness': 'Resource richness',
   'lab.p.seaLevel': 'Ocean level',
+  'planet.title': 'Planet view',
+  'planet.loading': 'Entering orbit…',
+  'planet.hint': 'Presentation view — drag to rotate, scroll to zoom. The simulation keeps running; night side shows civilization lights. Analysis lives on the flat map.',
 };
 
 const zh: Record<string, string> = {
@@ -990,6 +993,9 @@ const zh: Record<string, string> = {
   'lab.p.disasterFrequency': '灾难频率',
   'lab.p.resourceRichness': '资源丰富度',
   'lab.p.seaLevel': '海洋比例',
+  'planet.title': '行星视图',
+  'planet.loading': '正在进入轨道…',
+  'planet.hint': '展示视图 — 拖拽旋转，滚轮缩放。模拟持续运行；夜半球可见文明灯火。分析请使用平面地图。',
 };
 
 const DICTS: Record<Lang, Record<string, string>> = { en, zh };

@@ -10,6 +10,7 @@ import { GOD_TOOLS } from './GodToolbar';
 import {
   buildBuildingsCanvas,
   buildDetailCanvas,
+  buildTerrainCanvas,
   citySignature,
   drawCaravans,
   drawFrontFighters,
@@ -96,48 +97,7 @@ export function WorldCanvas({ universe }: Props): JSX.Element {
   // --- Terrain base layer: rendered once per map ---
   useEffect(() => {
     if (!mapStatic) return;
-    const c = document.createElement('canvas');
-    c.width = mapStatic.width;
-    c.height = mapStatic.height;
-    const ctx = c.getContext('2d')!;
-    const img = ctx.createImageData(mapStatic.width, mapStatic.height);
-    const W = mapStatic.width;
-    const H = mapStatic.height;
-    const elev = mapStatic.elevation;
-    for (let i = 0; i < mapStatic.terrain.length; i++) {
-      const t = mapStatic.terrain[i];
-      let [r, g, b] = TERRAIN_COLORS[t];
-      // Shade by elevation for relief
-      const e = elev[i];
-      let shade = t === 0 ? 0.75 + e * 0.5 : 0.72 + e * 0.55;
-      // Hillshading: light from the northwest — slopes facing the light
-      // brighten, slopes falling away darken. This is what makes the
-      // terrain read as 3D at every zoom level.
-      if (t !== 0) {
-        const x = i % W;
-        const yy = (i / W) | 0;
-        const eL = x > 0 ? elev[i - 1] : e;
-        const eR = x < W - 1 ? elev[i + 1] : e;
-        const eU = yy > 0 ? elev[i - W] : e;
-        const eD = yy < H - 1 ? elev[i + W] : e;
-        const slope = (eL - eR) + (eU - eD); // + = facing NW light
-        shade *= Math.max(0.62, Math.min(1.38, 1 + slope * 5.5));
-      }
-      r = Math.min(255, r * shade);
-      g = Math.min(255, g * shade);
-      b = Math.min(255, b * shade);
-      if (mapStatic.river[i] && t !== 0) {
-        r = r * 0.55 + 40;
-        g = g * 0.6 + 60;
-        b = b * 0.4 + 110;
-      }
-      img.data[i * 4] = r;
-      img.data[i * 4 + 1] = g;
-      img.data[i * 4 + 2] = b;
-      img.data[i * 4 + 3] = 255;
-    }
-    ctx.putImageData(img, 0, 0);
-    terrainCanvasRef.current = c;
+    terrainCanvasRef.current = buildTerrainCanvas(mapStatic);
     detailCanvasRef.current = buildDetailCanvas(mapStatic);
     buildingsCanvasRef.current = null;
     buildingsSigRef.current = '';

@@ -1,9 +1,10 @@
 // The main simulator layout: top bar, sidebar, map, controls, inspector.
-import { useCallback, useEffect, useRef } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useRef } from 'react';
 import {
   BookOpen,
   Clapperboard,
   FlaskConical,
+  Globe,
   Download,
   Home,
   Languages,
@@ -22,6 +23,9 @@ import { HistorySummary } from './HistorySummary';
 import { GodToolbar } from './GodToolbar';
 import { EventBanner } from './EventBanner';
 import { AchievementsPanel } from './AchievementsPanel';
+
+// Three.js loads only when the planet view is opened.
+const PlanetView = lazy(() => import('./PlanetView'));
 import { checkAchievements, loadUnlocked } from '../utils/achievements';
 import { getScenario } from '../utils/scenarios';
 import { ScenarioHud } from './ScenarioHud';
@@ -47,6 +51,8 @@ export function SimulatorShell(): JSX.Element {
   const setShowAchievements = useSimulatorStore((s) => s.setShowAchievements);
   const cinema = useSimulatorStore((s) => s.cinema);
   const setCinema = useSimulatorStore((s) => s.setCinema);
+  const planetView = useSimulatorStore((s) => s.planetView);
+  const setPlanetView = useSimulatorStore((s) => s.setPlanetView);
   const showToast = useSimulatorStore((s) => s.showToast);
   const uiLang = useLang();
   const unlockedRef = useRef<Set<string> | null>(null);
@@ -235,6 +241,13 @@ export function SimulatorShell(): JSX.Element {
             <Languages size={14} />
             <span className="lang-label">{lang === 'en' ? '中' : 'EN'}</span>
           </button>
+          <button
+            className={`icon-btn ${planetView ? 'icon-active' : ''}`}
+            onClick={() => setPlanetView(!planetView)}
+            title={t('planet.title')}
+          >
+            <Globe size={15} />
+          </button>
           <button className="icon-btn" onClick={() => setScreen('lab')} title={t('lab.title')}>
             <FlaskConical size={15} />
           </button>
@@ -291,8 +304,14 @@ export function SimulatorShell(): JSX.Element {
         </aside>
 
         <div className="canvas-column">
-          <WorldCanvas universe={universe} />
-          <GodToolbar />
+          {planetView ? (
+            <Suspense fallback={<div className="planet-loading">{t('planet.loading')}</div>}>
+              <PlanetView universe={universe} />
+            </Suspense>
+          ) : (
+            <WorldCanvas universe={universe} />
+          )}
+          {!planetView && <GodToolbar />}
           <EventBanner universe={universe} />
           <ScenarioHud universe={universe} />
           <SimulationControls universe={universe} />
