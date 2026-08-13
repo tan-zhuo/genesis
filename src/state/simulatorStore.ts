@@ -24,7 +24,7 @@ export interface Universe {
   scenario: { id: string; outcome: 'win' | 'fail' | null; acknowledged: boolean } | null;
 }
 
-export type Screen = 'landing' | 'setup' | 'simulator';
+export type Screen = 'landing' | 'setup' | 'simulator' | 'lab';
 
 export type InspectorTab = 'overview' | 'nations' | 'cities' | 'technology' | 'faith' | 'history' | 'rules' | 'stats' | 'compare';
 

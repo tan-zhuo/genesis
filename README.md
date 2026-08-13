@@ -46,6 +46,7 @@ First run: click **Explore Example World** — a 200×200 world with 5 civilizat
 - **Night-lights map & chronicle mode**: a "civilization lights" view where city glow shifts from firelight to electric white as technology advances, crisp political borders, burning war-front pixels, and a cinematic chronicle mode where the camera drifts to wherever history is happening
 - **Finite resources**: mines run dry under industrial extraction, over-logged forests turn to farmland, soil tires under the plough and rests when abandoned — scarcity, not abundance, drives migration and war (toggle: `finiteResources`, on by default)
 - **The way out of a finite world**: the tech tree now ends beyond AI — **Spaceflight** unlocks orbital mining (the planet is finite, the sky is not), and **Dimensional Transcendence** opens a Gate: the civilization emigrates over generations and finally *leaves the world* — not extinction but ascension, leaving golden monuments, empty cities, and room for new peoples to rise from their ruins
+- **Research Lab** (the instrument): Monte Carlo batches (same config × N deterministic seeds, run on a parallel worker pool → mean/σ/median tables and a population mean±σ band) and parameter sweeps (step one parameter — any trait for all civs, disasters, resources, ocean level — with several seeds per step → outcome-vs-parameter curves with error bands), plus CSV/JSON export. Experiments are themselves reproducible: every seed is derived from the recipe
 - **Scenario challenges**: six win/fail scripts — keep every nation alive for 5,000 years without touching anything, set a peaceful world ablaze with only 3 interventions, reach AI before year 3,000, witness an empire rise and fall as a purely silent god…
 
 ## Architecture
@@ -162,6 +163,7 @@ npm run dev      # 打开 http://localhost:5173
 - **文明夜灯与编年史模式**：城市光辉随科技从篝火橙演进为电力蓝白的"夜晚地球"视图、清晰国界描边、燃烧的战线像素、镜头自动飘向历史现场的电影化编年史模式
 - **有限资源**：矿脉会在工业开采下枯竭、过度砍伐的森林退化为农田、重耕之地地力衰竭而休耕之地缓慢恢复——稀缺而非丰饶驱动迁徙与战争（`finiteResources` 开关，默认开启）
 - **有限世界的出路**：科技树延伸到 AI 之后——**星际航行**解锁轨道采矿（行星有限，天空无限），**维度跃迁**打开一扇「门」：文明历经数代人移民，最终整体离开这个世界——不是灭亡而是升维，留下金色纪念碑、空城，和让新民族从废墟中崛起的空间
+- **研究实验室**（仪器本体）：蒙特卡洛批量（同配置 × N 个确定性种子，并行 worker 池运行 → 均值/σ/中位数统计表 + 人口均值±σ带）与参数扫描（任一参数步进——全体文明性格、灾难频率、资源、海平面——每步多种子 → 带误差带的"结果 vs 参数"曲线），支持 CSV/JSON 导出。实验本身可复现：所有种子由实验配方确定性派生
 - **剧本挑战**：六个带胜负判定的剧本 —— 零干预守护所有国家活满 5000 年、只用 3 次干预点燃和平世界、3000 年前抵达 AI、以纯粹沉默之神的身份见证帝国兴亡……
 
 ## 架构与设计

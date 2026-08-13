@@ -9,11 +9,20 @@ export interface Series {
   ys: number[];
 }
 
+export interface Band {
+  xs: number[];
+  lo: number[];
+  hi: number[];
+  color: string;
+}
+
 interface Props {
   series: Series[];
+  band?: Band;
   height?: number;
   yFormat?: (v: number) => string;
   title?: string;
+  xLabel?: string; // x-axis caption; defaults to 'Year' (time-series charts)
 }
 
 function fmtDefault(v: number): string {
@@ -23,13 +32,13 @@ function fmtDefault(v: number): string {
   return `${Math.round(v * 10) / 10}`;
 }
 
-export function LineChart({ series, height = 150, yFormat = fmtDefault, title }: Props): JSX.Element {
+export function LineChart({ series, band, height = 150, yFormat = fmtDefault, title, xLabel = 'Year' }: Props): JSX.Element {
   const width = 320;
   const pad = { l: 42, r: 8, t: 8, b: 20 };
   const svgRef = useRef<SVGSVGElement>(null);
   const [hoverX, setHoverX] = useState<number | null>(null);
 
-  const { paths, xMin, xMax, gridYs } = useMemo(() => {
+  const { paths, bandPath, xMin, xMax, gridYs } = useMemo(() => {
     let xMin = Infinity;
     let xMax = -Infinity;
     let yMax = 1;
@@ -38,6 +47,13 @@ export function LineChart({ series, height = 150, yFormat = fmtDefault, title }:
         if (s.xs[i] < xMin) xMin = s.xs[i];
         if (s.xs[i] > xMax) xMax = s.xs[i];
         if (s.ys[i] > yMax) yMax = s.ys[i];
+      }
+    }
+    if (band) {
+      for (let i = 0; i < band.xs.length; i++) {
+        if (band.xs[i] < xMin) xMin = band.xs[i];
+        if (band.xs[i] > xMax) xMax = band.xs[i];
+        if (band.hi[i] > yMax) yMax = band.hi[i];
       }
     }
     if (!Number.isFinite(xMin)) {
@@ -56,8 +72,18 @@ export function LineChart({ series, height = 150, yFormat = fmtDefault, title }:
       return d;
     });
     const gridYs = [0.25, 0.5, 0.75, 1].map((f) => ({ y: sy(yMax * f * (1 / 1.08)), v: yMax * f * (1 / 1.08) }));
-    return { paths, xMin, xMax, yMax, gridYs };
-  }, [series, height]);
+    let bandPath = '';
+    if (band && band.xs.length > 1) {
+      for (let i = 0; i < band.xs.length; i++) {
+        bandPath += `${i === 0 ? 'M' : 'L'}${sx(band.xs[i]).toFixed(1)},${sy(Math.max(0, band.lo[i])).toFixed(1)}`;
+      }
+      for (let i = band.xs.length - 1; i >= 0; i--) {
+        bandPath += `L${sx(band.xs[i]).toFixed(1)},${sy(band.hi[i]).toFixed(1)}`;
+      }
+      bandPath += 'Z';
+    }
+    return { paths, bandPath, xMin, xMax, yMax, gridYs };
+  }, [series, band, height]);
 
   const hover = useMemo(() => {
     if (hoverX === null || series.length === 0) return null;
@@ -107,8 +133,9 @@ export function LineChart({ series, height = 150, yFormat = fmtDefault, title }:
           {Math.round(xMin)}
         </text>
         <text x={width - pad.r} y={height - 5} className="chart-tick" textAnchor="end">
-          Year {Math.round(xMax)}
+          {xLabel} {Math.round(xMax * 100) / 100}
         </text>
+        {bandPath && band && <path d={bandPath} fill={band.color} stroke="none" opacity={0.22} />}
         {paths.map((d, i) => (
           <path key={i} d={d} fill="none" stroke={series[i].color} strokeWidth={2} strokeLinejoin="round" />
         ))}

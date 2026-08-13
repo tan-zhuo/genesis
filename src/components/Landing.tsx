@@ -1,6 +1,6 @@
 // Landing page: cinematic entry with a slowly-drifting world-lights canvas.
 import { useEffect, useRef } from 'react';
-import { Globe2, Compass, ChevronRight, Languages } from 'lucide-react';
+import { Globe2, Compass, ChevronRight, FlaskConical, Languages } from 'lucide-react';
 import { useSimulatorStore } from '../state/simulatorStore';
 import { WORLD_PRESETS } from '../simulation/presets';
 import { SCENARIOS } from '../utils/scenarios';
@@ -108,6 +108,9 @@ export function Landing(): JSX.Element {
           </button>
           <button className="btn btn-ghost btn-lg" onClick={startExample}>
             <Compass size={18} /> {t('landing.example')}
+          </button>
+          <button className="btn btn-ghost btn-lg" onClick={() => setScreen('lab')}>
+            <FlaskConical size={18} /> {t('landing.lab')}
           </button>
         </div>
         <div className="landing-presets">

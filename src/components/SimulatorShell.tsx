@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import {
   BookOpen,
   Clapperboard,
+  FlaskConical,
   Download,
   Home,
   Languages,
@@ -233,6 +234,9 @@ export function SimulatorShell(): JSX.Element {
           <button className="icon-btn lang-btn" onClick={() => setLang(lang === 'en' ? 'zh' : 'en')} title="Language / 语言">
             <Languages size={14} />
             <span className="lang-label">{lang === 'en' ? '中' : 'EN'}</span>
+          </button>
+          <button className="icon-btn" onClick={() => setScreen('lab')} title={t('lab.title')}>
+            <FlaskConical size={15} />
           </button>
           <button className="icon-btn" onClick={() => setShowAchievements(true)} title={t('ach.title')}>
             <Trophy size={15} />
