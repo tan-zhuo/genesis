@@ -155,7 +155,7 @@ export function runResearch(world: WorldState, civ: Civilization, rng: SeededRan
 
   const popFactor = Math.log10(Math.max(10, civ.population)); // 1..~8
   const points =
-    (popFactor * 0.8 + Math.sqrt(Math.max(0, cityScience)) * 1.1 + civ.economy * 0.02) *
+    (popFactor * 0.5 + Math.sqrt(Math.max(0, cityScience)) * 0.7 + civ.economy * 0.015) *
     (0.3 + civ.traits.science / 70) *
     tech.science *
     (1 + civ.modifiers.research) *

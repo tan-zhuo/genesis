@@ -38,11 +38,12 @@ export interface Technology {
   effects: TechEffects;
 }
 
-const TIER_COST = [10, 70, 200, 480, 1100, 2400, 5200, 10000, 19000, 60000, 150000];
+// Costs tuned to real-history proportions: millennia for the neolithic and
+// classical packages, accelerating (but still slow) toward modernity.
+const TIER_COST = [10, 900, 2200, 4200, 7500, 13000, 22000, 40000, 120000, 300000, 600000];
 
 export function techCost(t: Technology): number {
-  if (t.id === 'transcendence') return 400000;
-  if (t.id === 'fusion') return 70000;
+  if (t.id === 'transcendence') return 1200000;
   return TIER_COST[Math.min(t.tier, TIER_COST.length - 1)];
 }
 
@@ -63,32 +64,32 @@ export const TECHNOLOGIES: Technology[] = [
   { id: 'metallurgy', name: 'Bronze Working', nameZh: '青铜冶炼', tier: 2, category: 'military', requirements: ['mining'], effects: { militaryMult: 1.2, industryMult: 1.1 } },
   { id: 'wheel', name: 'The Wheel', nameZh: '车轮', tier: 2, category: 'economy', requirements: ['animal-husbandry'], effects: { economyMult: 1.1 } },
   { id: 'sailing', name: 'Sailing', nameZh: '帆船', tier: 2, category: 'maritime', requirements: ['fishing'], effects: { economyMult: 1.1 } },
-  { id: 'writing', name: 'Writing', nameZh: '文字', tier: 2, category: 'knowledge', requirements: ['agriculture'], effects: { cultureMult: 1.2, scienceMult: 1.1 } },
+  { id: 'writing', name: 'Writing', nameZh: '文字', tier: 2, category: 'knowledge', requirements: ['agriculture'], effects: { cultureMult: 1.2, scienceMult: 1.05 } },
   { id: 'masonry', name: 'Masonry', nameZh: '石作', tier: 2, category: 'craft', requirements: ['mining'], effects: { industryMult: 1.1 } },
 
   // -- Classical --
   { id: 'iron-working', name: 'Iron Working', nameZh: '冶铁', tier: 3, category: 'military', requirements: ['metallurgy'], effects: { militaryMult: 1.25 } },
-  { id: 'mathematics', name: 'Mathematics', nameZh: '数学', tier: 3, category: 'knowledge', requirements: ['writing'], effects: { scienceMult: 1.2 } },
+  { id: 'mathematics', name: 'Mathematics', nameZh: '数学', tier: 3, category: 'knowledge', requirements: ['writing'], effects: { scienceMult: 1.1 } },
   { id: 'currency', name: 'Currency', nameZh: '货币', tier: 3, category: 'economy', requirements: ['writing', 'wheel'], effects: { economyMult: 1.2 } },
-  { id: 'philosophy', name: 'Philosophy', nameZh: '哲学', tier: 3, category: 'knowledge', requirements: ['writing'], effects: { cultureMult: 1.25, scienceMult: 1.1 } },
+  { id: 'philosophy', name: 'Philosophy', nameZh: '哲学', tier: 3, category: 'knowledge', requirements: ['writing'], effects: { cultureMult: 1.25, scienceMult: 1.05 } },
   { id: 'medicine', name: 'Medicine', nameZh: '医术', tier: 3, category: 'health', requirements: ['philosophy'], effects: { healthMult: 1.12 } },
   { id: 'roads', name: 'Roads', nameZh: '道路', tier: 3, category: 'economy', requirements: ['wheel', 'masonry'], effects: { economyMult: 1.15 } },
-  { id: 'astronomy', name: 'Astronomy', nameZh: '天文学', tier: 3, category: 'knowledge', requirements: ['mathematics'], effects: { scienceMult: 1.15 } },
+  { id: 'astronomy', name: 'Astronomy', nameZh: '天文学', tier: 3, category: 'knowledge', requirements: ['mathematics'], effects: { scienceMult: 1.05 } },
   { id: 'siegecraft', name: 'Siegecraft', nameZh: '攻城术', tier: 3, category: 'military', requirements: ['masonry', 'metallurgy'], effects: { militaryMult: 1.15 } },
 
   // -- Medieval --
   { id: 'navigation', name: 'Navigation', nameZh: '航海', tier: 4, category: 'maritime', requirements: ['sailing', 'astronomy'], effects: { economyMult: 1.25, navalRange: true } },
   { id: 'engineering', name: 'Engineering', nameZh: '工程学', tier: 4, category: 'industry', requirements: ['mathematics', 'iron-working'], effects: { industryMult: 1.3, foodMult: 1.1 } },
-  { id: 'printing', name: 'Printing Press', nameZh: '印刷术', tier: 4, category: 'knowledge', requirements: ['philosophy'], effects: { scienceMult: 1.3, cultureMult: 1.15 } },
+  { id: 'printing', name: 'Printing Press', nameZh: '印刷术', tier: 4, category: 'knowledge', requirements: ['philosophy'], effects: { scienceMult: 1.15, cultureMult: 1.15 } },
   { id: 'gunpowder', name: 'Gunpowder', nameZh: '火药', tier: 4, category: 'military', requirements: ['iron-working', 'siegecraft'], effects: { militaryMult: 1.5 } },
   { id: 'banking', name: 'Banking', nameZh: '银行', tier: 4, category: 'economy', requirements: ['currency'], effects: { economyMult: 1.25 } },
-  { id: 'universities', name: 'Universities', nameZh: '大学', tier: 4, category: 'knowledge', requirements: ['philosophy', 'mathematics'], effects: { scienceMult: 1.25 } },
+  { id: 'universities', name: 'Universities', nameZh: '大学', tier: 4, category: 'knowledge', requirements: ['philosophy', 'mathematics'], effects: { scienceMult: 1.12 } },
 
   // -- Renaissance --
   { id: 'cartography', name: 'Cartography', nameZh: '制图学', tier: 5, category: 'maritime', requirements: ['navigation', 'printing'], effects: { economyMult: 1.12 } },
-  { id: 'optics', name: 'Optics', nameZh: '光学', tier: 5, category: 'knowledge', requirements: ['universities'], effects: { scienceMult: 1.12 } },
-  { id: 'scientific-method', name: 'Scientific Method', nameZh: '科学方法', tier: 5, category: 'knowledge', requirements: ['printing', 'universities'], effects: { scienceMult: 1.5 } },
-  { id: 'chemistry', name: 'Chemistry', nameZh: '化学', tier: 5, category: 'knowledge', requirements: ['optics', 'scientific-method'], effects: { scienceMult: 1.2 } },
+  { id: 'optics', name: 'Optics', nameZh: '光学', tier: 5, category: 'knowledge', requirements: ['universities'], effects: { scienceMult: 1.05 } },
+  { id: 'scientific-method', name: 'Scientific Method', nameZh: '科学方法', tier: 5, category: 'knowledge', requirements: ['printing', 'universities'], effects: { scienceMult: 1.25 } },
+  { id: 'chemistry', name: 'Chemistry', nameZh: '化学', tier: 5, category: 'knowledge', requirements: ['optics', 'scientific-method'], effects: { scienceMult: 1.08 } },
 
   // -- Industrial --
   { id: 'steam-engine', name: 'Steam Engine', nameZh: '蒸汽机', tier: 6, category: 'industry', requirements: ['scientific-method', 'engineering'], effects: { industryMult: 1.5 } },
@@ -97,21 +98,21 @@ export const TECHNOLOGIES: Technology[] = [
   { id: 'vaccination', name: 'Vaccination', nameZh: '疫苗', tier: 6, category: 'health', requirements: ['medicine', 'chemistry'], effects: { healthMult: 1.25, popGrowthMult: 1.1 } },
 
   // -- Modern --
-  { id: 'electricity', name: 'Electricity', nameZh: '电力', tier: 7, category: 'industry', requirements: ['industry', 'scientific-method'], effects: { economyMult: 1.5, scienceMult: 1.3 } },
+  { id: 'electricity', name: 'Electricity', nameZh: '电力', tier: 7, category: 'industry', requirements: ['industry', 'scientific-method'], effects: { economyMult: 1.5, scienceMult: 1.1 } },
   { id: 'internal-combustion', name: 'Internal Combustion', nameZh: '内燃机', tier: 7, category: 'economy', requirements: ['industry', 'chemistry'], effects: { economyMult: 1.3 } },
   { id: 'flight', name: 'Flight', nameZh: '飞行', tier: 7, category: 'military', requirements: ['internal-combustion'], effects: { militaryMult: 1.3, economyMult: 1.15 } },
   { id: 'antibiotics', name: 'Antibiotics', nameZh: '抗生素', tier: 7, category: 'health', requirements: ['vaccination'], effects: { healthMult: 1.35 } },
-  { id: 'radio', name: 'Radio', nameZh: '无线电', tier: 7, category: 'knowledge', requirements: ['electricity'], effects: { scienceMult: 1.2, cultureMult: 1.2 } },
+  { id: 'radio', name: 'Radio', nameZh: '无线电', tier: 7, category: 'knowledge', requirements: ['electricity'], effects: { scienceMult: 1.08, cultureMult: 1.2 } },
 
   // -- Information --
-  { id: 'computing', name: 'Computing', nameZh: '计算机', tier: 8, category: 'knowledge', requirements: ['electricity', 'mathematics'], effects: { scienceMult: 2 } },
-  { id: 'internet', name: 'Internet', nameZh: '互联网', tier: 8, category: 'knowledge', requirements: ['computing', 'radio'], effects: { scienceMult: 1.4, economyMult: 1.3 } },
+  { id: 'computing', name: 'Computing', nameZh: '计算机', tier: 8, category: 'knowledge', requirements: ['electricity', 'mathematics'], effects: { scienceMult: 1.4 } },
+  { id: 'internet', name: 'Internet', nameZh: '互联网', tier: 8, category: 'knowledge', requirements: ['computing', 'radio'], effects: { scienceMult: 1.2, economyMult: 1.3 } },
   { id: 'genetics', name: 'Genetic Engineering', nameZh: '基因工程', tier: 8, category: 'health', requirements: ['antibiotics', 'computing'], effects: { healthMult: 1.3, foodMult: 1.15 } },
 
   // -- Apex --
-  { id: 'ai', name: 'Artificial Intelligence', nameZh: '人工智能', tier: 9, category: 'apex', requirements: ['computing', 'internet'], effects: { scienceMult: 3, economyMult: 2 } },
+  { id: 'ai', name: 'Artificial Intelligence', nameZh: '人工智能', tier: 9, category: 'apex', requirements: ['computing', 'internet'], effects: { scienceMult: 1.6, economyMult: 2 } },
   { id: 'fusion', name: 'Fusion Power', nameZh: '聚变能源', tier: 9, category: 'apex', requirements: ['ai'], effects: { industryMult: 1.5, economyMult: 1.4 } },
-  { id: 'spaceflight', name: 'Spaceflight', nameZh: '星际航行', tier: 10, category: 'apex', requirements: ['ai', 'flight'], effects: { scienceMult: 1.5, economyMult: 1.5 } },
+  { id: 'spaceflight', name: 'Spaceflight', nameZh: '星际航行', tier: 10, category: 'apex', requirements: ['ai', 'flight'], effects: { scienceMult: 1.2, economyMult: 1.5 } },
   { id: 'transcendence', name: 'Dimensional Transcendence', nameZh: '维度跃迁', tier: 10, category: 'apex', requirements: ['spaceflight', 'fusion', 'genetics'], effects: {} },
 ];
 

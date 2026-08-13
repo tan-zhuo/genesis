@@ -23,6 +23,19 @@ export function runWarDeclarations(world: WorldState, rng: SeededRandom): void {
       if (!b.alive) continue;
       if (isAtWar(world, i, j)) continue;
       if (world.alliances[i][j]) continue;
+      // Truce: exhausted nations don't re-declare on the same enemy for decades.
+      let recentWar = false;
+      for (let k = world.wars.length - 1; k >= 0 && k >= world.wars.length - 40; k--) {
+        const w = world.wars[k];
+        if (w.endYear === null) continue;
+        const ai = parseInt(w.attackerId.slice(4), 10);
+        const bi = parseInt(w.defenderId.slice(4), 10);
+        if (((ai === i && bi === j) || (ai === j && bi === i)) && world.year - w.endYear < 45) {
+          recentWar = true;
+          break;
+        }
+      }
+      if (recentWar) continue;
       const rel = world.relations[i][j];
       const neighbors = areNeighbors(a, b);
       const aggr = Math.max(0, Math.min(150, a.traits.aggression + a.modifiers.aggression));
@@ -32,7 +45,7 @@ export function runWarDeclarations(world: WorldState, rng: SeededRandom): void {
       let prob = 0;
       if (neighbors && rel < -35) {
         // Border war: grievance boils over.
-        prob = (aggr / 100) * 0.04;
+        prob = (aggr / 100) * 0.03;
         prob += Math.max(0, powerRatio - 1) * 0.03 * (0.5 + risk);
         prob += a.modifiers.warProbability / 100;
         prob += ((-rel - 35) / 100) * 0.02;
@@ -154,7 +167,8 @@ export function runWars(world: WorldState, rng: SeededRandom): void {
       [a, powerB, powerA],
       [b, powerA, powerB],
     ] as [Civilization, number, number][]) {
-      const lossRate = 0.004 + 0.012 * intensity * (enemyPower / (enemyPower + ownPower));
+      const losing = (civ === a) === (war.warScore < 0);
+      const lossRate = (0.004 + 0.012 * intensity * (enemyPower / (enemyPower + ownPower))) * (losing ? 1.5 : 1);
       civ.population *= 1 - lossRate;
       civ.military *= 0.97;
       civ.economy = Math.max(0, civ.economy - 0.8);
@@ -164,10 +178,12 @@ export function runWars(world: WorldState, rng: SeededRandom): void {
     // Scale tile populations down to match aggregate losses (cheap approximation:
     // applied during next growth distribution via aggregate ratio).
 
-    // Territory changes: the year's winner takes border tiles.
+    // Territory changes: the year's winner takes border tiles — dominant
+    // armies advance much faster.
     const winner = yearScore > 0 ? a : b;
     const loser = yearScore > 0 ? b : a;
-    const advance = Math.min(6, 1 + Math.floor(Math.abs(war.warScore) / 12));
+    const dominance = winner.military > 0 && loser.military > 0 ? winner.military / loser.military : 1;
+    const advance = Math.min(12, 1 + Math.floor(Math.abs(war.warScore) / 8) + (dominance > 2 ? 2 : 0));
     const border = borderTiles(world, loser, winner);
     for (let k = 0; k < Math.min(advance, border.length); k++) {
       const t = border[k];
@@ -183,18 +199,38 @@ export function runWars(world: WorldState, rng: SeededRandom): void {
             loser.capitalCityId = loser.cityIds[0] ?? null;
           }
           if (city.level === 'capital') city.level = 'city';
-          addEvent(world, {
-            year: world.year,
-            type: 'city-captured',
-            civIds: [winner.id, loser.id],
-            title: `${city.name} falls to ${winner.name}`,
-            description: `After fierce fighting in ${war.name}, the city of ${city.name} was captured by ${demonym(winner.name)} forces.`,
-            titleZh: `${city.name}陷落，落入${winner.name}之手`,
-            descriptionZh: `经过惨烈的战斗，${city.name}被${winner.name}军队攻占。`,
-            importance: 7,
-            x: city.x,
-            y: city.y,
-          });
+          // A brutal conqueror may raze the city instead of keeping it.
+          if (winner.traits.aggression > 72 && rng.chance(0.3)) {
+            city.destroyed = true;
+            world.map.city[t] = -1;
+            world.map.population[t] *= 0.35;
+            winner.cityIds = winner.cityIds.filter((id) => id !== city.id);
+            addEvent(world, {
+              year: world.year,
+              type: 'city-captured',
+              civIds: [winner.id, loser.id],
+              title: `${city.name} is razed`,
+              description: `${winner.name} put ${city.name} to the torch. Its walls were pulled down and its people scattered; travellers will point at the rubble for centuries.`,
+              titleZh: `${city.name}被夷为平地`,
+              descriptionZh: `${winner.name}纵火焚毁了${city.name}。城墙被推倒，居民四散——此后数百年，旅人仍会指着废墟叹息。`,
+              importance: 8,
+              x: city.x,
+              y: city.y,
+            });
+          } else {
+            addEvent(world, {
+              year: world.year,
+              type: 'city-captured',
+              civIds: [winner.id, loser.id],
+              title: `${city.name} falls to ${winner.name}`,
+              description: `After fierce fighting in ${war.name}, the city of ${city.name} was captured by ${demonym(winner.name)} forces.`,
+              titleZh: `${city.name}陷落，落入${winner.name}之手`,
+              descriptionZh: `经过惨烈的战斗，${city.name}被${winner.name}军队攻占。`,
+              importance: 7,
+              x: city.x,
+              y: city.y,
+            });
+          }
         }
       }
     }
@@ -208,11 +244,19 @@ export function runWars(world: WorldState, rng: SeededRandom): void {
     let victor: Civilization | null = null;
 
     if (war.warScore > 35) {
-      peace = true;
-      victor = a;
+      // Winning big: a merciful diplomat takes tribute — a conqueror keeps
+      // marching until nothing of the enemy remains.
+      const mercy = ((100 - a.traits.aggression) / 100) * (0.4 + a.traits.diplomacy / 150);
+      if (rng.chance(0.1 + mercy * 0.5)) {
+        peace = true;
+        victor = a;
+      }
     } else if (war.warScore < -35) {
-      peace = true;
-      victor = b;
+      const mercy = ((100 - b.traits.aggression) / 100) * (0.4 + b.traits.diplomacy / 150);
+      if (rng.chance(0.1 + mercy * 0.5)) {
+        peace = true;
+        victor = b;
+      }
     } else if (exhaustionA || exhaustionB) {
       peace = true;
       victor = exhaustionA && !exhaustionB ? b : exhaustionB && !exhaustionA ? a : null;

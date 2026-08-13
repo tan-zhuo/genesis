@@ -67,16 +67,16 @@ export const SCENARIOS: ScenarioDef[] = [
     icon: '🚀',
     en: {
       name: 'The Accelerationist',
-      desc: 'Any civilization must build Artificial Intelligence before year 4,000. Intervene as much as you like.',
+      desc: 'Any civilization must build Artificial Intelligence before year 4,500. Intervene as much as you like.',
     },
     zh: {
       name: '加速主义者',
-      desc: '任意文明必须在 4000 年前造出人工智能。你可以随意干预。',
+      desc: '任意文明必须在 4500 年前造出人工智能。你可以随意干预。',
     },
     config: () => preset('science'),
     check: (s) => {
       if (s.civs.some((c) => c.alive && c.researchedTechs.includes('ai'))) return 'win';
-      if (s.year >= 4000) return 'fail';
+      if (s.year >= 4500) return 'fail';
       return null;
     },
   },
