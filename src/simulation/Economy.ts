@@ -181,9 +181,105 @@ export function runResearch(world: WorldState, civ: Civilization, rng: SeededRan
   }
 }
 
+/**
+ * The Age of Sail: a coastal nation with sailing (short range) or navigation
+ * (open ocean) can load settlers onto ships and found a colony on a distant,
+ * unclaimed shore — from there, normal expansion devours the new continent.
+ */
+function runColonization(world: WorldState, civ: Civilization, rng: SeededRandom): void {
+  const tech = techMultipliers(civ.researchedTechs);
+  const hasSail = civ.researchedTechs.includes('sailing');
+  if (!hasSail && !tech.naval) return;
+  const m = world.map;
+
+  // Pressure to leave: crowded land or an exhausted frontier.
+  const density = civ.population / Math.max(1, civ.territory);
+  const pressure = Math.min(1, density / 500) + (civ.frontier.length < 5 ? 0.5 : 0) + civ.traits.expansion / 300;
+  if (!rng.chance(0.012 * pressure * (0.5 + civ.traits.riskTaking / 150))) return;
+
+  // A port is required: at least one owned coastal tile.
+  let hasPort = false;
+  const checkN = Math.min(40, civ.tiles.length);
+  for (let s = 0; s < checkN; s++) {
+    const t = civ.tiles[Math.floor((s / checkN) * civ.tiles.length)];
+    if (m.owner[t] !== civ.index) continue;
+    const x = t % m.width;
+    const y = Math.floor(t / m.width);
+    if (
+      (x > 0 && m.terrain[t - 1] === 0) ||
+      (x < m.width - 1 && m.terrain[t + 1] === 0) ||
+      (y > 0 && m.terrain[t - m.width] === 0) ||
+      (y < m.height - 1 && m.terrain[t + m.width] === 0)
+    ) {
+      hasPort = true;
+      break;
+    }
+  }
+  if (!hasPort) return;
+
+  const cx = civ.sumX / Math.max(1, civ.territory);
+  const cy = civ.sumY / Math.max(1, civ.territory);
+  const range = tech.naval ? Math.max(m.width, m.height) : Math.min(m.width, m.height) * 0.3;
+
+  // Scout candidate shores (deterministic sample of the world's coasts).
+  let best = -1;
+  let bestScore = 0.25;
+  const tries = 30;
+  for (let k = 0; k < tries; k++) {
+    const t = world.coastalTiles[rng.nextInt(0, world.coastalTiles.length - 1)];
+    if (m.owner[t] !== -1 || m.terrain[t] === 0) continue;
+    const x = t % m.width;
+    const y = Math.floor(t / m.width);
+    const d = Math.hypot(x - cx, y - cy);
+    if (d < 12 || d > range) continue; // too close = walk there; too far = beyond the ships
+    const score = m.fertility[t] * (1 - (d / range) * 0.4);
+    if (score > bestScore) {
+      bestScore = score;
+      best = t;
+    }
+  }
+  if (best < 0) return;
+
+  // Land the settlers: claim a beachhead and move people onto it.
+  const bx = best % m.width;
+  const by = Math.floor(best / m.width);
+  let claimed = 0;
+  for (let dy = -1; dy <= 1; dy++) {
+    for (let dx = -1; dx <= 1; dx++) {
+      const nx = bx + dx;
+      const ny = by + dy;
+      if (nx < 0 || ny < 0 || nx >= m.width || ny >= m.height) continue;
+      const t = ny * m.width + nx;
+      if (m.owner[t] === -1 && m.terrain[t] !== TERRAIN_INDEX.ocean) {
+        claimTile(world, civ, t);
+        claimed++;
+      }
+    }
+  }
+  if (claimed === 0) return;
+  if (civ.denseTile >= 0 && m.owner[civ.denseTile] === civ.index) {
+    const settlers = Math.min(m.population[civ.denseTile] * 0.15, 900);
+    m.population[civ.denseTile] -= settlers;
+    m.population[best] += settlers;
+  }
+  addEvent(world, {
+    year: world.year,
+    type: 'migration',
+    civIds: [civ.id],
+    title: `${civ.name} founds an overseas colony`,
+    description: `Settler ships from ${civ.name} crossed the open sea and raised their flag on a distant shore. A new world begins to fill.`,
+    titleZh: `${civ.name}建立海外殖民地`,
+    descriptionZh: `${civ.name}的殖民船队横渡大洋，在遥远的海岸升起了旗帜。新大陆开始有了人烟。`,
+    importance: 6,
+    x: bx,
+    y: by,
+  });
+}
+
 export function runExpansion(world: WorldState, civ: Civilization, rng: SeededRandom): void {
   const m = world.map;
   if (civ.territory === 0) return;
+  runColonization(world, civ, rng);
   const density = civ.population / Math.max(1, civ.territory);
   const drive =
     ((civ.traits.expansion + civ.modifiers.expansion) / 100) * 0.5 +

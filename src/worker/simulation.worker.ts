@@ -22,7 +22,7 @@ let lastMapVersionSent = -1;
 let lastMapUpdateTime = 0;
 
 const MAX_YEARS_PER_SLICE = 600;
-const SNAPSHOT_INTERVAL_MS = 90;
+let snapshotIntervalMs = 90;
 
 function post(msg: WorkerToMain, transfer: Transferable[] = []): void {
   (self as unknown as Worker).postMessage(msg, transfer);
@@ -57,6 +57,8 @@ function sendSnapshot(): void {
 function initWorld(cfg: WorldConfig): void {
   config = cfg;
   world = createWorld(cfg);
+  // Big maps ship bigger snapshots — throttle the stream to keep transfer sane.
+  snapshotIntervalMs = cfg.width * cfg.height > 120000 ? 280 : 90;
   running = false;
   targetYear = null;
   lastEventIndex = 0;
@@ -112,7 +114,7 @@ function scheduleLoop(): void {
       return;
     }
 
-    if (performance.now() - lastSnapshotTime > SNAPSHOT_INTERVAL_MS) {
+    if (performance.now() - lastSnapshotTime > snapshotIntervalMs) {
       sendSnapshot();
     }
     loopHandle = setTimeout(tick, toRun >= MAX_YEARS_PER_SLICE ? 0 : 16);

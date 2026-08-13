@@ -112,8 +112,8 @@ export function validateConfig(raw: unknown): WorldConfig {
   return {
     simVersion: SIM_VERSION,
     seed: str(o.seed, '928374', 64),
-    width: Math.round(clamp(o.width, 60, 300, 200)),
-    height: Math.round(clamp(o.height, 60, 300, 200)),
+    width: Math.round(clamp(o.width, 60, 600, 200)),
+    height: Math.round(clamp(o.height, 60, 600, 200)),
     seaLevel: clamp(o.seaLevel, 0.3, 0.7, 0.5),
     resourceRichness: clamp(o.resourceRichness, 0, 2, 1),
     disasterFrequency: clamp(o.disasterFrequency, 0, 2, 1),

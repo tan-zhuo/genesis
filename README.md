@@ -29,7 +29,7 @@ First run: click **Explore Example World** — a 200×200 world with 5 civilizat
 
 ## What you can do
 
-- Create worlds: seed, map size (120–260), continent count (auto or 1–6 separated landmasses with real oceans between), ocean level, resource richness, disaster frequency
+- Create worlds: seed, map size (120–600), continent count (auto or 1–6 separated landmasses with real oceans between), ocean level, resource richness, disaster frequency
 - Create 2–20 civilizations with personality sliders (Aggression, Trade, Science, Migration, Expansion, Diplomacy, Birth Rate, Risk Taking) and starting technologies
 - Build IF/THEN rules with a visual Rule Builder (no code), or load templates (Peaceful, Militaristic, Merchant, Scientific, Nomadic, …)
 - Control time: pause / play / step / 1x–10,000x / run-to-year / reset
@@ -123,9 +123,9 @@ Only the *recipe* is ever serialized: seed + world config + civilization configs
 
 ## The technology web · 人类科技网
 
-47 real human technologies in a dependency DAG — agriculture, pottery, the wheel, writing, currency, philosophy, medicine, navigation, printing, gunpowder, banking, the scientific method, steam engines, railroads, vaccination, electricity, flight, antibiotics, computing, the internet, genetic engineering, AI, fusion, spaceflight, transcendence… Civilizations do **not** walk a fixed ladder: each one picks its next research by **weighted choice biased by geography** (coastline share → sailing & navigation; mountains → mining & metallurgy; river valleys → irrigation; population density → medicine), **traits and doctrine** (the Iron Creed rushes gunpowder, the Golden Scale rushes banking, the Silent Sky rushes universities). Two nations in the same world grow visibly different trees — inspect any nation's personal path in the Technology tab. Naval powers can wage overseas conquest once they master navigation.
+47 real human technologies in a dependency DAG — agriculture, pottery, the wheel, writing, currency, philosophy, medicine, navigation, printing, gunpowder, banking, the scientific method, steam engines, railroads, vaccination, electricity, flight, antibiotics, computing, the internet, genetic engineering, AI, fusion, spaceflight, transcendence… Civilizations do **not** walk a fixed ladder: each one picks its next research by **weighted choice biased by geography** (coastline share → sailing & navigation; mountains → mining & metallurgy; river valleys → irrigation; population density → medicine), **traits and doctrine** (the Iron Creed rushes gunpowder, the Golden Scale rushes banking, the Silent Sky rushes universities). Two nations in the same world grow visibly different trees — inspect any nation's personal path in the Technology tab. Naval powers can wage overseas conquest once they master navigation — and the **Age of Sail** is real: coastal nations under population pressure load settler ships and colonize distant unclaimed shores (sailing = short range, navigation = open ocean), so empty continents become new worlds to race for.
 
-47 项真实人类科技构成依赖网络。文明**不走固定阶梯**：每个文明按**地理**（海岸线→帆船航海，山地→采矿冶金，河谷→灌溉，人口密度→医术）与**性格信条**（铁血信条抢火药、金秤信条抢银行、寂空之思抢大学）加权选择下一项研究——同一世界里两个国家的科技树长得截然不同。科技页可查看每个国家的专属路径；掌握航海的海权国家可发动跨洋征服。
+47 项真实人类科技构成依赖网络。文明**不走固定阶梯**：每个文明按**地理**（海岸线→帆船航海，山地→采矿冶金，河谷→灌溉，人口密度→医术）与**性格信条**（铁血信条抢火药、金秤信条抢银行、寂空之思抢大学）加权选择下一项研究——同一世界里两个国家的科技树长得截然不同。科技页可查看每个国家的专属路径；掌握航海的海权国家可发动跨洋征服——而且**大航海时代**是真实发生的：沿海国家在人口压力下装载殖民船，跨海在无主海岸登陆建立殖民地（帆船=近海航程，航海=远洋），空大陆成为列强竞逐的新世界。
 
 ## Scientific models · 科学模型
 
@@ -169,7 +169,7 @@ npm run dev      # 打开 http://localhost:5173
 
 ## 你可以做什么
 
-- 创建世界：种子、地图尺寸（120–260）、大陆数量（自动或 1–6 块被真正海洋分隔的大陆）、海洋比例、资源丰富度、灾难频率
+- 创建世界：种子、地图尺寸（120–600）、大陆数量（自动或 1–6 块被真正海洋分隔的大陆）、海洋比例、资源丰富度、灾难频率
 - 创建 2–20 个文明，用滑杆定义性格（侵略、贸易、科学、迁徙、扩张、外交、生育率、冒险精神）与初始科技
 - 用可视化规则编辑器搭建 IF/THEN 规则（无需写代码），或加载模板（和平、军国、重商、科研、游牧……）
 - 控制时间：暂停 / 播放 / 单步 / 1x–10,000x / 运行至指定年份 / 重置

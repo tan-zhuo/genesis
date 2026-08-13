@@ -422,6 +422,7 @@ export interface WorldState {
   appliedAnomaly: number; // last anomaly applied to the map
   climateMilestone: number; // last whole-degree milestone announced
   baseTemperature: Float32Array; // pre-industrial temperature field
+  coastalTiles: number[]; // land tiles adjacent to ocean (colonization targets)
   landTilesCache?: number;
 }
 

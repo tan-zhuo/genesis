@@ -136,7 +136,7 @@ export function WorldSetup(): JSX.Element {
             <div className="field-row">
               <label>{t('setup.mapSize', { w: config.width, h: config.height, n: civTiles.toLocaleString('en-US') })}</label>
               <div className="size-btns">
-                {[120, 160, 200, 260].map((s) => (
+                {[120, 200, 300, 400, 600].map((s) => (
                   <button
                     key={s}
                     className={`chip ${config.width === s ? 'chip-active' : ''}`}
@@ -146,6 +146,7 @@ export function WorldSetup(): JSX.Element {
                   </button>
                 ))}
               </div>
+              {config.width >= 400 && <p className="hint">{t('setup.bigMapHint')}</p>}
             </div>
             <div className="field-row">
               <label>{t('setup.continents')}</label>

@@ -359,7 +359,21 @@ export function createWorld(config: WorldConfig): WorldState {
     appliedAnomaly: 0,
     climateMilestone: 0,
     baseTemperature: map.temperature.slice(),
+    coastalTiles: [],
   };
+  for (let i = 0; i < map.terrain.length; i++) {
+    if (map.terrain[i] === 0) continue;
+    const x = i % map.width;
+    const y = Math.floor(i / map.width);
+    if (
+      (x > 0 && map.terrain[i - 1] === 0) ||
+      (x < map.width - 1 && map.terrain[i + 1] === 0) ||
+      (y > 0 && map.terrain[i - map.width] === 0) ||
+      (y < map.height - 1 && map.terrain[i + map.width] === 0)
+    ) {
+      world.coastalTiles.push(i);
+    }
+  }
 
   const rng = subRng(config.seed, 'world-init');
   const starts = findStartLocations(map, config.civs.length, rng);

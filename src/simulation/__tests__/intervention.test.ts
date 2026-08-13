@@ -136,3 +136,57 @@ describe('Anthropogenic climate', () => {
     expect(Math.round(w2.co2 * 1000)).toBe(Math.round(w1.co2 * 1000));
   });
 });
+
+describe('Age of Sail', () => {
+  it('naval civilizations colonize other continents', () => {
+    const cfg = defaultConfig();
+    cfg.width = 160;
+    cfg.height = 160;
+    cfg.continents = 3;
+    const world = createWorld(cfg);
+    simulateYears(world, 100);
+    for (const civ of world.civs) {
+      if (!civ.alive) continue;
+      for (const id of ['fishing', 'sailing', 'writing', 'mathematics', 'astronomy', 'navigation']) {
+        if (!civ.researchedTechs.includes(id)) civ.researchedTechs.push(id);
+      }
+      civ.technologyLevel = civ.researchedTechs.length;
+    }
+    simulateYears(world, 1200);
+
+    // Label landmasses via flood fill, then check some civ owns tiles on 2+.
+    const m = world.map;
+    const label = new Int16Array(m.terrain.length).fill(-1);
+    let nLabels = 0;
+    for (let i = 0; i < m.terrain.length; i++) {
+      if (m.terrain[i] === 0 || label[i] >= 0) continue;
+      const stack = [i];
+      label[i] = nLabels;
+      while (stack.length) {
+        const t = stack.pop()!;
+        const x = t % m.width;
+        const y = Math.floor(t / m.width);
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          const nx = x + dx;
+          const ny = y + dy;
+          if (nx < 0 || ny < 0 || nx >= m.width || ny >= m.height) continue;
+          const nt = ny * m.width + nx;
+          if (m.terrain[nt] !== 0 && label[nt] < 0) {
+            label[nt] = nLabels;
+            stack.push(nt);
+          }
+        }
+      }
+      nLabels++;
+    }
+    let multiContinent = false;
+    for (const civ of world.civs) {
+      if (!civ.alive) continue;
+      const owned = new Set<number>();
+      for (const t of civ.tiles) if (m.owner[t] === civ.index && label[t] >= 0) owned.add(label[t]);
+      if (owned.size >= 2) multiContinent = true;
+    }
+    expect(world.events.some((e) => e.title.includes('overseas colony'))).toBe(true);
+    expect(multiContinent).toBe(true);
+  });
+});

@@ -163,7 +163,7 @@ describe('Serialization', () => {
       civs: [{ name: 'A' }, { name: 'B', startPopulation: 1e12, traits: { aggression: 500 } }],
       rules: [{ bogus: true }, { conditions: [{ metric: 'population', op: '>', value: 10 }], action: { type: 'declareWar', amount: 5 } }],
     });
-    expect(cfg.width).toBeLessThanOrEqual(300);
+    expect(cfg.width).toBeLessThanOrEqual(600);
     expect(cfg.height).toBeGreaterThanOrEqual(60);
     expect(cfg.civs[1].startPopulation).toBeLessThanOrEqual(100000);
     expect(cfg.civs[1].traits.aggression).toBeLessThanOrEqual(100);

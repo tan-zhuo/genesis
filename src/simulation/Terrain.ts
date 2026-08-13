@@ -78,7 +78,11 @@ export function generateMap(config: WorldConfig): WorldMap {
   // Continent cores: N landmasses kept apart by rejection sampling, so worlds
   // get real oceans between real continents instead of a single pangea.
   const continentCount =
-    config.continents && config.continents > 0 ? Math.min(6, Math.round(config.continents)) : rng.nextInt(2, 5);
+    config.continents && config.continents > 0
+      ? Math.min(8, Math.round(config.continents))
+      : width >= 400
+        ? rng.nextInt(3, 8)
+        : rng.nextInt(2, 5);
   // Radius chosen so total land area stays ~30% of the map regardless of count
   // (the steep mask falloff means land only reaches ~0.55 of the blob radius).
   const baseR = 1.75 * Math.sqrt((0.33 * width * height) / (Math.PI * continentCount));

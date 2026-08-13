@@ -3,7 +3,12 @@
 // simulation; everything is derived deterministically from world state.
 import { MapStatic, Snapshot, TradeRoute } from '../simulation/types';
 
-export const DETAIL_PX = 8; // detail-layer pixels per tile
+/** Detail-layer pixels per tile: full 8px for normal maps, 4px for huge ones
+ * (a 600-tile map at 8px would need a 4800² canvas — too much GPU memory). */
+export function detailPxFor(width: number): number {
+  return width > 320 ? 4 : 8;
+}
+export const DETAIL_PX = 8; // layout math base for buildings
 
 export const TERRAIN_RGB: [number, number, number][] = [
   [16, 32, 54], // ocean
@@ -67,18 +72,20 @@ function h2(a: number, b: number): number {
 // ---------- Static terrain detail (built once per map) ----------
 
 export function buildDetailCanvas(map: MapStatic): HTMLCanvasElement {
+  const P = detailPxFor(map.width);
   const c = document.createElement('canvas');
-  c.width = map.width * DETAIL_PX;
-  c.height = map.height * DETAIL_PX;
+  c.width = map.width * P;
+  c.height = map.height * P;
   const ctx = c.getContext('2d')!;
-  const P = DETAIL_PX;
+  if (P !== DETAIL_PX) ctx.scale(P / DETAIL_PX, P / DETAIL_PX);
+  const P8 = DETAIL_PX;
 
   for (let ty = 0; ty < map.height; ty++) {
     for (let tx = 0; tx < map.width; tx++) {
       const i = ty * map.width + tx;
       const terr = map.terrain[i];
-      const ox = tx * P;
-      const oy = ty * P;
+      const ox = tx * P8;
+      const oy = ty * P8;
       const r1 = h2(i, 1);
       const r2 = h2(i, 2);
       const r3 = h2(i, 3);
@@ -87,8 +94,8 @@ export function buildDetailCanvas(map: MapStatic): HTMLCanvasElement {
         // Forest: 2-3 little conifers
         const n = 2 + (r3 > 0.5 ? 1 : 0);
         for (let k = 0; k < n; k++) {
-          const x = ox + 1 + h2(i, 10 + k) * (P - 3);
-          const y = oy + 2 + h2(i, 20 + k) * (P - 4);
+          const x = ox + 1 + h2(i, 10 + k) * (P8 - 3);
+          const y = oy + 2 + h2(i, 20 + k) * (P8 - 4);
           const s = 1.6 + h2(i, 30 + k) * 1.3;
           ctx.fillStyle = 'rgba(10, 14, 20, 0.18)';
           ctx.beginPath();
@@ -106,8 +113,8 @@ export function buildDetailCanvas(map: MapStatic): HTMLCanvasElement {
         }
       } else if (terr === 4) {
         // Mountain: peak rises with elevation, casts a base shadow
-        const x = ox + P / 2 + (r1 - 0.5) * 2;
-        const y = oy + P / 2 + 1;
+        const x = ox + P8 / 2 + (r1 - 0.5) * 2;
+        const y = oy + P8 / 2 + 1;
         const s = 2.4 + r2 * 1.6 + Math.max(0, map.elevation[i] - 0.75) * 6;
         ctx.fillStyle = 'rgba(10, 14, 20, 0.22)';
         ctx.beginPath();
@@ -132,8 +139,8 @@ export function buildDetailCanvas(map: MapStatic): HTMLCanvasElement {
         ctx.strokeStyle = 'rgba(64, 96, 44, 0.5)';
         ctx.lineWidth = 0.6;
         for (let k = 0; k < 3; k++) {
-          const x = ox + 1 + h2(i, 40 + k) * (P - 2);
-          const y = oy + 1 + h2(i, 50 + k) * (P - 2);
+          const x = ox + 1 + h2(i, 40 + k) * (P8 - 2);
+          const y = oy + 1 + h2(i, 50 + k) * (P8 - 2);
           ctx.beginPath();
           ctx.moveTo(x, y + 1);
           ctx.lineTo(x + 0.6, y - 0.6);
@@ -144,18 +151,18 @@ export function buildDetailCanvas(map: MapStatic): HTMLCanvasElement {
         ctx.strokeStyle = 'rgba(140, 112, 66, 0.4)';
         ctx.lineWidth = 0.7;
         ctx.beginPath();
-        ctx.arc(ox + P / 2 + (r1 - 0.5) * 3, oy + P / 2 + (r2 - 0.5) * 3, 1.6 + r3, Math.PI * 0.1, Math.PI * 0.9);
+        ctx.arc(ox + P8 / 2 + (r1 - 0.5) * 3, oy + P8 / 2 + (r2 - 0.5) * 3, 1.6 + r3, Math.PI * 0.1, Math.PI * 0.9);
         ctx.stroke();
       } else if (terr === 5 && r1 > 0.6) {
         // Tundra: sparse white flecks
         ctx.fillStyle = 'rgba(230, 236, 240, 0.5)';
-        ctx.fillRect(ox + r2 * (P - 1), oy + r3 * (P - 1), 1, 1);
+        ctx.fillRect(ox + r2 * (P8 - 1), oy + r3 * (P8 - 1), 1, 1);
       } else if (terr === 0 && r1 > 0.8) {
         // Ocean: faint wave dashes
         ctx.strokeStyle = 'rgba(120, 170, 220, 0.18)';
         ctx.lineWidth = 0.7;
-        const x = ox + r2 * (P - 3);
-        const y = oy + r3 * (P - 1);
+        const x = ox + r2 * (P8 - 3);
+        const y = oy + r3 * (P8 - 1);
         ctx.beginPath();
         ctx.moveTo(x, y);
         ctx.quadraticCurveTo(x + 1.5, y - 0.8, x + 3, y);
@@ -166,8 +173,8 @@ export function buildDetailCanvas(map: MapStatic): HTMLCanvasElement {
         ctx.strokeStyle = 'rgba(90, 150, 220, 0.55)';
         ctx.lineWidth = 0.8;
         ctx.beginPath();
-        ctx.moveTo(ox + 1, oy + P / 2 + (r1 - 0.5) * 2);
-        ctx.quadraticCurveTo(ox + P / 2, oy + P / 2 + (r2 - 0.5) * 3, ox + P - 1, oy + P / 2 + (r3 - 0.5) * 2);
+        ctx.moveTo(ox + 1, oy + P8 / 2 + (r1 - 0.5) * 2);
+        ctx.quadraticCurveTo(ox + P8 / 2, oy + P8 / 2 + (r2 - 0.5) * 3, ox + P8 - 1, oy + P8 / 2 + (r3 - 0.5) * 2);
         ctx.stroke();
       }
     }
@@ -219,11 +226,13 @@ export function citySignature(snapshot: Snapshot): string {
 export function buildBuildingsCanvas(map: MapStatic, snapshot: Snapshot): HTMLCanvasElement {
   // Buildings are drawn at 2x supersampling so facades stay crisp at
   // street-level zoom; layout math stays in DETAIL_PX coordinates.
+  const ss = map.width > 320 ? 1 : 2; // supersample small maps only
+  const px = detailPxFor(map.width);
   const c = document.createElement('canvas');
-  c.width = map.width * DETAIL_PX * 2;
-  c.height = map.height * DETAIL_PX * 2;
+  c.width = map.width * px * ss;
+  c.height = map.height * px * ss;
   const ctx = c.getContext('2d')!;
-  ctx.scale(2, 2);
+  ctx.scale((px * ss) / DETAIL_PX, (px * ss) / DETAIL_PX);
   const P = DETAIL_PX;
 
   for (const city of snapshot.cities) {
