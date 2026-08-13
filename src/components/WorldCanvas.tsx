@@ -207,7 +207,7 @@ export function WorldCanvas({ universe }: Props): JSX.Element {
       return snapshot.civs.map((civ) => {
         switch (metric) {
           case 'technology':
-            return civ.technologyLevel / 11;
+            return civ.technologyLevel / 13;
           case 'economy':
             return civ.economy / 100;
           case 'military':
@@ -534,7 +534,8 @@ export function WorldCanvas({ universe }: Props): JSX.Element {
             const sy = v.y + (ep.y + 0.5) * v.scale;
             if (sx < -20 || sy < -20 || sx > rect.width + 20 || sy > rect.height + 20) continue;
             const h = Math.max(4, v.scale * 1.4);
-            ctx.strokeStyle = 'rgba(170, 178, 194, 0.75)';
+            // Ascension monuments glow gold; graves stay grey.
+            ctx.strokeStyle = ep.ascended ? 'rgba(245, 200, 90, 0.9)' : 'rgba(170, 178, 194, 0.75)';
             ctx.lineWidth = Math.max(1, v.scale * 0.3);
             ctx.beginPath();
             ctx.moveTo(sx, sy + h * 0.4);

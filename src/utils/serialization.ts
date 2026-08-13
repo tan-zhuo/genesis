@@ -116,6 +116,7 @@ export function validateConfig(raw: unknown): WorldConfig {
     seaLevel: clamp(o.seaLevel, 0.3, 0.7, 0.5),
     resourceRichness: clamp(o.resourceRichness, 0, 2, 1),
     disasterFrequency: clamp(o.disasterFrequency, 0, 2, 1),
+    finiteResources: o.finiteResources !== false,
     civs: civsRaw.map((c, i) => validCiv(c, i)),
     rules: rulesRaw.map((r, i) => validRule(r, i)).filter((r): r is Rule => r !== null),
     interventions: interventionsRaw

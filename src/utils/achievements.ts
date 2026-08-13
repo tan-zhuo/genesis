@@ -118,6 +118,20 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     check: (s) => s.interventions.some((iv) => iv.type === 'bless') && s.interventions.some((iv) => iv.type === 'spawnCiv'),
   },
   {
+    id: 'stellar',
+    icon: '🚀',
+    en: { name: 'To Touch the Sky', desc: 'A civilization achieves Spaceflight — the planet is finite, the sky is not.' },
+    zh: { name: '触摸星空', desc: '一个文明掌握了星际航行——行星是有限的，天空不是。' },
+    check: (s) => s.civs.some((c) => c.researchedTechs.includes('spaceflight')),
+  },
+  {
+    id: 'ascension',
+    icon: '✨',
+    en: { name: 'The Open Gate', desc: 'Witness a civilization leave this world — not by dying, but by finishing.' },
+    zh: { name: '门开了', desc: '见证一个文明离开这个世界——不是因为灭亡，而是因为完成。' },
+    check: (s) => s.civs.some((c) => c.ascended),
+  },
+  {
     id: 'world-at-war',
     icon: '🌐',
     en: { name: 'A World at War', desc: 'Three or more wars rage at the same time.' },

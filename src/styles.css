@@ -126,6 +126,10 @@ input[type='checkbox'] { accent-color: var(--accent); }
   letter-spacing: 0.04em;
 }
 .tag-dead { color: var(--danger); border-color: rgba(229, 72, 77, 0.4); }
+.tag-ascended { color: var(--accent); border-color: rgba(245, 165, 36, 0.5); }
+.civ-row-ascended { opacity: 0.85; }
+.epitaph-ascended { border-left-color: var(--accent-dim); }
+.epitaph-ascended .epitaph-marker { color: var(--accent); }
 
 .badge {
   background: var(--bg-hover);

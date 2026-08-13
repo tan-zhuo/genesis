@@ -57,3 +57,51 @@ describe('Divine interventions', () => {
     expect(spawned).toBe(evented);
   });
 });
+
+describe('Finite resources & transcendence', () => {
+  it('mineral deposits deplete over industrial time', () => {
+    const cfg = defaultConfig();
+    cfg.width = 120;
+    cfg.height = 120;
+    const world = createWorld(cfg);
+    const countMinerals = (): number => {
+      let n = 0;
+      for (let i = 0; i < world.map.resources.length; i++) {
+        if (world.map.resources[i] & (4 | 8 | 16)) n++;
+      }
+      return n;
+    };
+    const before = countMinerals();
+    simulateYears(world, 4000);
+    const after = countMinerals();
+    expect(after).toBeLessThan(before);
+    expect(world.mapVersion).toBeGreaterThan(0);
+  });
+
+  it('finiteResources=false keeps the old infinite behavior deterministic', () => {
+    const cfg = defaultConfig();
+    cfg.width = 100;
+    cfg.height = 100;
+    cfg.finiteResources = false;
+    const w1 = simulateYears(createWorld(cfg), 300);
+    const w2 = simulateYears(createWorld(cfg), 300);
+    expect(digest(w1)).toEqual(digest(w2));
+  });
+
+  it('a civilization with transcendence ascends and leaves the world', () => {
+    const cfg = defaultConfig();
+    cfg.width = 100;
+    cfg.height = 100;
+    const world = createWorld(cfg);
+    simulateYears(world, 50);
+    // Grant the full tech tree to the strongest civ — the gate opens.
+    const civ = world.civs.filter((c) => c.alive).sort((a, b) => b.population - a.population)[0];
+    civ.researchedTechs = ['survival', 'agriculture', 'writing', 'metallurgy', 'engineering', 'navigation', 'gunpowder', 'industry', 'electricity', 'computing', 'ai', 'spaceflight', 'transcendence'];
+    civ.technologyLevel = civ.researchedTechs.length;
+    simulateYears(world, 300);
+    expect(civ.alive).toBe(false);
+    expect(civ.ascended).toBe(true);
+    expect(world.events.some((e) => e.type === 'ascension' && e.importance === 10)).toBe(true);
+    expect(world.epitaphs.some((e) => e.civId === civ.id && e.ascended)).toBe(true);
+  });
+});

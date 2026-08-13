@@ -18,6 +18,8 @@ let loopHandle: ReturnType<typeof setTimeout> | null = null;
 let lastTickTime = 0;
 let yearCarry = 0;
 let lastSnapshotTime = 0;
+let lastMapVersionSent = -1;
+let lastMapUpdateTime = 0;
 
 const MAX_YEARS_PER_SLICE = 600;
 const SNAPSHOT_INTERVAL_MS = 90;
@@ -37,9 +39,19 @@ function takeNewEvents(): WorldEvent[] {
 
 function sendSnapshot(): void {
   if (!world) return;
-  const snapshot = buildSnapshot(world, running, yearsPerSecond, takeNewEvents());
-  post({ type: 'snapshot', snapshot }, [snapshot.owner.buffer, snapshot.population.buffer]);
-  lastSnapshotTime = performance.now();
+  const now = performance.now();
+  // Terrain/resources/fertility mutate slowly (depletion, blessings): ship a
+  // map refresh at most every 3s of real time when the version moved.
+  const includeMap = world.mapVersion !== lastMapVersionSent && now - lastMapUpdateTime > 3000;
+  const snapshot = buildSnapshot(world, running, yearsPerSecond, takeNewEvents(), includeMap);
+  const transfer: Transferable[] = [snapshot.owner.buffer, snapshot.population.buffer];
+  if (snapshot.mapUpdate) {
+    transfer.push(snapshot.mapUpdate.terrain.buffer, snapshot.mapUpdate.resources.buffer, snapshot.mapUpdate.fertility.buffer);
+    lastMapVersionSent = snapshot.mapUpdate.version;
+    lastMapUpdateTime = now;
+  }
+  post({ type: 'snapshot', snapshot }, transfer);
+  lastSnapshotTime = now;
 }
 
 function initWorld(cfg: WorldConfig): void {
@@ -49,6 +61,8 @@ function initWorld(cfg: WorldConfig): void {
   targetYear = null;
   lastEventIndex = 0;
   yearCarry = 0;
+  lastMapVersionSent = -1;
+  lastMapUpdateTime = 0;
   const mapStatic = buildMapStatic(world);
   const snapshot = buildSnapshot(world, running, yearsPerSecond, takeNewEvents());
   post({ type: 'ready', mapStatic, snapshot }, [

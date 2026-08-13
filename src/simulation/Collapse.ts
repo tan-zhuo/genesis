@@ -6,6 +6,7 @@ import { Civilization, Traits, WorldState } from './types';
 import { addEvent, claimTile, compactTiles, createCivilization, randomCivConfig, transferTile } from './World';
 import { TERRAIN_INDEX } from './Terrain';
 import { declareWar } from './Warfare';
+import { writeEpitaph } from './Faith';
 
 const civNamePool = new Set<string>();
 
@@ -74,6 +75,77 @@ export function runEmpireAndCollapse(world: WorldState, civ: Civilization, landT
       descriptionZh: `多年的困苦终于酿成暴动。${civ.name}的旧秩序被推翻，新政权勉强恢复了平静。`,
       importance: 5,
     });
+  }
+}
+
+/**
+ * Transcendence: a civilization that mastered Dimensional Transcendence opens
+ * a gate and, over a few generations, leaves this world entirely. Not death —
+ * departure. The map is finite; the destinations are not.
+ */
+export function runAscension(world: WorldState, rng: SeededRandom): void {
+  for (const civ of world.civs) {
+    if (!civ.alive || !civ.researchedTechs.includes('transcendence')) continue;
+
+    if (civ.ascendingSince === null) {
+      civ.ascendingSince = world.year;
+      addEvent(world, {
+        year: world.year, type: 'ascension', civIds: [civ.id],
+        title: `${civ.name} opens the Gate`,
+        description: `In the capital of ${civ.name}, a door was opened onto somewhere that is not this world. The first volunteers stepped through and did not come back — but they sent word: come.`,
+        titleZh: `${civ.name}打开了「门」`,
+        descriptionZh: `在${civ.name}的都城，一扇通往"别处"的门被打开了。第一批志愿者走了进去，没有回来——但他们传回了讯息：来吧。`,
+        importance: 9,
+        x: civ.territory > 0 ? Math.round(civ.sumX / civ.territory) : undefined,
+        y: civ.territory > 0 ? Math.round(civ.sumY / civ.territory) : undefined,
+      });
+      continue;
+    }
+
+    // The exodus: population flows through the gate, year after year.
+    civ.population *= 0.96;
+    civ.happiness = Math.min(100, civ.happiness + 0.5);
+
+    const finished = civ.population < 800 || world.year - civ.ascendingSince > 200;
+    if (finished) {
+      const age = world.year - civ.foundedYear;
+      writeEpitaph(world, civ, 'conquest'); // placeholder, immediately rewritten below
+      const ep = world.epitaphs[world.epitaphs.length - 1];
+      if (ep && ep.civId === civ.id) {
+        ep.ascended = true;
+        ep.textEn = `Here rose ${civ.name}, ${age} years a nation. They did not fall. They finished, and went elsewhere. The gate still hums at dusk.`;
+        ep.textZh = `${civ.name}在此崛起，立国 ${age} 年。他们没有灭亡——他们完成了，然后去了别处。黄昏时分，那扇门仍在低鸣。`;
+      }
+      compactTiles(world, civ);
+      for (const t of [...civ.tiles]) {
+        if (world.map.owner[t] === civ.index) {
+          // Those who chose to stay remain in the wilderness.
+          world.map.owner[t] = -1;
+          world.map.population[t] *= 0.25;
+        }
+      }
+      for (const cid of civ.cityIds) {
+        const city = world.cities[parseInt(cid.slice(5), 10)];
+        if (city && city.ownerId === civ.id) city.destroyed = true;
+      }
+      civ.tiles = [];
+      civ.territory = 0;
+      civ.population = 0;
+      civ.cityIds = [];
+      civ.capitalCityId = null;
+      civ.alive = false;
+      civ.ascended = true;
+      civ.deathYear = world.year;
+      addEvent(world, {
+        year: world.year, type: 'ascension', civIds: [civ.id],
+        title: `${civ.name} leaves this world`,
+        description: `After ${age} years, the last of the ${civ.name} stepped through the Gate and closed it gently behind them. Their cities stand empty, their fields grow wild, and somewhere beyond geometry, their story continues.`,
+        titleZh: `${civ.name}离开了这个世界`,
+        descriptionZh: `${age} 年的历史之后，最后一批${civ.name}人穿过了那扇门，并轻轻将它带上。他们的城市空了，田野重归荒芜——而在几何之外的某处，他们的故事仍在继续。`,
+        importance: 10,
+      });
+      void rng;
+    }
   }
 }
 

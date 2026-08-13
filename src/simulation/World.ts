@@ -46,11 +46,13 @@ export function tileYields(world: WorldState, t: number): { food: number; wood: 
   if (terr === TERRAIN_INDEX.forest) wood += 0.8;
   if (terr === TERRAIN_INDEX.plains) wood += 0.25;
   if (terr === TERRAIN_INDEX.mountain) stone += 0.6;
+  // Mineral output falls as the vein thins (finite-resource worlds).
+  const dep = world.config.finiteResources === false ? 1 : Math.min(1, m.deposits[t] * 1.6 + 0.1);
   if (bits & RESOURCE_BIT.food) food += 1.2;
   if (bits & RESOURCE_BIT.wood) wood += 1.0;
-  if (bits & RESOURCE_BIT.stone) stone += 1.0;
-  if (bits & RESOURCE_BIT.iron) iron += 1.0;
-  if (bits & RESOURCE_BIT.gold) gold += 1.0;
+  if (bits & RESOURCE_BIT.stone) stone += 1.0 * dep;
+  if (bits & RESOURCE_BIT.iron) iron += 1.0 * dep;
+  if (bits & RESOURCE_BIT.gold) gold += 1.0 * dep;
   return { food, wood, stone, iron, gold };
 }
 
@@ -257,6 +259,8 @@ export function createCivilization(
     cityIds: [],
     alive: true,
     deathYear: null,
+    ascended: false,
+    ascendingSince: null,
     faith: {
       devotion: 0,
       doctrine: null,
@@ -348,6 +352,7 @@ export function createWorld(config: WorldConfig): WorldState {
     disasters: [],
     epitaphs: [],
     godName: null,
+    mapVersion: 0,
   };
 
   const rng = subRng(config.seed, 'world-init');
@@ -445,6 +450,21 @@ export function getTile(world: WorldState, x: number, y: number): Tile | null {
     population: m.population[t],
     cityId: cityIdx >= 0 ? world.cities[cityIdx].id : null,
   };
+}
+
+/** Full yield recompute for one civ (after the map itself changed). */
+export function recomputeYields(world: WorldState, civ: Civilization): void {
+  civ.yields = { food: 0, wood: 0, stone: 0, iron: 0, gold: 0 };
+  if (!civ.alive) return;
+  for (const t of civ.tiles) {
+    if (world.map.owner[t] !== civ.index) continue;
+    const y = tileYields(world, t);
+    civ.yields.food += y.food;
+    civ.yields.wood += y.wood;
+    civ.yields.stone += y.stone;
+    civ.yields.iron += y.iron;
+    civ.yields.gold += y.gold;
+  }
 }
 
 /** Effective military strength index, recomputed each year in the economy phase. */

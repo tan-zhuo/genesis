@@ -62,6 +62,7 @@ export function buildSnapshot(
   running: boolean,
   speed: number,
   newEvents: WorldEvent[],
+  includeMapUpdate = false,
 ): Snapshot {
   const landTiles = countLandTiles(world);
   const civs: CivSummary[] = world.civs.map((c) => {
@@ -99,6 +100,7 @@ export function buildSnapshot(
       devotion: c.faith.devotion,
       doctrine: c.faith.doctrine,
       pendingPrayer: c.faith.pendingPrayer ? { ...c.faith.pendingPrayer } : null,
+      ascended: c.ascended,
     };
   });
 
@@ -167,5 +169,15 @@ export function buildSnapshot(
     interventions: [...(world.config.interventions ?? [])],
     epitaphs: [...world.epitaphs],
     godName: world.godName ? { ...world.godName } : null,
+    ...(includeMapUpdate
+      ? {
+          mapUpdate: {
+            version: world.mapVersion,
+            terrain: world.map.terrain.slice(),
+            resources: world.map.resources.slice(),
+            fertility: world.map.fertility.slice(),
+          },
+        }
+      : {}),
   };
 }

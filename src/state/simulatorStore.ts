@@ -129,6 +129,16 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
         case 'snapshot': {
           const events = u.events.concat(msg.snapshot.events);
           trimEvents(events);
+          // The living map: depletion/deforestation/blessings mutate terrain.
+          let mapStatic = u.mapStatic;
+          if (msg.snapshot.mapUpdate && mapStatic) {
+            mapStatic = {
+              ...mapStatic,
+              terrain: msg.snapshot.mapUpdate.terrain,
+              resources: msg.snapshot.mapUpdate.resources,
+              fertility: msg.snapshot.mapUpdate.fertility,
+            };
+          }
           // Keep the UI-side config's intervention log in sync so export,
           // share links, and branches reproduce the player's actions.
           const config =
@@ -139,6 +149,7 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
             snapshot: msg.snapshot,
             events,
             config,
+            mapStatic,
             running: msg.snapshot.running,
           });
           break;

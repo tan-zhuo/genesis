@@ -80,7 +80,7 @@ export function FaithPanel({ universe }: { universe: Universe }): JSX.Element {
         <>
           <div className="section-title">{t('faith.ruins')} · {snapshot.epitaphs.length}</div>
           {snapshot.epitaphs.slice(-8).reverse().map((e) => (
-            <button key={e.civId} className="epitaph-row" onClick={() => focusOn(e.x, e.y)}>
+            <button key={e.civId} className={`epitaph-row ${e.ascended ? 'epitaph-ascended' : ''}`} onClick={() => focusOn(e.x, e.y)}>
               <span className="epitaph-marker"><Landmark size={15} /></span>
               <div>
                 <div className="epitaph-name" style={{ color: e.color }}>{e.name} · {e.foundedYear}–{e.deathYear}</div>

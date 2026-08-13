@@ -44,6 +44,8 @@ First run: click **Explore Example World** — a 200×200 world with 5 civilizat
 - **Faith & the observer**: doctrines crystallize out of each civilization's lived history (harvest cults, storm cults, atheist "Silent Sky" scholars…) and permanently reshape their character; nations **pray to you** when starving, plagued, or losing wars — answer within a generation and devotion soars, stay silent and temples empty; the world's prophets **name you** from your deeds (The Star-Hurler, The Gardener, The Silent One…); fallen nations leave clickable **ruins with epitaphs**, and philosophers ask questions their history taught them to ask
 - **Street-level living world (LOD)**: zoom in and the map stops being colored blobs — cities grow procedural buildings that evolve with technology (huts → stone walls → industrial chimneys → glowing skyscrapers, capitals get walls, a golden hall and a banner), tiny animated inhabitants wander the streets, golden caravans travel the trade routes, soldiers clash along burning front lines, forests become individual trees and mountains get snowcaps; meteor strikes now fall from the sky with a blast flash; the terrain is hillshaded (NW light) and buildings are extruded in 2.5D — lit facades, shadowed side walls, rooftops, and ground shadows under every building, tree, and person
 - **Night-lights map & chronicle mode**: a "civilization lights" view where city glow shifts from firelight to electric white as technology advances, crisp political borders, burning war-front pixels, and a cinematic chronicle mode where the camera drifts to wherever history is happening
+- **Finite resources**: mines run dry under industrial extraction, over-logged forests turn to farmland, soil tires under the plough and rests when abandoned — scarcity, not abundance, drives migration and war (toggle: `finiteResources`, on by default)
+- **The way out of a finite world**: the tech tree now ends beyond AI — **Spaceflight** unlocks orbital mining (the planet is finite, the sky is not), and **Dimensional Transcendence** opens a Gate: the civilization emigrates over generations and finally *leaves the world* — not extinction but ascension, leaving golden monuments, empty cities, and room for new peoples to rise from their ruins
 - **Scenario challenges**: six win/fail scripts — keep every nation alive for 5,000 years without touching anything, set a peaceful world ablaze with only 3 interventions, reach AI before year 3,000, witness an empire rise and fall as a purely silent god…
 
 ## Architecture
@@ -158,6 +160,8 @@ npm run dev      # 打开 http://localhost:5173
 - **信仰与观察者**：信条从每个文明亲历的历史中结晶（丰饶之道、风暴崇拜、无神论的"寂空之思"……）并永久重塑其民族性格；国家会在饥荒、瘟疫、战败时**向你祈祷** —— 一代人之内回应则虔诚高涨，保持沉默则神庙冷清；世界的先知会依据你的所作所为**为你命名**（掷星者、播绿者、沉默者……）；亡国留下可点击的**废墟与墓志铭**，思想家会问出被自身历史塑造的问题
 - **街景级活世界（LOD）**：放大地图，色块世界会"落地"——城市长出随科技演化的程序化建筑群（茅屋 → 石墙 → 工业烟囱 → 亮窗高楼，首都有城墙、金顶大殿与旗帜），街道上有走动的小人，商路上有金色商队，战线上有厮杀的士兵与刀光，森林变成一棵棵树、山地有雪峰；陨石会真正从天而降并爆出冲击闪光；地形带西北光源的山体光照（hillshading），建筑以 2.5D 挤出——受光正面、背光侧墙、屋顶面，且每栋建筑、每棵树、每个小人脚下都有投影
 - **文明夜灯与编年史模式**：城市光辉随科技从篝火橙演进为电力蓝白的"夜晚地球"视图、清晰国界描边、燃烧的战线像素、镜头自动飘向历史现场的电影化编年史模式
+- **有限资源**：矿脉会在工业开采下枯竭、过度砍伐的森林退化为农田、重耕之地地力衰竭而休耕之地缓慢恢复——稀缺而非丰饶驱动迁徙与战争（`finiteResources` 开关，默认开启）
+- **有限世界的出路**：科技树延伸到 AI 之后——**星际航行**解锁轨道采矿（行星有限，天空无限），**维度跃迁**打开一扇「门」：文明历经数代人移民，最终整体离开这个世界——不是灭亡而是升维，留下金色纪念碑、空城，和让新民族从废墟中崛起的空间
 - **剧本挑战**：六个带胜负判定的剧本 —— 零干预守护所有国家活满 5000 年、只用 3 次干预点燃和平世界、3000 年前抵达 AI、以纯粹沉默之神的身份见证帝国兴亡……
 
 ## 架构与设计

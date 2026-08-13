@@ -25,9 +25,10 @@ import { runCities } from './City';
 import { runEconomy, runResearch, runExpansion } from './Economy';
 import { runTrade, runDiplomacy } from './Diplomacy';
 import { runWarDeclarations, runWars, checkExtinction } from './Warfare';
-import { runEmpireAndCollapse, runRebirth, seedCivNames } from './Collapse';
+import { runAscension, runEmpireAndCollapse, runRebirth, seedCivNames } from './Collapse';
 import { runDisasters } from './Events';
 import { runInterventions } from './Intervention';
+import { runDepletion } from './Depletion';
 import { runFaith } from './Faith';
 import { createWorld as createWorldBase } from './World';
 import { emptyModifiers, WorldConfig, WorldState } from './types';
@@ -108,9 +109,16 @@ export function simulateYear(world: WorldState): WorldState {
     runEmpireAndCollapse(world, world.civs[i], landTiles, rng);
   }
 
+  // 14.5 Finite resources: mines, forests, soil
+  runDepletion(world, rng);
+  if (world.config.finiteResources !== false && world.year % 25 === 0) world.mapVersion++;
+
+  // 14.7 Transcendence: the way out of a finite world
+  runAscension(world, rng);
+
   // 15. Extinction sweep, then possible rebirth from the wilderness
   for (const civ of world.civs) {
-    checkExtinction(world, civ);
+    if (!civ.ascended) checkExtinction(world, civ);
   }
   runRebirth(world, rng);
 

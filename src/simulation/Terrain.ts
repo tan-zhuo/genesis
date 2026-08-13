@@ -71,6 +71,7 @@ export function generateMap(config: WorldConfig): WorldMap {
   const owner = new Int16Array(n).fill(-1);
   const population = new Float32Array(n);
   const city = new Int16Array(n).fill(-1);
+  const deposits = new Float32Array(n);
 
   const scale = 4.5 / Math.max(width, height); // base noise frequency
 
@@ -217,9 +218,11 @@ export function generateMap(config: WorldConfig): WorldMap {
         break;
     }
     resources[i] = bits;
+    // Finite reserves: how much a mine holds / how healthy a forest is.
+    deposits[i] = 0.7 + latticeValue(seedNum + 5150, i % width, Math.floor(i / width)) * 0.6;
   }
 
-  return { width, height, terrain, elevation, temperature, moisture, fertility, resources, river, owner, population, city };
+  return { width, height, terrain, elevation, temperature, moisture, fertility, resources, river, owner, population, city, deposits };
 }
 
 export function terrainName(index: number): Terrain {

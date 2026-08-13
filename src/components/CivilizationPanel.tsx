@@ -45,7 +45,10 @@ export function CivilizationPanel({ universe, civ }: { universe: Universe; civ: 
           <ArrowLeft size={14} />
         </button>
         <span className="civ-panel-name" style={{ color: civ.color }}>{civ.name.toUpperCase()}</span>
-        {!civ.alive && (
+        {!civ.alive && civ.ascended && (
+          <span className="tag tag-ascended">{t('nat.ascended')} {civ.deathYear !== null ? `· ${civ.deathYear}` : ''}</span>
+        )}
+        {!civ.alive && !civ.ascended && (
           <span className="tag tag-dead"><Skull size={11} /> {t('nat.extinct')} {civ.deathYear !== null ? `· ${civ.deathYear}` : ''}</span>
         )}
         <button className="icon-btn" onClick={() => focusOn(Math.round(civ.cx), Math.round(civ.cy))} title={t('nat.locate')} disabled={!civ.alive}>

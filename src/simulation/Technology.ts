@@ -36,6 +36,8 @@ export const TECHNOLOGIES: Technology[] = [
   { id: 'electricity', name: 'Electricity', nameZh: '电力', cost: 20000, requirements: ['industry'], effects: { economyMult: 1.5, scienceMult: 1.3 }, blurb: 'Economy +50%, science +30%.', blurbZh: '经济 +50%，科研 +30%。' },
   { id: 'computing', name: 'Computing', nameZh: '计算机', cost: 35000, requirements: ['electricity'], effects: { scienceMult: 2 }, blurb: 'Science +100%.', blurbZh: '科研 +100%。' },
   { id: 'ai', name: 'Artificial Intelligence', nameZh: '人工智能', cost: 60000, requirements: ['computing'], effects: { scienceMult: 3, economyMult: 2 }, blurb: 'Science +200%, economy +100%.', blurbZh: '科研 +200%，经济 +100%。' },
+  { id: 'spaceflight', name: 'Spaceflight', nameZh: '星际航行', cost: 150000, requirements: ['ai'], effects: { scienceMult: 1.5, economyMult: 1.5 }, blurb: 'Orbital mining: minerals from space, immune to depletion. Science +50%, economy +50%.', blurbZh: '轨道采矿：矿物取自太空，不再受枯竭限制。科研 +50%，经济 +50%。' },
+  { id: 'transcendence', name: 'Dimensional Transcendence', nameZh: '维度跃迁', cost: 400000, requirements: ['spaceflight'], effects: {}, blurb: 'Open a gate beyond this world. The civilization will begin to leave.', blurbZh: '打开通往世界之外的门。这个文明将开始离开。' },
 ];
 
 export const TECH_BY_ID: Map<string, Technology> = new Map(TECHNOLOGIES.map((t) => [t.id, t]));
@@ -89,5 +91,7 @@ export function techEraKey(count: number): string {
   if (count <= 7) return 'renaissance';
   if (count <= 8) return 'industrial';
   if (count <= 10) return 'modern';
-  return 'information';
+  if (count <= 11) return 'information';
+  if (count <= 12) return 'stellar';
+  return 'transcendent';
 }

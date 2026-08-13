@@ -175,9 +175,10 @@ function NationsPanel({ universe }: { universe: Universe }): JSX.Element {
         <>
           <div className="section-title">{t('nat.fallen')}</div>
           {dead.map((c) => (
-            <button key={c.id} className="civ-row civ-row-dead" onClick={() => selectCiv(c.id)}>
+            <button key={c.id} className={`civ-row ${c.ascended ? 'civ-row-ascended' : 'civ-row-dead'}`} onClick={() => selectCiv(c.id)}>
               <span className="dot" style={{ background: c.color }} />
               <span className="civ-row-name">{c.name}</span>
+              {c.ascended && <span className="tag tag-ascended">{t('nat.ascended')}</span>}
               <span className="muted small">
                 {c.foundedYear} – {c.deathYear}
               </span>

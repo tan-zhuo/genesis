@@ -43,7 +43,7 @@ export function ComparePanel({ universe }: { universe: Universe }): JSX.Element 
       { label: t('cmp.civilizations'), value: `${alive.length}` },
       { label: t('cmp.cities'), value: `${s.cities.length}` },
       { label: t('cmp.warsFought'), value: `${totalWars}` },
-      { label: t('cmp.maxTech'), value: `${Math.max(0, ...alive.map((c) => c.technologyLevel))}/11` },
+      { label: t('cmp.maxTech'), value: `${Math.max(0, ...alive.map((c) => c.technologyLevel))}/13` },
       { label: t('cmp.extinctions'), value: `${s.civs.filter((c) => !c.alive).length}` },
     ];
   };

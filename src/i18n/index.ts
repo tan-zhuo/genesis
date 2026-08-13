@@ -278,6 +278,7 @@ const en: Record<string, string> = {
   'nat.fallen': 'Fallen civilizations',
   'nat.citiesCount': '{n} cities',
   'nat.extinct': 'extinct',
+  'nat.ascended': 'ascended',
   'nat.locate': 'Locate on map',
   'nat.back': 'Back to list',
   'nat.territory': 'Territory',
@@ -321,6 +322,8 @@ const en: Record<string, string> = {
   'era.industrial': 'Industrial',
   'era.modern': 'Modern',
   'era.information': 'Information',
+  'era.stellar': 'Stellar',
+  'era.transcendent': 'Transcendent',
 
   // Tech tree
   'tech.all': 'All',
@@ -702,6 +705,7 @@ const zh: Record<string, string> = {
   'nat.fallen': '消亡的文明',
   'nat.citiesCount': '{n} 座城市',
   'nat.extinct': '已消亡',
+  'nat.ascended': '已升维',
   'nat.locate': '在地图上定位',
   'nat.back': '返回列表',
   'nat.territory': '领土',
@@ -743,6 +747,8 @@ const zh: Record<string, string> = {
   'era.industrial': '工业时代',
   'era.modern': '现代',
   'era.information': '信息时代',
+  'era.stellar': '星际时代',
+  'era.transcendent': '超越时代',
 
   'tech.all': '全部',
   'tech.waiting': '等待世界生成…',

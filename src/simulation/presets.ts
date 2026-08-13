@@ -239,6 +239,7 @@ function baseConfig(seed: string, civs: CivConfig[], rules: Rule[]): WorldConfig
     seaLevel: 0.5,
     resourceRichness: 1,
     disasterFrequency: 1,
+    finiteResources: true,
     civs,
     rules,
   };

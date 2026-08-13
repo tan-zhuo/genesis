@@ -1,7 +1,7 @@
 // Core shared types for the simulation engine.
 // The engine is pure TypeScript: it must never import React or DOM types.
 
-export const SIM_VERSION = '1.0.0';
+export const SIM_VERSION = '1.2.0';
 
 export type Terrain = 'ocean' | 'plains' | 'forest' | 'desert' | 'mountain' | 'tundra';
 
@@ -57,6 +57,7 @@ export interface WorldMap {
   owner: Int16Array; // civ index or -1
   population: Float32Array;
   city: Int16Array; // city index or -1
+  deposits: Float32Array; // finite-resource reserves (minerals) / forest health, 0..~1.3
 }
 
 export interface Traits {
@@ -149,6 +150,8 @@ export interface Civilization {
 
   alive: boolean;
   deathYear: number | null;
+  ascended: boolean; // left this world through transcendence (not extinction)
+  ascendingSince: number | null; // year the portal opened
 
   // faith & memory (the philosophical layer)
   faith: {
@@ -217,7 +220,8 @@ export type WorldEventType =
   | 'divine'
   | 'prayer'
   | 'faith'
-  | 'philosophy';
+  | 'philosophy'
+  | 'ascension';
 
 // ---- Divine interventions (the player's hand) ----
 // Interventions are part of the world's "recipe": they are recorded with the
@@ -345,6 +349,7 @@ export interface WorldConfig {
   civs: CivConfig[];
   rules: Rule[];
   interventions?: Intervention[];
+  finiteResources?: boolean; // default true: mines exhaust, forests fall, soil tires
 }
 
 // ---- Statistics / history ----
@@ -369,6 +374,7 @@ export interface CivHistory {
 }
 
 export interface Epitaph {
+  ascended?: boolean; // a monument, not a grave
   civId: string;
   name: string;
   color: string;
@@ -406,6 +412,7 @@ export interface WorldState {
   disasters: { untilYear: number; x: number; y: number; radius: number; type: string }[];
   epitaphs: Epitaph[];
   godName: GodName | null;
+  mapVersion: number; // bumped when terrain/resources/fertility mutate
   landTilesCache?: number;
 }
 
@@ -444,6 +451,7 @@ export interface CivSummary {
   devotion: number;
   doctrine: string | null;
   pendingPrayer: { year: number; kind: string } | null;
+  ascended: boolean;
 }
 
 export interface CitySummary {
@@ -496,6 +504,7 @@ export interface Snapshot {
   interventions: Intervention[]; // recorded divine interventions (part of the recipe)
   epitaphs: Epitaph[];
   godName: GodName | null;
+  mapUpdate?: { version: number; terrain: Uint8Array; resources: Uint8Array; fertility: Float32Array };
 }
 
 export interface MapStatic {

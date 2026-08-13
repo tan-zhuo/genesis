@@ -67,6 +67,7 @@ export const EVENT_ICONS: Partial<Record<WorldEventType, LucideIcon>> = {
   prayer: Church,
   faith: Church,
   philosophy: ScrollText,
+  ascension: Rocket,
 };
 
 export const GOD_TOOL_ICONS: Record<string, LucideIcon> = {
@@ -115,6 +116,8 @@ export const ACHIEVEMENT_ICONS: Record<string, LucideIcon> = {
   peacemaker: Bird,
   gardener: Sprout,
   'world-at-war': Globe2,
+  stellar: Rocket,
+  ascension: Sparkles,
 };
 
 export const SCENARIO_ICONS: Record<string, LucideIcon> = {

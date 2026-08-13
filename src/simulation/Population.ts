@@ -28,10 +28,12 @@ export function produceFood(world: WorldState, civ: Civilization): FoodReport {
 
   // Other resource stockpiles accumulate slowly, capped to avoid runaway numbers.
   const ind = tech.industry;
+  // Spaceflight: orbital mining — the planet is finite, the sky is not.
+  const orbital = civ.researchedTechs.includes('spaceflight') ? 6 : 0;
   civ.wood = Math.min(1e7, civ.wood + civ.yields.wood * 2 * ind);
-  civ.stone = Math.min(1e7, civ.stone + civ.yields.stone * 1.5 * ind);
-  civ.iron = Math.min(1e7, civ.iron + civ.yields.iron * 1.2 * ind);
-  civ.gold = Math.min(1e9, civ.gold + civ.yields.gold * 1.0 * ind + civ.economy * 0.2);
+  civ.stone = Math.min(1e7, civ.stone + (civ.yields.stone + orbital * 0.7) * 1.5 * ind);
+  civ.iron = Math.min(1e7, civ.iron + (civ.yields.iron + orbital) * 1.2 * ind);
+  civ.gold = Math.min(1e9, civ.gold + (civ.yields.gold + orbital * 0.5) * 1.0 * ind + civ.economy * 0.2);
 
   return { produced, needed, ratio };
 }
