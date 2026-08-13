@@ -96,6 +96,9 @@ export function buildSnapshot(
       foodPerCapita: c.population > 0 ? c.yields.food / c.population : 0,
       cx: c.territory > 0 ? c.sumX / c.territory : 0,
       cy: c.territory > 0 ? c.sumY / c.territory : 0,
+      devotion: c.faith.devotion,
+      doctrine: c.faith.doctrine,
+      pendingPrayer: c.faith.pendingPrayer ? { ...c.faith.pendingPrayer } : null,
     };
   });
 
@@ -162,5 +165,7 @@ export function buildSnapshot(
     events: newEvents,
     landTiles,
     interventions: [...(world.config.interventions ?? [])],
+    epitaphs: [...world.epitaphs],
+    godName: world.godName ? { ...world.godName } : null,
   };
 }

@@ -41,6 +41,9 @@ First run: click **Explore Example World** — a 200×200 world with 5 civilizat
 - **Play god**: 9 divine intervention tools — hurl meteors, unleash plagues, split the earth, bless or blight the land, will new civilizations into being, spark golden ages, incite wars, force peace. Interventions are recorded into the world's recipe and replay deterministically — branch a universe to compare history *with and without* your meddling
 - **Achievements**: 16 observer milestones (witness the first war, an empire's rise, an extinction, reach AI, survive 10,000 years, wield the hand of god…), persisted across worlds
 - **Historic-moment banners**: major events (wars, collapses, empires, divine acts) slide in over the map — click to jump there, or enable auto-pause on historic events
+- **Faith & the observer**: doctrines crystallize out of each civilization's lived history (harvest cults, storm cults, atheist "Silent Sky" scholars…) and permanently reshape their character; nations **pray to you** when starving, plagued, or losing wars — answer within a generation and devotion soars, stay silent and temples empty; the world's prophets **name you** from your deeds (The Star-Hurler, The Gardener, The Silent One…); fallen nations leave clickable **ruins with epitaphs**, and philosophers ask questions their history taught them to ask
+- **Night-lights map & chronicle mode**: a "civilization lights" view where city glow shifts from firelight to electric white as technology advances, crisp political borders, burning war-front pixels, and a cinematic chronicle mode where the camera drifts to wherever history is happening
+- **Scenario challenges**: six win/fail scripts — keep every nation alive for 5,000 years without touching anything, set a peaceful world ablaze with only 3 interventions, reach AI before year 3,000, witness an empire rise and fall as a purely silent god…
 
 ## Architecture
 
@@ -151,6 +154,9 @@ npm run dev      # 打开 http://localhost:5173
 - **扮演上帝**：9 种神之手干预工具 —— 掷陨星、放瘟疫、裂大地、赐福/枯萎土地、凭空创生文明、开启黄金时代、挑动战争、强制和平。干预会记入世界配方并确定性重放 —— 分支一个宇宙，对比"有你插手"和"没你插手"的两段历史
 - **成就系统**：16 个观察者里程碑（见证第一场战争、帝国崛起、文明灭绝、抵达 AI、模拟一万年、初次动用神之手……），跨世界持久保存
 - **历史时刻横幅**：重大事件（战争、灭亡、帝国、神迹）滑入地图上方 —— 点击即可跳转现场，也可开启"历史时刻自动暂停"
+- **信仰与观察者**：信条从每个文明亲历的历史中结晶（丰饶之道、风暴崇拜、无神论的"寂空之思"……）并永久重塑其民族性格；国家会在饥荒、瘟疫、战败时**向你祈祷** —— 一代人之内回应则虔诚高涨，保持沉默则神庙冷清；世界的先知会依据你的所作所为**为你命名**（掷星者、播绿者、沉默者……）；亡国留下可点击的**废墟与墓志铭**，思想家会问出被自身历史塑造的问题
+- **文明夜灯与编年史模式**：城市光辉随科技从篝火橙演进为电力蓝白的"夜晚地球"视图、清晰国界描边、燃烧的战线像素、镜头自动飘向历史现场的电影化编年史模式
+- **剧本挑战**：六个带胜负判定的剧本 —— 零干预守护所有国家活满 5000 年、只用 3 次干预点燃和平世界、3000 年前抵达 AI、以纯粹沉默之神的身份见证帝国兴亡……
 
 ## 架构与设计
 

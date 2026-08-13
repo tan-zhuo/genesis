@@ -150,6 +150,18 @@ export interface Civilization {
   alive: boolean;
   deathYear: number | null;
 
+  // faith & memory (the philosophical layer)
+  faith: {
+    devotion: number; // -100 (defiant) .. 100 (devout) — attitude toward the observer
+    doctrine: string | null; // adopted doctrine id (see Faith.ts)
+    doctrineYear: number;
+    pendingPrayer: { year: number; kind: 'famine' | 'war' | 'plague' | 'decline' } | null;
+    lastPrayerYear: number;
+    miracles: number; // nurturing interventions received
+    wraths: number; // destructive interventions received
+  };
+  memory: { wars: number; disasters: number; famineYears: number };
+
   // internal engine bookkeeping
   tiles: number[]; // owned tile indices (order = deterministic claim order)
   frontier: number[]; // candidate expansion tile indices
@@ -202,7 +214,10 @@ export type WorldEventType =
   | 'disaster'
   | 'alliance'
   | 'empire'
-  | 'divine';
+  | 'divine'
+  | 'prayer'
+  | 'faith'
+  | 'philosophy';
 
 // ---- Divine interventions (the player's hand) ----
 // Interventions are part of the world's "recipe": they are recorded with the
@@ -353,6 +368,23 @@ export interface CivHistory {
   military: number[];
 }
 
+export interface Epitaph {
+  civId: string;
+  name: string;
+  color: string;
+  x: number;
+  y: number;
+  foundedYear: number;
+  deathYear: number;
+  textEn: string;
+  textZh: string;
+}
+
+export interface GodName {
+  id: string; // title id from Faith.ts
+  sinceYear: number;
+}
+
 export interface WorldState {
   version: string;
   config: WorldConfig;
@@ -372,6 +404,8 @@ export interface WorldState {
   totalWars: number;
   totalTradeDeals: number;
   disasters: { untilYear: number; x: number; y: number; radius: number; type: string }[];
+  epitaphs: Epitaph[];
+  godName: GodName | null;
   landTilesCache?: number;
 }
 
@@ -407,6 +441,9 @@ export interface CivSummary {
   foodPerCapita: number;
   cx: number; // territory centroid (map coords)
   cy: number;
+  devotion: number;
+  doctrine: string | null;
+  pendingPrayer: { year: number; kind: string } | null;
 }
 
 export interface CitySummary {
@@ -457,6 +494,8 @@ export interface Snapshot {
   events: WorldEvent[]; // full (capped) event log
   landTiles: number;
   interventions: Intervention[]; // recorded divine interventions (part of the recipe)
+  epitaphs: Epitaph[];
+  godName: GodName | null;
 }
 
 export interface MapStatic {

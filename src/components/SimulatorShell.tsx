@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import {
   BookOpen,
+  Clapperboard,
   Download,
   Home,
   Languages,
@@ -21,12 +22,14 @@ import { GodToolbar } from './GodToolbar';
 import { EventBanner } from './EventBanner';
 import { AchievementsPanel } from './AchievementsPanel';
 import { checkAchievements, loadUnlocked } from '../utils/achievements';
+import { getScenario } from '../utils/scenarios';
+import { ScenarioHud } from './ScenarioHud';
 import { configToShareUrl, exportConfig, importConfig } from '../utils/serialization';
 import { fmtNum } from '../utils/format';
 import { useI18nStore, useT } from '../i18n';
 import { useLang } from '../i18n';
 
-const MAP_MODES: MapMode[] = ['political', 'population', 'terrain', 'resources', 'technology', 'economy', 'military', 'culture'];
+const MAP_MODES: MapMode[] = ['political', 'night', 'population', 'terrain', 'resources', 'technology', 'economy', 'military', 'culture'];
 
 export function SimulatorShell(): JSX.Element {
   const universe = useActiveUniverse();
@@ -40,6 +43,8 @@ export function SimulatorShell(): JSX.Element {
   const setSidebarOpen = useSimulatorStore((s) => s.setSidebarOpen);
   const setShowSummary = useSimulatorStore((s) => s.setShowSummary);
   const setShowAchievements = useSimulatorStore((s) => s.setShowAchievements);
+  const cinema = useSimulatorStore((s) => s.cinema);
+  const setCinema = useSimulatorStore((s) => s.setCinema);
   const showToast = useSimulatorStore((s) => s.showToast);
   const uiLang = useLang();
   const unlockedRef = useRef<Set<string> | null>(null);
@@ -60,14 +65,26 @@ export function SimulatorShell(): JSX.Element {
         else play();
       } else if (e.key === '.') {
         step();
+      } else if (e.key === 'Escape' && useSimulatorStore.getState().cinema) {
+        setCinema(false);
       }
     },
-    [universe?.running, play, pause, step],
+    [universe?.running, play, pause, step, setCinema],
   );
   useEffect(() => {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onKey]);
+
+  // Scenario win/fail checks.
+  const setScenarioOutcome = useSimulatorStore((s) => s.setScenarioOutcome);
+  useEffect(() => {
+    if (!universe?.snapshot || !universe.scenario || universe.scenario.outcome) return;
+    const def = getScenario(universe.scenario.id);
+    if (!def) return;
+    const outcome = def.check(universe.snapshot, universe.events);
+    if (outcome) setScenarioOutcome(universe.id, outcome);
+  }, [universe?.snapshot, universe?.events, universe?.scenario, universe?.id, setScenarioOutcome]);
 
   // Achievement checks on every snapshot.
   useEffect(() => {
@@ -168,7 +185,7 @@ export function SimulatorShell(): JSX.Element {
   };
 
   return (
-    <div className="sim-root">
+    <div className={`sim-root ${cinema ? 'cinema-mode' : ''}`}>
       <header className="topbar">
         <button className="icon-btn" onClick={() => setScreen('landing')} title={t('top.home')}>
           <Home size={16} />
@@ -202,6 +219,16 @@ export function SimulatorShell(): JSX.Element {
               ))}
             </select>
           )}
+          <button
+            className={`icon-btn ${cinema ? 'icon-active' : ''}`}
+            onClick={() => {
+              setCinema(!cinema);
+              if (!cinema) showToast(t('cinema.on'));
+            }}
+            title={t('cinema.title')}
+          >
+            <Clapperboard size={15} />
+          </button>
           <button className="icon-btn lang-btn" onClick={() => setLang(lang === 'en' ? 'zh' : 'en')} title="Language / 语言">
             <Languages size={14} />
             <span className="lang-label">{lang === 'en' ? '中' : 'EN'}</span>
@@ -262,6 +289,7 @@ export function SimulatorShell(): JSX.Element {
           <WorldCanvas universe={universe} />
           <GodToolbar />
           <EventBanner universe={universe} />
+          <ScenarioHud universe={universe} />
           <SimulationControls universe={universe} />
         </div>
 

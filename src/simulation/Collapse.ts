@@ -125,6 +125,7 @@ export function runRebirth(world: WorldState, rng: SeededRandom): void {
     for (const t of civ.tiles) m.population[t] += boost;
     civ.population += 300;
   }
+  const nearRuin = world.epitaphs.find((e) => (e.x - bx) ** 2 + (e.y - by) ** 2 <= 144);
   addEvent(world, {
     year: world.year,
     type: 'birth',
@@ -133,12 +134,16 @@ export function runRebirth(world: WorldState, rng: SeededRandom): void {
     description:
       aliveCount === 0
         ? `Out of a silent world, survivors gathered among old ruins. They call themselves the ${demonym(civ.name)} — and history begins again.`
-        : `In the unclaimed wilds, scattered peoples united into a new nation: ${civ.name}.`,
+        : nearRuin
+          ? `Among the ruins of ${nearRuin.name}, wanderers found old writing and called the ancients giants. They named themselves ${civ.name}, and swore to do better.`
+          : `In the unclaimed wilds, scattered peoples united into a new nation: ${civ.name}.`,
     titleZh: `${civ.name}崛起`,
     descriptionZh:
       aliveCount === 0
         ? `在一片死寂的世界上，幸存者聚集于古老的废墟之间。他们自称${civ.name}人 — 历史再次开始。`
-        : `在无主的荒野中，散落的部族联合成一个新的国家：${civ.name}。`,
+        : nearRuin
+          ? `在${nearRuin.name}的废墟之间，流浪者发现了旧日的文字，并把先民称作巨人。他们自名为${civ.name}，并发誓要做得更好。`
+          : `在无主的荒野中，散落的部族联合成一个新的国家：${civ.name}。`,
     importance: 8,
     x: bx,
     y: by,

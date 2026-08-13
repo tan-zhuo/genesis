@@ -45,6 +45,9 @@ export function WorldCanvas({ universe }: Props): JSX.Element {
   const wrapRef = useRef<HTMLDivElement>(null);
   const terrainCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const overlayCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const warFrontCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const lightsCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const targetViewRef = useRef<ViewTransform | null>(null);
   const viewRef = useRef<ViewTransform>({ x: 0, y: 0, scale: 3 });
   const [hoverTile, setHoverTile] = useState<{ x: number; y: number; sx: number; sy: number } | null>(null);
   const dragRef = useRef<{ startX: number; startY: number; panX: number; panY: number; moved: boolean; pointerId: number } | null>(null);
@@ -64,6 +67,11 @@ export function WorldCanvas({ universe }: Props): JSX.Element {
   const setInspectorTab = useSimulatorStore((s) => s.setInspectorTab);
   const godTool = useSimulatorStore((s) => s.godTool);
   const intervene = useSimulatorStore((s) => s.intervene);
+  const cinema = useSimulatorStore((s) => s.cinema);
+  const cinemaRef = useRef(cinema);
+  useEffect(() => {
+    cinemaRef.current = cinema;
+  }, [cinema]);
   const godToolRef = useRef(godTool);
   const hoverTileRef = useRef<{ x: number; y: number } | null>(null);
   useEffect(() => {
@@ -170,17 +178,90 @@ export function WorldCanvas({ universe }: Props): JSX.Element {
       });
     };
 
-    if (mapMode === 'political') {
+    // War-front layer (rebuilt alongside the political overlay)
+    let wf = warFrontCanvasRef.current;
+    if (!wf || wf.width !== mapStatic.width) {
+      wf = document.createElement('canvas');
+      wf.width = mapStatic.width;
+      wf.height = mapStatic.height;
+      warFrontCanvasRef.current = wf;
+    }
+    const wfCtx = wf.getContext('2d')!;
+    wfCtx.clearRect(0, 0, wf.width, wf.height);
+
+    if (mapMode === 'political' || mapMode === 'night') {
+      const W = mapStatic.width;
+      const H = mapStatic.height;
+      const warPairs = new Set<string>();
+      for (const w of snapshot.wars) {
+        if (w.endYear !== null) continue;
+        const a = parseInt(w.attackerId.slice(4), 10);
+        const b = parseInt(w.defenderId.slice(4), 10);
+        warPairs.add(a < b ? `${a}-${b}` : `${b}-${a}`);
+      }
+      const wfImg = wfCtx.createImageData(W, H);
+      const night = mapMode === 'night';
       for (let i = 0; i < n; i++) {
         const o = owner[i];
-        if (o >= 0 && civColors[o]) {
-          const sel = selectedCivId !== null && snapshot.civs[o]?.id === selectedCivId;
-          const [r, g, b] = civColors[o];
+        if (o < 0 || !civColors[o]) continue;
+        const x = i % W;
+        const yy = (i / W) | 0;
+        const right = x < W - 1 ? owner[i + 1] : -2;
+        const down = yy < H - 1 ? owner[i + W] : -2;
+        const isBorder = (right !== -2 && right !== o) || (down !== -2 && down !== o);
+        const sel = selectedCivId !== null && snapshot.civs[o]?.id === selectedCivId;
+        const [r, g, b] = civColors[o];
+        if (!night) {
           data[i * 4] = r;
           data[i * 4 + 1] = g;
           data[i * 4 + 2] = b;
-          data[i * 4 + 3] = sel ? 235 : 165;
+          data[i * 4 + 3] = isBorder ? 255 : sel ? 200 : 110;
+        } else if (isBorder) {
+          data[i * 4] = r;
+          data[i * 4 + 1] = g;
+          data[i * 4 + 2] = b;
+          data[i * 4 + 3] = 130;
         }
+        // Burning front between two civs at war
+        if (isBorder) {
+          const others = [right, down].filter((v) => v >= 0 && v !== o);
+          for (const other of others) {
+            const key = o < other ? `${o}-${other}` : `${other}-${o}`;
+            if (warPairs.has(key)) {
+              wfImg.data[i * 4] = 255;
+              wfImg.data[i * 4 + 1] = 90;
+              wfImg.data[i * 4 + 2] = 40;
+              wfImg.data[i * 4 + 3] = 255;
+            }
+          }
+        }
+      }
+      wfCtx.putImageData(wfImg, 0, 0);
+
+      // Night lights layer: brightness from population, hue from tech era.
+      if (night) {
+        let lc = lightsCanvasRef.current;
+        if (!lc || lc.width !== W) {
+          lc = document.createElement('canvas');
+          lc.width = W;
+          lc.height = H;
+          lightsCanvasRef.current = lc;
+        }
+        const lcCtx = lc.getContext('2d')!;
+        const lImg = lcCtx.createImageData(W, H);
+        for (let i = 0; i < n; i++) {
+          const p = pop[i];
+          if (p < 40) continue;
+          const o = owner[i];
+          const tech = o >= 0 ? snapshot.civs[o]?.technologyLevel ?? 1 : 1;
+          const lum = Math.min(1, Math.log10(p + 1) / 5.2);
+          const eraT = Math.min(1, tech / 11); // 0 firelight -> 1 electric
+          lImg.data[i * 4] = 255 * lum;
+          lImg.data[i * 4 + 1] = (140 + eraT * 110) * lum;
+          lImg.data[i * 4 + 2] = (40 + eraT * 215) * lum;
+          lImg.data[i * 4 + 3] = 255 * lum;
+        }
+        lcCtx.putImageData(lImg, 0, 0);
       }
     } else if (mapMode === 'population') {
       let max = 100;
@@ -229,13 +310,13 @@ export function WorldCanvas({ universe }: Props): JSX.Element {
     ctx.putImageData(img, 0, 0);
   }, [mapStatic, snapshot, mapMode, civColors, selectedCivId]);
 
-  // --- Focus animation ---
+  // --- Focus animation: smooth glide to the target tile ---
   useEffect(() => {
     if (!focusTile || !wrapRef.current || !mapStatic) return;
     const rect = wrapRef.current.getBoundingClientRect();
     const v = viewRef.current;
     const targetScale = Math.max(v.scale, 5);
-    viewRef.current = {
+    targetViewRef.current = {
       scale: targetScale,
       x: rect.width / 2 - focusTile.x * targetScale,
       y: rect.height / 2 - focusTile.y * targetScale,
@@ -262,15 +343,64 @@ export function WorldCanvas({ universe }: Props): JSX.Element {
       ctx.fillStyle = '#070a10';
       ctx.fillRect(0, 0, rect.width, rect.height);
 
+      // Camera glide (focus jumps + cinematic drift)
+      const target = targetViewRef.current;
+      if (target) {
+        const v0 = viewRef.current;
+        viewRef.current = {
+          x: v0.x + (target.x - v0.x) * 0.08,
+          y: v0.y + (target.y - v0.y) * 0.08,
+          scale: v0.scale + (target.scale - v0.scale) * 0.08,
+        };
+        if (Math.abs(target.x - v0.x) < 0.5 && Math.abs(target.y - v0.y) < 0.5 && Math.abs(target.scale - v0.scale) < 0.01) {
+          targetViewRef.current = null;
+        }
+      } else if (cinemaRef.current) {
+        const tt = performance.now() / 1000;
+        viewRef.current = {
+          ...viewRef.current,
+          x: viewRef.current.x + Math.sin(tt * 0.11) * 0.12,
+          y: viewRef.current.y + Math.cos(tt * 0.07) * 0.09,
+        };
+      }
+
       const v = viewRef.current;
       ctx.imageSmoothingEnabled = v.scale < 2.5;
+      const night = mapMode === 'night';
       const terrain = terrainCanvasRef.current;
       if (terrain) {
         ctx.drawImage(terrain, v.x, v.y, terrain.width * v.scale, terrain.height * v.scale);
+        if (night) {
+          ctx.fillStyle = 'rgba(3, 5, 12, 0.86)';
+          ctx.fillRect(v.x, v.y, terrain.width * v.scale, terrain.height * v.scale);
+        }
       }
       const overlay = overlayCanvasRef.current;
       if (overlay && mapMode !== 'terrain') {
         ctx.drawImage(overlay, v.x, v.y, overlay.width * v.scale, overlay.height * v.scale);
+      }
+      // Night lights: soft halo pass + sharp core pass, additively blended.
+      const lights = lightsCanvasRef.current;
+      if (night && lights && terrain) {
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.imageSmoothingEnabled = true;
+        const flicker = 0.9 + 0.1 * Math.sin(performance.now() / 700);
+        ctx.globalAlpha = 0.55 * flicker;
+        ctx.filter = 'blur(6px)';
+        ctx.drawImage(lights, v.x, v.y, terrain.width * v.scale, terrain.height * v.scale);
+        ctx.filter = 'none';
+        ctx.globalAlpha = 0.95;
+        ctx.drawImage(lights, v.x, v.y, terrain.width * v.scale, terrain.height * v.scale);
+        ctx.restore();
+      }
+      // Burning war fronts
+      const wfLayer = warFrontCanvasRef.current;
+      if (wfLayer && terrain && (mapMode === 'political' || night)) {
+        ctx.save();
+        ctx.globalAlpha = 0.5 + 0.4 * Math.sin(performance.now() / 220);
+        ctx.drawImage(wfLayer, v.x, v.y, terrain.width * v.scale, terrain.height * v.scale);
+        ctx.restore();
       }
 
       const snap = universe.snapshot;
@@ -314,6 +444,26 @@ export function WorldCanvas({ universe }: Props): JSX.Element {
             ctx.font = '14px sans-serif';
             ctx.textAlign = 'center';
             ctx.fillText('⚔', mx, my + 5);
+          }
+          ctx.restore();
+        }
+
+        // Ruins of fallen civilizations
+        if (snap.epitaphs.length > 0 && mapMode !== 'terrain') {
+          ctx.save();
+          for (const ep of snap.epitaphs) {
+            const sx = v.x + (ep.x + 0.5) * v.scale;
+            const sy = v.y + (ep.y + 0.5) * v.scale;
+            if (sx < -20 || sy < -20 || sx > rect.width + 20 || sy > rect.height + 20) continue;
+            const h = Math.max(4, v.scale * 1.4);
+            ctx.strokeStyle = 'rgba(170, 178, 194, 0.75)';
+            ctx.lineWidth = Math.max(1, v.scale * 0.3);
+            ctx.beginPath();
+            ctx.moveTo(sx, sy + h * 0.4);
+            ctx.lineTo(sx, sy - h * 0.6);
+            ctx.moveTo(sx - h * 0.32, sy - h * 0.25);
+            ctx.lineTo(sx + h * 0.32, sy - h * 0.25);
+            ctx.stroke();
           }
           ctx.restore();
         }
@@ -428,6 +578,7 @@ export function WorldCanvas({ universe }: Props): JSX.Element {
 
   const onWheel = useCallback((e: React.WheelEvent): void => {
     if (!wrapRef.current) return;
+    targetViewRef.current = null;
     const rect = wrapRef.current.getBoundingClientRect();
     const v = viewRef.current;
     const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
@@ -450,6 +601,7 @@ export function WorldCanvas({ universe }: Props): JSX.Element {
       dragRef.current = null;
       return;
     }
+    targetViewRef.current = null;
     dragRef.current = {
       startX: e.clientX,
       startY: e.clientY,
@@ -611,7 +763,7 @@ function MapLegend({ mode, snapshot }: { mode: MapMode; snapshot: Snapshot | nul
   return (
     <div className="map-legend">
       <div className="legend-title">{t(`mode.${mode}`)}</div>
-      {mode === 'political' && snapshot && (
+      {(mode === 'political' || mode === 'night') && snapshot && (
         <div className="legend-items">
           {snapshot.civs.filter((c) => c.alive).slice(0, 12).map((c) => (
             <div className="legend-item" key={c.id}>

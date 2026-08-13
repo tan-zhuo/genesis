@@ -53,7 +53,10 @@ export function growPopulation(world: WorldState, civ: Civilization, food: FoodR
 
   // Deaths
   let deathRate = 0.019;
-  if (food.ratio < 0.75) deathRate += (0.75 - food.ratio) * 0.12; // true famine
+  if (food.ratio < 0.75) {
+    deathRate += (0.75 - food.ratio) * 0.12; // true famine
+    civ.memory.famineYears++;
+  }
   if (crowding > 1.15) deathRate += Math.min(0.04, (crowding - 1.15) * 0.05); // density disease
   if (civ.warYears > 0) deathRate += 0.004; // wartime attrition beyond battle losses
   deathRate *= 0.9 + rng.next() * 0.2; // small deterministic yearly variance

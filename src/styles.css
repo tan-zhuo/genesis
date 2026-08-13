@@ -444,6 +444,73 @@ input[type='checkbox'] { accent-color: var(--accent); }
 
 .historic-check { font-size: 11px; white-space: nowrap; }
 
+/* ---------- Scenarios ---------- */
+.scenario-chip {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(10, 14, 22, 0.9);
+  border: 1px solid var(--border-strong);
+  border-radius: 20px;
+  padding: 5px 13px;
+  font-size: 12px;
+  z-index: 6;
+}
+.scenario-chip-name { font-weight: 700; }
+.scenario-win { border-color: var(--good); color: var(--good); }
+.scenario-fail { border-color: var(--danger); color: var(--danger); }
+.scenario-modal { max-width: 480px; text-align: center; }
+.scenario-verdict { font-size: 14px; letter-spacing: 0.22em; font-weight: 800; margin-bottom: 10px; }
+.verdict-win { color: var(--good); }
+.verdict-fail { color: var(--danger); }
+.scenario-modal-name { font-size: 22px; margin-bottom: 8px; }
+.scenario-modal-desc { color: var(--text-muted); font-size: 13px; line-height: 1.6; margin-bottom: 16px; }
+.scenario-modal-actions { display: flex; gap: 10px; justify-content: center; margin-top: 6px; }
+.scenario-card { border-color: rgba(245, 165, 36, 0.25); }
+
+/* ---------- Cinema mode ---------- */
+.cinema-mode .sidebar,
+.cinema-mode .inspector,
+.cinema-mode .topbar-stats { display: none; }
+.cinema-mode .god-toolbar { opacity: 0.25; transition: opacity 0.2s; }
+.cinema-mode .god-toolbar:hover { opacity: 1; }
+.icon-active { color: var(--accent); background: rgba(245, 165, 36, 0.12); }
+
+/* ---------- Faith panel ---------- */
+.god-card {
+  background: linear-gradient(160deg, rgba(245, 165, 36, 0.10), rgba(13, 17, 25, 0.6));
+  border: 1px solid var(--accent-dim);
+  border-radius: 6px;
+  padding: 16px;
+  text-align: center;
+  margin-bottom: 14px;
+}
+.god-card-label { font-size: 10px; letter-spacing: 0.22em; color: var(--text-muted); }
+.god-card-name { font-size: 24px; font-weight: 800; color: var(--accent); margin: 6px 0 4px; letter-spacing: 0.06em; }
+.faith-row { display: block; width: 100%; text-align: left; padding: 8px; border-radius: var(--radius); border: 1px solid transparent; }
+.faith-row:hover { background: var(--bg-hover); border-color: var(--border); }
+.faith-row-head { display: flex; align-items: center; gap: 7px; }
+.faith-row-name { font-weight: 600; flex: 1; }
+.faith-doctrine { font-size: 11px; color: var(--text-muted); }
+.devotion-track { position: relative; height: 5px; background: var(--bg-raised); border-radius: 3px; margin: 6px 0 4px; overflow: hidden; }
+.devotion-zero { position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: var(--border-strong); }
+.devotion-fill { position: absolute; top: 0; bottom: 0; border-radius: 2px; }
+.devotion-pos { background: var(--accent); }
+.devotion-neg { background: #7ce2fe; }
+.faith-row-foot { display: flex; justify-content: space-between; gap: 8px; }
+.prayer-flag { color: var(--accent); animation: pulse 1.6s infinite; }
+.epitaph-row { display: flex; gap: 9px; width: 100%; text-align: left; padding: 8px; border-radius: var(--radius); border-left: 2px solid var(--border-strong); background: var(--bg-raised); margin-bottom: 6px; }
+.epitaph-row:hover { background: var(--bg-hover); }
+.epitaph-marker { font-size: 15px; }
+.epitaph-name { font-size: 12px; font-weight: 700; }
+.epitaph-text { font-size: 12px; color: var(--text-muted); line-height: 1.55; font-style: italic; margin-top: 2px; }
+.doctrine-legend { display: flex; flex-direction: column; gap: 6px; }
+.doctrine-item { display: flex; gap: 9px; font-size: 12px; align-items: flex-start; }
+.doctrine-item > span { font-size: 15px; }
+
 /* ---------- Controls bar ---------- */
 .controls-bar {
   display: flex;

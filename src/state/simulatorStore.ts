@@ -7,7 +7,7 @@ import { trimEvents } from '../simulation/World';
 import { MainToWorker, WorkerToMain } from '../worker/protocol';
 import { translate, useI18nStore } from '../i18n';
 
-export type MapMode = 'political' | 'population' | 'terrain' | 'resources' | 'technology' | 'economy' | 'military' | 'culture';
+export type MapMode = 'political' | 'night' | 'population' | 'terrain' | 'resources' | 'technology' | 'economy' | 'military' | 'culture';
 
 export interface Universe {
   id: string;
@@ -21,11 +21,12 @@ export interface Universe {
   speed: number;
   replaying: boolean;
   runToTarget: number | null;
+  scenario: { id: string; outcome: 'win' | 'fail' | null; acknowledged: boolean } | null;
 }
 
 export type Screen = 'landing' | 'setup' | 'simulator';
 
-export type InspectorTab = 'overview' | 'nations' | 'cities' | 'technology' | 'history' | 'rules' | 'stats' | 'compare';
+export type InspectorTab = 'overview' | 'nations' | 'cities' | 'technology' | 'faith' | 'history' | 'rules' | 'stats' | 'compare';
 
 interface SimulatorState {
   screen: Screen;
@@ -46,9 +47,12 @@ interface SimulatorState {
   toast: string | null;
   godTool: InterventionType | null;
   pauseOnHistoric: boolean;
+  cinema: boolean;
 
   setScreen: (s: Screen) => void;
-  createUniverse: (config: WorldConfig, name?: string, autoplay?: boolean) => string;
+  createUniverse: (config: WorldConfig, name?: string, autoplay?: boolean, scenarioId?: string) => string;
+  setScenarioOutcome: (universeId: string, outcome: 'win' | 'fail') => void;
+  ackScenario: (universeId: string) => void;
   branchUniverse: (fromId: string, config: WorldConfig, name: string) => void;
   removeUniverse: (id: string) => void;
   setActiveUniverse: (id: string) => void;
@@ -76,6 +80,7 @@ interface SimulatorState {
   showToast: (msg: string) => void;
   setGodTool: (tool: InterventionType | null) => void;
   setPauseOnHistoric: (on: boolean) => void;
+  setCinema: (on: boolean) => void;
   intervene: (tool: InterventionType, x: number, y: number) => void;
 }
 
@@ -186,10 +191,22 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
     toast: null,
     godTool: null,
     pauseOnHistoric: false,
+    cinema: false,
 
     setScreen: (s) => set({ screen: s }),
 
-    createUniverse: (config, name, autoplay = false) => {
+    setScenarioOutcome: (universeId, outcome) => {
+      const u = get().universes.find((x) => x.id === universeId);
+      if (!u?.scenario || u.scenario.outcome) return;
+      patchUniverse(universeId, { scenario: { ...u.scenario, outcome } });
+    },
+    ackScenario: (universeId) => {
+      const u = get().universes.find((x) => x.id === universeId);
+      if (!u?.scenario) return;
+      patchUniverse(universeId, { scenario: { ...u.scenario, acknowledged: true } });
+    },
+
+    createUniverse: (config, name, autoplay = false, scenarioId) => {
       universeCounter++;
       const id = `universe-${universeCounter}`;
       const worker = makeWorker();
@@ -205,6 +222,7 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
         speed: 20,
         replaying: false,
         runToTarget: null,
+        scenario: scenarioId ? { id: scenarioId, outcome: null, acknowledged: false } : null,
       };
       attachWorker(id, worker);
       set((state) => ({
@@ -315,6 +333,7 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
     setShowAchievements: (show) => set({ showAchievements: show }),
     setGodTool: (tool) => set({ godTool: tool }),
     setPauseOnHistoric: (on) => set({ pauseOnHistoric: on }),
+    setCinema: (on) => set({ cinema: on }),
     intervene: (tool, x, y) => {
       const u = activeUniverse();
       if (!u) return;

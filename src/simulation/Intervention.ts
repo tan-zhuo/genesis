@@ -9,6 +9,7 @@ import { addEvent, claimTile, createCivilization, randomCivConfig, tileYields } 
 import { areNeighbors, isAtWar } from './Diplomacy';
 import { declareWar } from './Warfare';
 import { getCivNamePool } from './Collapse';
+import { receiveMiracle, receiveWrath } from './Faith';
 
 /** Rebuild every civ's cached yields after the map itself changed (bless/blight). */
 function recomputeAllYields(world: WorldState): void {
@@ -76,6 +77,7 @@ export function applyIntervention(world: WorldState, iv: Intervention, rng: Seed
         const civ = world.civs[idx];
         civ.foodPenaltyUntil = world.year + 5;
         civ.foodPenaltyMult = 0.6;
+        receiveWrath(civ);
       }
       addEvent(world, {
         year: world.year, type: 'divine', civIds: [...affected.keys()].map((i) => world.civs[i].id),
@@ -94,6 +96,7 @@ export function applyIntervention(world: WorldState, iv: Intervention, rng: Seed
         const civ = world.civs[idx];
         civ.foodPenaltyUntil = world.year + 4;
         civ.foodPenaltyMult = 0.85;
+        receiveWrath(civ);
       }
       addEvent(world, {
         year: world.year, type: 'divine', civIds: [...affected.keys()].map((i) => world.civs[i].id),
@@ -108,6 +111,7 @@ export function applyIntervention(world: WorldState, iv: Intervention, rng: Seed
     case 'quake': {
       const radius = 6;
       const affected = smite(world, x, y, radius, 0.35);
+      for (const idx of affected.keys()) receiveWrath(world.civs[idx]);
       // Quakes can level cities on the spot.
       for (const city of world.cities) {
         if (city.destroyed) continue;
@@ -144,6 +148,11 @@ export function applyIntervention(world: WorldState, iv: Intervention, rng: Seed
         }
       }
       recomputeAllYields(world);
+      for (const cid of civIds) {
+        const civ = world.civs[parseInt(cid.slice(4), 10)];
+        if (iv.type === 'bless') receiveMiracle(world, civ, ['famine', 'plague', 'decline']);
+        else receiveWrath(civ);
+      }
       addEvent(world, {
         year: world.year, type: 'divine', civIds: [...civIds],
         title: iv.type === 'bless' ? 'The land is blessed' : 'The land is blighted',
@@ -240,6 +249,7 @@ export function applyIntervention(world: WorldState, iv: Intervention, rng: Seed
         ended++;
       }
       if (ended === 0) break;
+      receiveMiracle(world, civ, ['war']);
       addEvent(world, {
         year: world.year, type: 'divine', civIds: [civ.id],
         title: `An unnatural calm settles over ${civ.name}`,
@@ -260,6 +270,7 @@ export function applyIntervention(world: WorldState, iv: Intervention, rng: Seed
       const upcoming = nextTech(civ.researchedTechs);
       if (upcoming) civ.researchProgress += upcoming.cost * 0.35;
       civ.lowStabilityYears = 0;
+      receiveMiracle(world, civ, 'any');
       addEvent(world, {
         year: world.year, type: 'divine', civIds: [civ.id],
         title: `A golden age dawns in ${civ.name}`,

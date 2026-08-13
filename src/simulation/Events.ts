@@ -177,6 +177,7 @@ export function runDisasters(world: WorldState, rng: SeededRandom): void {
     civ.foodPenaltyMult = foodPenalty;
     civ.happiness = Math.max(0, civ.happiness - 10);
     civ.stability = Math.max(0, civ.stability - 5);
+    civ.memory.disasters++;
     civIds.push(civ.id);
     totalLost += lost;
   }

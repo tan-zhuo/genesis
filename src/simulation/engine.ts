@@ -28,6 +28,7 @@ import { runWarDeclarations, runWars, checkExtinction } from './Warfare';
 import { runEmpireAndCollapse, runRebirth, seedCivNames } from './Collapse';
 import { runDisasters } from './Events';
 import { runInterventions } from './Intervention';
+import { runFaith } from './Faith';
 import { createWorld as createWorldBase } from './World';
 import { emptyModifiers, WorldConfig, WorldState } from './types';
 import { TERRAIN_INDEX } from './Terrain';
@@ -113,7 +114,10 @@ export function simulateYear(world: WorldState): WorldState {
   }
   runRebirth(world, rng);
 
-  // 16. Statistics
+  // 16. Faith, prayers, doctrine, philosophers
+  runFaith(world, rng);
+
+  // 17. Statistics
   recordStats(world);
 
   return world;

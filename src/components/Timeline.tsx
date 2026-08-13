@@ -20,6 +20,10 @@ const TYPE_ICONS: Partial<Record<WorldEventType, string>> = {
   disaster: '🌋',
   alliance: '🤝',
   empire: '👑',
+  divine: '⚡',
+  prayer: '🙏',
+  faith: '🕯',
+  philosophy: '📜',
 };
 
 const FILTERS: { id: string; key: string; types: WorldEventType[] }[] = [
@@ -28,6 +32,7 @@ const FILTERS: { id: string; key: string; types: WorldEventType[] }[] = [
   { id: 'tech', key: 'tl.tech', types: ['technology'] },
   { id: 'cities', key: 'tl.cities', types: ['city-founded'] },
   { id: 'nations', key: 'tl.nations', types: ['birth', 'split', 'extinction', 'empire', 'revolution', 'collapse'] },
+  { id: 'faith', key: 'tl.faith', types: ['prayer', 'faith', 'philosophy', 'divine'] },
   { id: 'world', key: 'tl.world', types: ['disaster', 'migration', 'trade', 'alliance'] },
 ];
 

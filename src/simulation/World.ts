@@ -257,6 +257,16 @@ export function createCivilization(
     cityIds: [],
     alive: true,
     deathYear: null,
+    faith: {
+      devotion: 0,
+      doctrine: null,
+      doctrineYear: 0,
+      pendingPrayer: null,
+      lastPrayerYear: -1000,
+      miracles: 0,
+      wraths: 0,
+    },
+    memory: { wars: 0, disasters: 0, famineYears: 0 },
     tiles: [],
     frontier: [],
     sumX: 0,
@@ -336,6 +346,8 @@ export function createWorld(config: WorldConfig): WorldState {
     totalWars: 0,
     totalTradeDeals: 0,
     disasters: [],
+    epitaphs: [],
+    godName: null,
   };
 
   const rng = subRng(config.seed, 'world-init');

@@ -6,6 +6,7 @@ import { TERRAIN_INDEX } from './Terrain';
 import { demonym } from './names';
 import { Civilization, War, WorldState } from './types';
 import { addEvent, compactTiles, releaseTile, transferTile } from './World';
+import { writeEpitaph } from './Faith';
 import { areNeighbors, isAtWar } from './Diplomacy';
 
 const WAR_NAMES = ['War', 'Conflict', 'Struggle', 'Campaign', 'Crusade'];
@@ -61,6 +62,8 @@ export function declareWar(world: WorldState, a: Civilization, b: Civilization, 
   world.totalWars++;
   world.relations[a.index][b.index] = -85;
   world.relations[b.index][a.index] = -85;
+  a.memory.wars++;
+  b.memory.wars++;
   world.alliances[a.index][b.index] = false;
   world.alliances[b.index][a.index] = false;
   addEvent(world, {
@@ -291,6 +294,7 @@ function annihilate(world: WorldState, civ: Civilization, conqueror: Civilizatio
   civ.population = 0;
   civ.alive = false;
   civ.deathYear = world.year;
+  writeEpitaph(world, civ, 'conquest');
   civ.capitalCityId = null;
   war.endYear = world.year;
   const age = world.year - civ.foundedYear;
@@ -322,9 +326,10 @@ export function checkExtinction(world: WorldState, civ: Civilization): void {
   civ.territory = 0;
   civ.population = 0;
   civ.cityIds = [];
-  civ.capitalCityId = null;
   civ.alive = false;
   civ.deathYear = world.year;
+  writeEpitaph(world, civ, 'famine');
+  civ.capitalCityId = null;
   const age = world.year - civ.foundedYear;
   addEvent(world, {
     year: world.year,

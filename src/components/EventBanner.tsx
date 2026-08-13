@@ -8,6 +8,7 @@ import { useLang } from '../i18n';
 const ICONS: Record<string, string> = {
   war: '⚔️', peace: '🕊', extinction: '💀', split: '💥', empire: '👑',
   disaster: '🌋', divine: '⚡', birth: '🌱', technology: '💡', 'city-captured': '🏴',
+  prayer: '🙏', faith: '🕯', philosophy: '📜',
 };
 
 export function EventBanner({ universe }: { universe: Universe }): JSX.Element | null {
@@ -19,7 +20,9 @@ export function EventBanner({ universe }: { universe: Universe }): JSX.Element |
   const selectCiv = useSimulatorStore((s) => s.selectCiv);
   const pauseOnHistoric = useSimulatorStore((s) => s.pauseOnHistoric);
   const pause = useSimulatorStore((s) => s.pause);
+  const cinema = useSimulatorStore((s) => s.cinema);
   const lang = useLang();
+  void cinema;
 
   // Collect new historic events (not while fast-forwarding to a target year —
   // a replay would flood the banner with the whole of history).
@@ -48,7 +51,12 @@ export function EventBanner({ universe }: { universe: Universe }): JSX.Element |
   useEffect(() => {
     const tick = (): void => {
       if (queueRef.current.length > 0) {
-        setCurrent(queueRef.current.shift()!);
+        const next = queueRef.current.shift()!;
+        setCurrent(next);
+        // Cinematic mode: the camera drifts to where history is happening.
+        if (useSimulatorStore.getState().cinema && next.x !== undefined && next.y !== undefined) {
+          focusOn(next.x, next.y);
+        }
         timerRef.current = setTimeout(() => {
           setCurrent(null);
           timerRef.current = setTimeout(tick, 250);
@@ -61,7 +69,7 @@ export function EventBanner({ universe }: { universe: Universe }): JSX.Element |
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, []);
+  }, [focusOn]);
 
   // Reset on universe switch / replay.
   useEffect(() => {

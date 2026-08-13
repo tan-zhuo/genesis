@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react';
 import { Globe2, Compass, ChevronRight, Languages } from 'lucide-react';
 import { useSimulatorStore } from '../state/simulatorStore';
 import { WORLD_PRESETS } from '../simulation/presets';
+import { SCENARIOS } from '../utils/scenarios';
 import { useI18nStore, useT } from '../i18n';
 
 export function Landing(): JSX.Element {
@@ -72,6 +73,13 @@ export function Landing(): JSX.Element {
     setScreen('simulator');
   };
 
+  const startScenario = (id: string): void => {
+    const sc = SCENARIOS.find((x) => x.id === id);
+    if (!sc) return;
+    createUniverse(sc.config(), undefined, true, sc.id);
+    setScreen('simulator');
+  };
+
   const startCreate = (): void => {
     if (localStorage.getItem('civsim.tutorialDone') !== '1') {
       setTutorialStep(0);
@@ -107,6 +115,20 @@ export function Landing(): JSX.Element {
             {WORLD_PRESETS.slice(1).map((p) => (
               <button key={p.id} className="preset-card" onClick={() => startPreset(p.id)} title={t(`preset.${p.id}.desc`)}>
                 <span>{t(`preset.${p.id}.name`)}</span>
+                <ChevronRight size={14} />
+              </button>
+            ))}
+          </div>
+          <div className="landing-presets-label" style={{ marginTop: 26 }}>{t('landing.scenarios')}</div>
+          <div className="preset-row">
+            {SCENARIOS.map((sc) => (
+              <button
+                key={sc.id}
+                className="preset-card scenario-card"
+                onClick={() => startScenario(sc.id)}
+                title={lang === 'zh' ? sc.zh.desc : sc.en.desc}
+              >
+                <span>{sc.icon} {lang === 'zh' ? sc.zh.name : sc.en.name}</span>
                 <ChevronRight size={14} />
               </button>
             ))}

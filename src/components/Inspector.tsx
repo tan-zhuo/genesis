@@ -12,8 +12,9 @@ import { Statistics } from './Statistics';
 import { TechnologyTree } from './TechnologyTree';
 import { ComparePanel } from './ComparePanel';
 import { RuleBuilder } from './RuleBuilder';
+import { FaithPanel } from './FaithPanel';
 
-const TABS: InspectorTab[] = ['overview', 'nations', 'cities', 'technology', 'history', 'stats', 'rules', 'compare'];
+const TABS: InspectorTab[] = ['overview', 'nations', 'cities', 'technology', 'faith', 'history', 'stats', 'rules', 'compare'];
 
 export function Inspector({ universe }: { universe: Universe }): JSX.Element {
   const tab = useSimulatorStore((s) => s.inspectorTab);
@@ -34,6 +35,7 @@ export function Inspector({ universe }: { universe: Universe }): JSX.Element {
         {tab === 'nations' && <NationsPanel universe={universe} />}
         {tab === 'cities' && <CitiesPanel universe={universe} />}
         {tab === 'technology' && <TechnologyTree universe={universe} />}
+        {tab === 'faith' && <FaithPanel universe={universe} />}
         {tab === 'history' && <Timeline universe={universe} />}
         {tab === 'stats' && <Statistics universe={universe} />}
         {tab === 'rules' && <RulesPanel universe={universe} />}
