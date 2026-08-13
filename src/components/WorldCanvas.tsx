@@ -547,7 +547,7 @@ export function WorldCanvas({ universe }: Props): JSX.Element {
           drawWalkers(ctx, v, rect.width, rect.height, snap, mapStatic, performance.now());
         }
         if (v.scale >= 5 && (mapMode === 'political' || mapMode === 'night')) {
-          drawCaravans(ctx, v, snap.tradeRoutes, snap.civs, performance.now());
+          if (mapStatic) drawCaravans(ctx, v, snap.tradeRoutes, snap.civs, mapStatic, performance.now());
           if (mapStatic && v.scale >= 6.5 && warFrontTilesRef.current.length > 0) {
             drawFrontFighters(ctx, v, rect.width, rect.height, warFrontTilesRef.current, mapStatic, snap, performance.now());
           }

@@ -361,6 +361,8 @@ const en: Record<string, string> = {
   'st.terrByCiv': 'Territory by civilization',
   'st.worldPop': 'World population',
   'st.citiesSeries': 'Cities',
+  'st.co2': 'Atmospheric CO₂ (ppm)',
+  'st.tempAnomaly': 'Warming vs pre-industrial',
   'st.largest': 'Largest empire: {name} — {tiles} tiles ({pct}% of land), {pop} people.',
 
   // Compare
@@ -461,6 +463,9 @@ const en: Record<string, string> = {
   'faith.prays.war': 'praying for peace (force peace)',
   'faith.prays.plague': 'praying for deliverance (bless / golden age)',
   'faith.prays.decline': 'praying to be remembered (any mercy)',
+  'faith.beyond': 'Beyond',
+  'faith.enterGate': 'Step through the Gate',
+  'faith.enteredGate': 'You step through. On the far side: the world where {name} continues.',
   'faith.ruins': 'Ruins & epitaphs',
   'faith.chronicle': 'Chronicle of belief',
   'faith.doctrines': 'Known doctrines',
@@ -840,6 +845,8 @@ const zh: Record<string, string> = {
   'st.terrByCiv': '各文明领土',
   'st.worldPop': '世界人口',
   'st.citiesSeries': '城市',
+  'st.co2': '大气 CO₂ 浓度（ppm）',
+  'st.tempAnomaly': '相对工业化前升温',
   'st.largest': '最大帝国：{name} — {tiles} 格领土（占陆地 {pct}%），人口 {pop}。',
 
   'cmp.title': '平行宇宙',
@@ -934,6 +941,9 @@ const zh: Record<string, string> = {
   'faith.prays.war': '祈求和平（强制和平可回应）',
   'faith.prays.plague': '祈求拯救（赐福/黄金时代可回应）',
   'faith.prays.decline': '祈求被记住（任何恩典可回应）',
+  'faith.beyond': '彼岸',
+  'faith.enterGate': '穿过这扇门',
+  'faith.enteredGate': '你穿过了门。彼岸，是{name}的故事继续的世界。',
   'faith.ruins': '废墟与墓志铭',
   'faith.chronicle': '信仰编年史',
   'faith.doctrines': '已知信条',

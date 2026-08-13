@@ -21,6 +21,8 @@ export function Statistics({ universe }: { universe: Universe }): JSX.Element {
       ],
       cities: [{ label: t('st.citiesSeries'), color: '#12a594', xs, ys: stats.map((s) => s.cities) }],
       tech: [{ label: t('st.maxTech'), color: '#8e4ec6', xs, ys: stats.map((s) => s.technologies) }],
+      co2: [{ label: 'CO₂ (ppm)', color: '#f76b15', xs, ys: stats.map((s) => s.co2 ?? 280) }],
+      temp: [{ label: t('st.tempAnomaly'), color: '#e5484d', xs, ys: stats.map((s) => Math.max(0, s.tempAnomaly ?? 0)) }],
     };
   }, [stats, t]);
 
@@ -72,6 +74,12 @@ export function Statistics({ universe }: { universe: Universe }): JSX.Element {
       <LineChart title={t('st.techProgress')} series={worldSeries.tech} yFormat={(v) => `${Math.round(v)}`} />
       {warsPerCentury.length > 0 && warsPerCentury[0].xs.length > 1 && (
         <LineChart title={t('st.warsPerCentury')} series={warsPerCentury} yFormat={(v) => `${Math.round(v)}`} />
+      )}
+      {(stats[stats.length - 1]?.co2 ?? 280) > 285 && (
+        <>
+          <LineChart title={t('st.co2')} series={worldSeries.co2} yFormat={(v) => `${Math.round(v)}`} />
+          <LineChart title={t('st.tempAnomaly')} series={worldSeries.temp} yFormat={(v) => `${v.toFixed(1)}°C`} />
+        </>
       )}
       {civPopSeries.length > 0 && <LineChart title={t('st.popByCiv')} series={civPopSeries} />}
       {civTerritorySeries.length > 0 && <LineChart title={t('st.terrByCiv')} series={civTerritorySeries} yFormat={fmtNum} />}

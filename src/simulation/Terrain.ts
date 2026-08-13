@@ -83,8 +83,11 @@ export function generateMap(config: WorldConfig): WorldMap {
   // (the steep mask falloff means land only reaches ~0.55 of the blob radius).
   const baseR = 1.75 * Math.sqrt((0.33 * width * height) / (Math.PI * continentCount));
   const minSep = baseR * 1.45; // centers this far apart -> tails rarely bridge
-  const blobs: { x: number; y: number; r: number }[] = [];
+  // Each plate gets a drift vector — collisions raise mountain chains,
+  // mid-ocean boundaries raise island arcs (plate-tectonics-lite).
+  const blobs: { x: number; y: number; r: number; dx: number; dy: number }[] = [];
   for (let i = 0; i < continentCount; i++) {
+    const drift = rng.range(0, Math.PI * 2);
     let placed = false;
     for (let attempt = 0; attempt < 80 && !placed; attempt++) {
       const x = rng.range(0.16, 0.84) * width;
@@ -97,13 +100,19 @@ export function generateMap(config: WorldConfig): WorldMap {
         }
       }
       if (ok) {
-        blobs.push({ x, y, r: baseR * rng.range(0.75, 1.2) });
+        blobs.push({ x, y, r: baseR * rng.range(0.75, 1.2), dx: Math.cos(drift), dy: Math.sin(drift) });
         placed = true;
       }
     }
     // Crowded map: place anyway (still deterministic), slightly smaller.
     if (!placed) {
-      blobs.push({ x: rng.range(0.2, 0.8) * width, y: rng.range(0.2, 0.8) * height, r: baseR * 0.6 });
+      blobs.push({
+        x: rng.range(0.2, 0.8) * width,
+        y: rng.range(0.2, 0.8) * height,
+        r: baseR * 0.6,
+        dx: Math.cos(drift),
+        dy: Math.sin(drift),
+      });
     }
   }
 
@@ -132,20 +141,92 @@ export function generateMap(config: WorldConfig): WorldMap {
 
       e = e * 0.44 + mask * 0.56;
       e *= 0.35 + 0.65 * edge;
-      elevation[i] = e;
 
-      // Temperature: latitude bands + elevation cooling + noise
-      const lat = Math.abs(y / height - 0.5) * 2; // 0 equator .. 1 pole
-      let t = 1 - lat * 1.15;
-      t -= Math.max(0, e - seaLevel) * 0.9;
-      t += (fbm(seedNum + 3333, x * scale * 3, y * scale * 3, 3) - 0.5) * 0.25;
-      temperature[i] = Math.max(0, Math.min(1, t));
-
-      // Moisture
-      let m = fbm(seedNum + 4444, x * scale * 2.2, y * scale * 2.2, 4);
-      m = m * 0.85 + (1 - Math.abs(lat - 0.35)) * 0.15;
-      moisture[i] = Math.max(0, Math.min(1, m));
+      // Plate tectonics-lite: where two plates' influence zones meet and their
+      // drift vectors converge, the crust buckles upward — mountain chains on
+      // land, island arcs at sea.
+      if (blobs.length >= 2) {
+        let d1 = Infinity;
+        let d2 = Infinity;
+        let b1 = blobs[0];
+        let b2 = blobs[0];
+        for (const b of blobs) {
+          const d = Math.hypot(x - b.x, y - b.y) / b.r;
+          if (d < d1) {
+            d2 = d1;
+            b2 = b1;
+            d1 = d;
+            b1 = b;
+          } else if (d < d2) {
+            d2 = d;
+            b2 = b;
+          }
+        }
+        const boundary = Math.exp(-((d2 - d1) * (d2 - d1)) / 0.045); // 1 at the seam
+        if (boundary > 0.05 && b1 !== b2) {
+          const nx = b2.x - b1.x;
+          const ny = b2.y - b1.y;
+          const nl = Math.hypot(nx, ny) || 1;
+          const convergence = ((b1.dx - b2.dx) * nx + (b1.dy - b2.dy) * ny) / nl; // >0: colliding
+          if (convergence > 0) {
+            const ridge = fbm(seedNum + 8181, x * scale * 4, y * scale * 4, 3);
+            e += boundary * convergence * 0.34 * (0.55 + ridge * 0.9);
+          }
+        }
+      }
+      elevation[i] = Math.min(1.05, e);
     }
+  }
+
+  // ---- Atmospheric circulation & precipitation (reduced-order, real bands) ----
+  // Insolation temperature: T(°C) = 28 - 42·sin^1.6(|lat|), minus a lapse-rate
+  // cooling of ~6.5°C/km for land above sea level (mapped 0..4 km).
+  const tempC = new Float32Array(n);
+  for (let y = 0; y < height; y++) {
+    const latAbs = Math.abs(y / height - 0.5) * 2; // 0 equator .. 1 pole
+    const base = 30 - 38 * Math.pow(Math.sin((latAbs * Math.PI) / 2), 1.5);
+    for (let x = 0; x < width; x++) {
+      const i = y * width + x;
+      const kmAbove = (Math.max(0, elevation[i] - seaLevel) / Math.max(0.001, 1 - seaLevel)) * 2.5;
+      tempC[i] = base - kmAbove * 6.5 + (fbm(seedNum + 3333, x * scale * 3, y * scale * 3, 3) - 0.5) * 4;
+    }
+  }
+
+  // Prevailing winds by latitude (trade easterlies <30°, westerlies 30-60°,
+  // polar easterlies >60°). March each row along the wind, evaporating over
+  // ocean and raining out over land — uphill forcing gives orographic rain
+  // and a rain shadow behind mountains.
+  const precip = new Float32Array(n); // mm/yr
+  for (let y = 0; y < height; y++) {
+    const latAbs = Math.abs(y / height - 0.5) * 2;
+    const westerly = latAbs > 0.33 && latAbs <= 0.66; // wind blows west->east
+    let humidity = 12;
+    const xs: number[] = [];
+    for (let x = 0; x < width; x++) xs.push(westerly ? x : width - 1 - x);
+    for (const x of xs) {
+      const i = y * width + x;
+      if (elevation[i] < seaLevel) {
+        // Evaporation grows with sea-surface temperature.
+        humidity = Math.min(60, humidity + Math.max(0.5, 0.11 * (tempC[i] + 14)));
+        precip[i] = Math.min(2200, humidity * 22);
+      } else {
+        const prevX = westerly ? x - 1 : x + 1;
+        const prevI = prevX >= 0 && prevX < width ? y * width + prevX : i;
+        const uphill = Math.max(0, elevation[i] - elevation[prevI]);
+        const rainFrac = Math.min(0.3, 0.055 + uphill * 2.2); // orographic forcing
+        const rain = humidity * rainFrac;
+        precip[i] = Math.min(2600, rain * 320);
+        // Evapotranspiration recycles a share of rainfall back into the air —
+        // without it, continental interiors turn to total desert.
+        humidity = Math.max(0.5, humidity - rain * 0.62);
+      }
+    }
+  }
+
+  // Normalize temperature/moisture into the 0..1 arrays the engine uses.
+  for (let i = 0; i < n; i++) {
+    temperature[i] = Math.max(0, Math.min(1, (tempC[i] + 25) / 55)); // -25..30°C -> 0..1
+    moisture[i] = Math.max(0, Math.min(1, precip[i] / 1800));
   }
 
   // Rivers: trace downhill from high-elevation sources; boost moisture along path.
@@ -180,30 +261,32 @@ export function generateMap(config: WorldConfig): WorldMap {
     }
   }
 
-  // Classify terrain + fertility + resources
+  // Classify terrain (Whittaker biome diagram: temperature x precipitation)
+  // and derive fertility from the Miami NPP model (Lieth 1975):
+  //   NPP_T = 3000 / (1 + e^(1.315 - 0.119 T))
+  //   NPP_P = 3000 · (1 - e^(-0.000664 P))
+  //   NPP   = min(NPP_T, NPP_P)   [g dry matter / m² / yr]
   const rich = config.resourceRichness;
   for (let i = 0; i < n; i++) {
     const e = elevation[i];
-    const t = temperature[i];
-    const m = moisture[i];
+    const tC = temperature[i] * 55 - 25; // back to °C
+    const pMm = moisture[i] * 1800; // back to mm/yr
     let terr: Terrain;
     if (e < seaLevel) terr = 'ocean';
     else if (e > seaLevel + 0.34) terr = 'mountain';
-    else if (t < 0.22) terr = 'tundra';
-    else if (m < 0.34 && t > 0.55) terr = 'desert';
-    else if (m > 0.58) terr = 'forest';
+    else if (tC < -4) terr = 'tundra';
+    else if (pMm < 320 && tC > 12) terr = 'desert';
+    else if (pMm < 220) terr = tC > 5 ? 'desert' : 'tundra';
+    else if (pMm > 780 && tC > 2) terr = 'forest';
     else terr = 'plains';
     terrain[i] = TERRAIN_INDEX[terr];
 
-    // Fertility
-    let f = 0;
-    if (terr === 'plains') f = 0.55 + m * 0.4;
-    else if (terr === 'forest') f = 0.45 + m * 0.3;
-    else if (terr === 'tundra') f = 0.12 + m * 0.1;
-    else if (terr === 'desert') f = 0.08 + m * 0.15;
-    else if (terr === 'mountain') f = 0.1;
-    if (river[i] && terr !== 'ocean') f = Math.min(1, f + 0.25);
-    f *= 0.8 + 0.4 * (1 - Math.abs(t - 0.6));
+    // Miami-model NPP -> fertility
+    const nppT = 3000 / (1 + Math.exp(1.315 - 0.119 * tC));
+    const nppP = 3000 * (1 - Math.exp(-0.000664 * pMm));
+    const npp = Math.min(nppT, nppP) / 3000; // 0..1
+    let f = Math.pow(npp, 0.8) * (terr === 'mountain' ? 0.35 : terr === 'ocean' ? 0 : 1.05);
+    if (river[i] && terr !== 'ocean') f = Math.min(1, f + 0.22); // floodplain silt
     fertility[i] = Math.max(0, Math.min(1, f));
 
     // Resources — deterministic per tile, no RNG-order dependence.

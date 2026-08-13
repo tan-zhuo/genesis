@@ -130,6 +130,9 @@ input[type='checkbox'] { accent-color: var(--accent); }
 .civ-row-ascended { opacity: 0.85; }
 .epitaph-ascended { border-left-color: var(--accent-dim); }
 .epitaph-ascended .epitaph-marker { color: var(--accent); }
+.epitaph-body { flex: 1; }
+.epitaph-link { display: block; width: 100%; text-align: left; }
+.gate-btn { margin-top: 6px; color: var(--accent); }
 
 .badge {
   background: var(--bg-hover);

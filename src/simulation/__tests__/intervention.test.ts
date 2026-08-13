@@ -105,3 +105,29 @@ describe('Finite resources & transcendence', () => {
     expect(world.epitaphs.some((e) => e.civId === civ.id && e.ascended)).toBe(true);
   });
 });
+
+describe('Anthropogenic climate', () => {
+  it('industrial civilizations warm the world; coasts flood; it is deterministic', () => {
+    const cfg = defaultConfig();
+    cfg.width = 120;
+    cfg.height = 120;
+    const run = () => {
+      const world = createWorld(cfg);
+      simulateYears(world, 50);
+      for (const civ of world.civs) {
+        if (!civ.alive) continue;
+        civ.researchedTechs = ['survival', 'agriculture', 'writing', 'metallurgy', 'engineering', 'navigation', 'gunpowder', 'industry', 'electricity'];
+        civ.technologyLevel = civ.researchedTechs.length;
+        civ.population = Math.max(civ.population, 2_000_000);
+      }
+      simulateYears(world, 1200);
+      return world;
+    };
+    const w1 = run();
+    expect(w1.co2).toBeGreaterThan(300);
+    expect(w1.tempAnomaly).toBeGreaterThan(0.3);
+    expect(w1.events.some((e) => e.title.includes('warmed by'))).toBe(true);
+    const w2 = run();
+    expect(Math.round(w2.co2 * 1000)).toBe(Math.round(w1.co2 * 1000));
+  });
+});

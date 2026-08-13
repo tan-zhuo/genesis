@@ -353,6 +353,11 @@ export function createWorld(config: WorldConfig): WorldState {
     epitaphs: [],
     godName: null,
     mapVersion: 0,
+    co2: 280,
+    tempAnomaly: 0,
+    appliedAnomaly: 0,
+    climateMilestone: 0,
+    baseTemperature: map.temperature.slice(),
   };
 
   const rng = subRng(config.seed, 'world-init');

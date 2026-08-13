@@ -363,6 +363,8 @@ export interface YearStats {
   wars: number;
   alliances: number;
   technologies: number;
+  co2: number; // ppm
+  tempAnomaly: number; // °C above pre-industrial
 }
 
 export interface CivHistory {
@@ -414,6 +416,11 @@ export interface WorldState {
   epitaphs: Epitaph[];
   godName: GodName | null;
   mapVersion: number; // bumped when terrain/resources/fertility mutate
+  co2: number; // atmospheric CO2, ppm
+  tempAnomaly: number; // °C vs pre-industrial
+  appliedAnomaly: number; // last anomaly applied to the map
+  climateMilestone: number; // last whole-degree milestone announced
+  baseTemperature: Float32Array; // pre-industrial temperature field
   landTilesCache?: number;
 }
 

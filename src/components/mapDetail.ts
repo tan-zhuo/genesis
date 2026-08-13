@@ -436,6 +436,7 @@ export function drawCaravans(
   v: View,
   routes: TradeRoute[],
   civs: Snapshot['civs'],
+  map: MapStatic,
   timeMs: number,
 ): void {
   const t = timeMs / 1000;
@@ -451,14 +452,46 @@ export function drawCaravans(
       const fy = a.cy + (b.cy - a.cy) * f;
       const px = v.x + fx * v.scale;
       const py = v.y + fy * v.scale;
-      ctx.fillStyle = 'rgba(240, 200, 90, 0.95)';
-      ctx.beginPath();
-      ctx.arc(px, py, Math.max(1.4, v.scale * 0.14), 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = 'rgba(240, 200, 90, 0.3)';
-      ctx.beginPath();
-      ctx.arc(px - (b.cx - a.cx) * 0.004 * v.scale, py - (b.cy - a.cy) * 0.004 * v.scale, Math.max(1, v.scale * 0.1), 0, Math.PI * 2);
-      ctx.fill();
+      // Over the sea the caravan becomes a sailing ship.
+      const tx = Math.max(0, Math.min(map.width - 1, Math.round(fx)));
+      const ty = Math.max(0, Math.min(map.height - 1, Math.round(fy)));
+      const atSea = map.terrain[ty * map.width + tx] === 0;
+      if (atSea) {
+        const s = Math.max(2.2, v.scale * 0.22);
+        // hull
+        ctx.fillStyle = 'rgba(120, 86, 50, 0.95)';
+        ctx.beginPath();
+        ctx.moveTo(px - s, py);
+        ctx.lineTo(px + s, py);
+        ctx.lineTo(px + s * 0.55, py + s * 0.5);
+        ctx.lineTo(px - s * 0.55, py + s * 0.5);
+        ctx.closePath();
+        ctx.fill();
+        // sail
+        ctx.fillStyle = 'rgba(238, 240, 244, 0.95)';
+        ctx.beginPath();
+        ctx.moveTo(px, py - s * 1.5);
+        ctx.lineTo(px, py - s * 0.1);
+        ctx.lineTo(px + s * 0.9, py - s * 0.1);
+        ctx.closePath();
+        ctx.fill();
+        // wake
+        ctx.strokeStyle = 'rgba(180, 215, 245, 0.35)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(px - s * 1.6, py + s * 0.3);
+        ctx.lineTo(px - s * 3, py + s * 0.3);
+        ctx.stroke();
+      } else {
+        ctx.fillStyle = 'rgba(240, 200, 90, 0.95)';
+        ctx.beginPath();
+        ctx.arc(px, py, Math.max(1.4, v.scale * 0.14), 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = 'rgba(240, 200, 90, 0.3)';
+        ctx.beginPath();
+        ctx.arc(px - (b.cx - a.cx) * 0.004 * v.scale, py - (b.cy - a.cy) * 0.004 * v.scale, Math.max(1, v.scale * 0.1), 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
   }
 }

@@ -4,7 +4,10 @@ import { DOCTRINES, GOD_TITLES, getDoctrine } from '../simulation/Faith';
 import { useLang, useT } from '../i18n';
 import { fmtNum } from '../utils/format';
 import { DOCTRINE_ICONS, EVENT_ICONS } from './icons';
-import { Church, HeartHandshake, Landmark } from 'lucide-react';
+import { Church, DoorOpen, HeartHandshake, Landmark } from 'lucide-react';
+import { SeededRandom } from '../simulation/Random';
+import { randomCivConfig } from '../simulation/World';
+import { CivConfig, Epitaph } from '../simulation/types';
 
 export function FaithPanel({ universe }: { universe: Universe }): JSX.Element {
   const t = useT();
@@ -12,7 +15,43 @@ export function FaithPanel({ universe }: { universe: Universe }): JSX.Element {
   const zh = lang === 'zh';
   const selectCiv = useSimulatorStore((s) => s.selectCiv);
   const focusOn = useSimulatorStore((s) => s.focusOn);
+  const createUniverse = useSimulatorStore((s) => s.createUniverse);
+  const showToast = useSimulatorStore((s) => s.showToast);
   const snapshot = universe.snapshot;
+
+  // "开阔其他空间": every transcendence gate leads to a real generated world.
+  // The seed derives from the gate, so the same door always opens onto the
+  // same world — and the ascended civilization is waiting on the other side.
+  const enterGate = (ep: Epitaph): void => {
+    const civ = universe.snapshot?.civs.find((c) => c.id === ep.civId);
+    const seed = `beyond-${ep.civId}-${universe.config.seed}`;
+    const rng = new SeededRandom(seed);
+    const natives: CivConfig[] = [];
+    const taken = new Set<string>([ep.name]);
+    for (let i = 0; i < 2 + rng.nextInt(0, 1); i++) natives.push(randomCivConfig(rng, taken, i + 1));
+    const arrivals: CivConfig = {
+      name: ep.name,
+      color: ep.color,
+      startPopulation: 2600,
+      traits: civ ? { ...civ.traits } : natives[0].traits,
+      // The crossing strips the great machines — they arrive advanced but must rebuild.
+      startTechs: (civ?.researchedTechs ?? ['survival']).filter(
+        (id) => !['computing', 'ai', 'spaceflight', 'transcendence'].includes(id),
+      ),
+    };
+    createUniverse(
+      {
+        ...universe.config,
+        seed,
+        civs: [arrivals, ...natives],
+        interventions: [],
+        continents: 0,
+      },
+      `${ep.name} · ${t('faith.beyond')}`,
+      true,
+    );
+    showToast(t('faith.enteredGate', { name: ep.name }));
+  };
   if (!snapshot) return <div className="empty-note">{t('ov.generating')}</div>;
 
   const title = snapshot.godName ? GOD_TITLES[snapshot.godName.id] : null;
@@ -80,13 +119,20 @@ export function FaithPanel({ universe }: { universe: Universe }): JSX.Element {
         <>
           <div className="section-title">{t('faith.ruins')} · {snapshot.epitaphs.length}</div>
           {snapshot.epitaphs.slice(-8).reverse().map((e) => (
-            <button key={e.civId} className={`epitaph-row ${e.ascended ? 'epitaph-ascended' : ''}`} onClick={() => focusOn(e.x, e.y)}>
+            <div key={e.civId} className={`epitaph-row ${e.ascended ? 'epitaph-ascended' : ''}`}>
               <span className="epitaph-marker"><Landmark size={15} /></span>
-              <div>
-                <div className="epitaph-name" style={{ color: e.color }}>{e.name} · {e.foundedYear}–{e.deathYear}</div>
-                <div className="epitaph-text">{zh ? e.textZh : e.textEn}</div>
+              <div className="epitaph-body">
+                <button className="epitaph-link" onClick={() => focusOn(e.x, e.y)}>
+                  <div className="epitaph-name" style={{ color: e.color }}>{e.name} · {e.foundedYear}–{e.deathYear}</div>
+                  <div className="epitaph-text">{zh ? e.textZh : e.textEn}</div>
+                </button>
+                {e.ascended && (
+                  <button className="btn btn-ghost btn-sm gate-btn" onClick={() => enterGate(e)}>
+                    <DoorOpen size={13} /> {t('faith.enterGate')}
+                  </button>
+                )}
               </div>
-            </button>
+            </div>
           ))}
         </>
       )}

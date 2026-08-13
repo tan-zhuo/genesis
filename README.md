@@ -121,6 +121,22 @@ Only the *recipe* is ever serialized: seed + world config + civilization configs
 
 `src/simulation/__tests__/` covers: PRNG determinism, identical worlds from identical configs, seed divergence, exact replay equality (including event years), population sanity over 2,000 years (no NaN/∞/negatives), war termination (hard cap well under 50 years), city founding/expansion, splits & extinctions occurring in hostile worlds, config round-tripping to identical simulations, config validation/clamping, and rules measurably changing history. Plus a 10,000-year smoke/performance run.
 
+## Scientific models · 科学模型
+
+The physical world is grounded in real published models, each cheap enough for 10,000-year runs:
+
+| Layer | Model | Source |
+|---|---|---|
+| Continents & mountains | Plate-tectonics-lite: drift vectors, uplift at convergent boundaries, island arcs at sea | procedural adaptation of plate kinematics |
+| Temperature | Latitude insolation + 6.5°C/km lapse rate | standard atmosphere |
+| Precipitation | Hadley-cell wind bands (trades / westerlies / polar easterlies), ocean evaporation, moisture advection, orographic rain & rain shadow, evapotranspiration recycling | reduced-order circulation |
+| Biomes | Whittaker diagram (temperature × precipitation) | Whittaker 1975 |
+| Land fertility | Miami NPP model: NPP = min(3000/(1+e^(1.315−0.119T)), 3000(1−e^(−0.000664P))) | Lieth 1975 |
+| Warming | ΔT = 3.0 · log₂(CO₂/280) — logarithmic radiative forcing, IPCC central sensitivity | Arrhenius / IPCC |
+| Consequences | Biome drift under ΔT, ice-melt sea-level rise drowning coasts & cities | energy-balance reasoning |
+
+工业文明燃烧化石燃料排放 CO₂（信息时代技术逐步脱碳），大气浓度按源汇平衡演化，升温按真实对数辐射强迫计算，随后生物群系漂移（冻原绿化、荒漠扩张）、海面上升淹没沿海城市——全部确定性、全部可在统计页看到 CO₂ 与升温曲线。
+
 ## Notes
 
 - First version intentionally avoids WebGPU, backends, LLMs, and per-agent simulation — the point is *simple rules, deterministic simulation, emergent history, and a readable map*.

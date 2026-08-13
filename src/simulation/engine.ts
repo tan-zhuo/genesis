@@ -29,6 +29,7 @@ import { runAscension, runEmpireAndCollapse, runRebirth, seedCivNames } from './
 import { runDisasters } from './Events';
 import { runInterventions } from './Intervention';
 import { runDepletion } from './Depletion';
+import { runClimate } from './Climate';
 import { runFaith } from './Faith';
 import { createWorld as createWorldBase } from './World';
 import { emptyModifiers, WorldConfig, WorldState } from './types';
@@ -113,6 +114,9 @@ export function simulateYear(world: WorldState): WorldState {
   runDepletion(world, rng);
   if (world.config.finiteResources !== false && world.year % 25 === 0) world.mapVersion++;
 
+  // 14.6 Anthropogenic climate: emissions, warming, biome drift, sea rise
+  runClimate(world, rng);
+
   // 14.7 Transcendence: the way out of a finite world
   runAscension(world, rng);
 
@@ -163,6 +167,8 @@ function recordStats(world: WorldState): void {
     wars: activeWars,
     alliances,
     technologies,
+    co2: Math.round(world.co2),
+    tempAnomaly: Math.round(world.tempAnomaly * 100) / 100,
   });
 
   if (world.year % HISTORY_SAMPLE_INTERVAL === 0 || world.year === 1) {
