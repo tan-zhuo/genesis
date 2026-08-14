@@ -3,10 +3,11 @@
 // simulation results depend exclusively on (seed, config, year).
 import { createWorld, simulateYear } from '../simulation/engine';
 import { buildMapStatic, buildSnapshot } from '../simulation/snapshot';
-import { Intervention, WorldConfig, WorldEvent, WorldState } from '../simulation/types';
+import { AiDecision, Intervention, WorldConfig, WorldEvent, WorldState } from '../simulation/types';
 import { MainToWorker, WorkerToMain } from './protocol';
 
 let interventionCounter = 0;
+let aiDecisionCounter = 0;
 
 let world: WorldState | null = null;
 let config: WorldConfig | null = null;
@@ -193,6 +194,27 @@ self.onmessage = (e: MessageEvent<MainToWorker>): void => {
         config.interventions.push(iv);
         if (world.config !== config) {
           world.config.interventions = config.interventions;
+        }
+        if (!running) {
+          simulateYear(world);
+          sendSnapshot();
+        }
+        break;
+      }
+      case 'aiDecision': {
+        // Record an AI-ruler decision to take effect at the START of the next
+        // simulated year — same recipe mechanics as divine interventions.
+        if (!world || !config) return;
+        aiDecisionCounter++;
+        const d: AiDecision = {
+          ...msg.decision,
+          id: `aid-${aiDecisionCounter}`,
+          year: world.year + 1,
+        };
+        if (!config.aiDecisions) config.aiDecisions = [];
+        config.aiDecisions.push(d);
+        if (world.config !== config) {
+          world.config.aiDecisions = config.aiDecisions;
         }
         if (!running) {
           simulateYear(world);

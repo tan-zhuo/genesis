@@ -10,7 +10,7 @@ const FILTERS: { id: string; key: string; types: WorldEventType[] }[] = [
   { id: 'war', key: 'tl.wars', types: ['war', 'peace', 'city-captured'] },
   { id: 'tech', key: 'tl.tech', types: ['technology'] },
   { id: 'cities', key: 'tl.cities', types: ['city-founded'] },
-  { id: 'nations', key: 'tl.nations', types: ['birth', 'split', 'extinction', 'empire', 'revolution', 'collapse', 'ascension'] },
+  { id: 'nations', key: 'tl.nations', types: ['birth', 'split', 'extinction', 'empire', 'revolution', 'collapse', 'ascension', 'council'] },
   { id: 'faith', key: 'tl.faith', types: ['prayer', 'faith', 'philosophy', 'divine'] },
   { id: 'world', key: 'tl.world', types: ['disaster', 'migration', 'trade', 'alliance'] },
 ];

@@ -222,7 +222,8 @@ export type WorldEventType =
   | 'prayer'
   | 'faith'
   | 'philosophy'
-  | 'ascension';
+  | 'ascension'
+  | 'council';
 
 // ---- Divine interventions (the player's hand) ----
 // Interventions are part of the world's "recipe": they are recorded with the
@@ -244,6 +245,24 @@ export interface Intervention {
   type: InterventionType;
   x?: number;
   y?: number;
+}
+
+// ---- AI rulers (LLM-governed civilizations) ----
+// Like interventions, AI decisions are part of the world's recipe: the LLM is
+// an external "player" whose inputs are recorded with an effect year and
+// replayed deterministically. Replays never call the model again.
+export type AiActionKind = 'research' | 'war' | 'peace' | 'diplomacy' | 'policy' | 'none';
+
+export interface AiDecision {
+  id: string;
+  year: number; // takes effect at the START of this simulated year
+  civId: string;
+  kind: AiActionKind;
+  techId?: string; // research: switch the nation's research target
+  targetId?: string; // war / peace / diplomacy: the other civilization
+  trait?: keyof Traits; // policy: which trait to shift
+  delta?: number; // policy: shift amount, engine clamps to ±12
+  reason?: string; // the ruler's stated reasoning (recorded verbatim, shown in the chronicle)
 }
 
 export interface WorldEvent {
@@ -350,6 +369,7 @@ export interface WorldConfig {
   civs: CivConfig[];
   rules: Rule[];
   interventions?: Intervention[];
+  aiDecisions?: AiDecision[]; // recorded AI-ruler decisions (replayed deterministically)
   finiteResources?: boolean; // default true: mines exhaust, forests fall, soil tires
   continents?: number; // 0/undefined = auto (2-5); otherwise 1-6 separated landmasses
 }
@@ -513,6 +533,7 @@ export interface Snapshot {
   events: WorldEvent[]; // full (capped) event log
   landTiles: number;
   interventions: Intervention[]; // recorded divine interventions (part of the recipe)
+  aiDecisions: AiDecision[]; // recorded AI-ruler decisions (part of the recipe)
   epitaphs: Epitaph[];
   godName: GodName | null;
   mapUpdate?: { version: number; terrain: Uint8Array; resources: Uint8Array; fertility: Float32Array };

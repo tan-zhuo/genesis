@@ -152,6 +152,7 @@ function NationsPanel({ universe }: { universe: Universe }): JSX.Element {
   const snapshot = universe.snapshot;
   const selectedCivId = useSimulatorStore((s) => s.selectedCivId);
   const selectCiv = useSimulatorStore((s) => s.selectCiv);
+  const aiRuledKeys = useSimulatorStore((s) => s.aiRuledKeys);
   const t = useT();
   if (!snapshot) return <div className="empty-note">{t('ov.generating')}</div>;
 
@@ -167,6 +168,7 @@ function NationsPanel({ universe }: { universe: Universe }): JSX.Element {
         <button key={c.id} className="civ-row" onClick={() => selectCiv(c.id)}>
           <span className="dot" style={{ background: c.color }} />
           <span className="civ-row-name">{c.name}</span>
+          {aiRuledKeys.includes(`${universe.id}/${c.id}`) && <span className="tag tag-ai">AI</span>}
           <span className="muted small">{t('nat.citiesCount', { n: c.cityCount })}</span>
           <span className="civ-row-pop">{fmtNum(c.population)}</span>
         </button>

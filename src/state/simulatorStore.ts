@@ -51,6 +51,7 @@ interface SimulatorState {
   planetView: boolean;
   followedCivId: string | null;
   aiAnalystCivId: string | null;
+  aiRuledKeys: string[]; // `${universeId}/${civId}` of AI-governed civilizations
 
   setScreen: (s: Screen) => void;
   createUniverse: (config: WorldConfig, name?: string, autoplay?: boolean, scenarioId?: string) => string;
@@ -87,6 +88,7 @@ interface SimulatorState {
   setPlanetView: (on: boolean) => void;
   setFollowedCiv: (id: string | null) => void;
   setAiAnalystCiv: (id: string | null) => void;
+  toggleAiRuler: (universeId: string, civId: string) => void;
   intervene: (tool: InterventionType, x: number, y: number) => void;
 }
 
@@ -212,6 +214,7 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
     planetView: false,
     followedCivId: null,
     aiAnalystCivId: null,
+    aiRuledKeys: [],
 
     setScreen: (s) => set({ screen: s }),
 
@@ -357,6 +360,11 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
     setPlanetView: (on) => set({ planetView: on }),
     setFollowedCiv: (id) => set({ followedCivId: id }),
     setAiAnalystCiv: (id) => set({ aiAnalystCivId: id }),
+    toggleAiRuler: (universeId, civId) => {
+      const key = `${universeId}/${civId}`;
+      const cur = get().aiRuledKeys;
+      set({ aiRuledKeys: cur.includes(key) ? cur.filter((k) => k !== key) : [...cur, key] });
+    },
     intervene: (tool, x, y) => {
       const u = activeUniverse();
       if (!u) return;

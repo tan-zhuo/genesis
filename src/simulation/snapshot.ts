@@ -168,6 +168,7 @@ export function buildSnapshot(
     events: newEvents,
     landTiles,
     interventions: [...(world.config.interventions ?? [])],
+    aiDecisions: [...(world.config.aiDecisions ?? [])],
     epitaphs: [...world.epitaphs],
     godName: world.godName ? { ...world.godName } : null,
     ...(includeMapUpdate

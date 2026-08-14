@@ -24,6 +24,7 @@ import { GodToolbar } from './GodToolbar';
 import { EventBanner } from './EventBanner';
 import { AchievementsPanel } from './AchievementsPanel';
 import { AiAnalyst } from './AiAnalyst';
+import { useAiRulers } from '../utils/aiRuler';
 
 // Three.js loads only when the planet view is opened.
 const PlanetView = lazy(() => import('./PlanetView'));
@@ -63,6 +64,7 @@ const MAP_MODES: MapMode[] = ['political', 'night', 'population', 'terrain', 're
 
 export function SimulatorShell(): JSX.Element {
   const universe = useActiveUniverse();
+  useAiRulers(universe);
   const t = useT();
   const lang = useI18nStore((s) => s.lang);
   const setLang = useI18nStore((s) => s.setLang);

@@ -8,6 +8,7 @@ import {
   Bot,
   Church,
   CloudLightning,
+  Cpu,
   Coins,
   Crown,
   Flag,
@@ -68,6 +69,7 @@ export const EVENT_ICONS: Partial<Record<WorldEventType, LucideIcon>> = {
   faith: Church,
   philosophy: ScrollText,
   ascension: Rocket,
+  council: Cpu,
 };
 
 export const GOD_TOOL_ICONS: Record<string, LucideIcon> = {

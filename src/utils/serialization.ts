@@ -1,7 +1,7 @@
 // Config serialization: export/import JSON, share URLs.
 // Only the *recipe* (seed + configs) is serialized — never the full world
 // state. Opening a share link recomputes the identical world.
-import { Intervention, InterventionType, Rule, RuleActionType, RuleMetric, RuleOperator, Traits, WorldConfig, CivConfig, SIM_VERSION } from '../simulation/types';
+import { AiActionKind, AiDecision, Intervention, InterventionType, Rule, RuleActionType, RuleMetric, RuleOperator, Traits, WorldConfig, CivConfig, SIM_VERSION } from '../simulation/types';
 import { CIV_COLORS } from '../simulation/names';
 import { TECH_BY_ID } from '../simulation/Technology';
 
@@ -101,6 +101,28 @@ function validIntervention(v: unknown, index: number): Intervention | null {
   return iv;
 }
 
+const AI_ACTION_KINDS: AiActionKind[] = ['research', 'war', 'peace', 'diplomacy', 'policy', 'none'];
+const TRAIT_NAMES = ['aggression', 'trade', 'science', 'migration', 'expansion', 'diplomacy', 'birthRate', 'riskTaking'];
+
+function validAiDecision(v: unknown, index: number): AiDecision | null {
+  const o = (v ?? {}) as Record<string, unknown>;
+  if (!AI_ACTION_KINDS.includes(o.kind as AiActionKind)) return null;
+  const year = Math.round(clamp(o.year, 1, 1e6, -1));
+  if (year < 1 || typeof o.civId !== 'string') return null;
+  const d: AiDecision = {
+    id: str(o.id, `aid-imported-${index}`, 40),
+    year,
+    civId: str(o.civId, '', 40),
+    kind: o.kind as AiActionKind,
+  };
+  if (typeof o.techId === 'string') d.techId = str(o.techId, '', 60);
+  if (typeof o.targetId === 'string') d.targetId = str(o.targetId, '', 40);
+  if (typeof o.trait === 'string' && TRAIT_NAMES.includes(o.trait)) d.trait = o.trait as AiDecision['trait'];
+  if (typeof o.delta === 'number') d.delta = Math.round(clamp(o.delta, -12, 12, 0));
+  if (typeof o.reason === 'string') d.reason = str(o.reason, '', 220);
+  return d;
+}
+
 /** Validate arbitrary JSON into a safe WorldConfig. Throws on hopeless input. */
 export function validateConfig(raw: unknown): WorldConfig {
   if (raw === null || typeof raw !== 'object') throw new Error('Config must be an object');
@@ -109,6 +131,7 @@ export function validateConfig(raw: unknown): WorldConfig {
   if (civsRaw.length < 2) throw new Error('Config needs at least 2 civilizations');
   const rulesRaw = Array.isArray(o.rules) ? o.rules.slice(0, 50) : [];
   const interventionsRaw = Array.isArray(o.interventions) ? o.interventions.slice(0, 500) : [];
+  const aiDecisionsRaw = Array.isArray(o.aiDecisions) ? o.aiDecisions.slice(0, 2000) : [];
   return {
     simVersion: SIM_VERSION,
     seed: str(o.seed, '928374', 64),
@@ -124,6 +147,9 @@ export function validateConfig(raw: unknown): WorldConfig {
     interventions: interventionsRaw
       .map((iv, i) => validIntervention(iv, i))
       .filter((iv): iv is Intervention => iv !== null),
+    aiDecisions: aiDecisionsRaw
+      .map((d, i) => validAiDecision(d, i))
+      .filter((d): d is AiDecision => d !== null),
   };
 }
 

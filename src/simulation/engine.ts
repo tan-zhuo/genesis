@@ -28,6 +28,7 @@ import { runWarDeclarations, runWars, checkExtinction } from './Warfare';
 import { runAscension, runEmpireAndCollapse, runRebirth, seedCivNames } from './Collapse';
 import { runDisasters } from './Events';
 import { runInterventions } from './Intervention';
+import { runAiCouncil } from './AiCouncil';
 import { runDepletion } from './Depletion';
 import { runClimate } from './Climate';
 import { runFaith } from './Faith';
@@ -56,6 +57,9 @@ export function simulateYear(world: WorldState): WorldState {
 
   // 0. Divine interventions recorded for this year (deterministic on replay)
   runInterventions(world, rng);
+
+  // 0.5 AI-ruler decisions recorded for this year (deterministic on replay)
+  runAiCouncil(world, rng);
 
   // 1. Rules
   for (const civ of world.civs) {

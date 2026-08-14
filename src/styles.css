@@ -563,6 +563,13 @@ input[type='checkbox'] { accent-color: var(--accent); }
 }
 .follow-chip:hover { background: rgba(245, 165, 36, 0.12); }
 
+.tag-ai {
+  color: #7ec8ff;
+  border-color: rgba(126, 200, 255, 0.45);
+  background: rgba(126, 200, 255, 0.08);
+  letter-spacing: 0.08em;
+}
+
 /* --- AI Analyst chat --- */
 .ai-analyst {
   max-width: 560px;

@@ -1,5 +1,5 @@
 // Civilization detail: stats, history charts, relations.
-import { ArrowLeft, Bot, Crosshair, Skull, Star } from 'lucide-react';
+import { ArrowLeft, Bot, Cpu, Crosshair, Skull, Star } from 'lucide-react';
 import { Universe, useSimulatorStore } from '../state/simulatorStore';
 import { CivSummary } from '../simulation/types';
 import { techEraKeyOf } from '../simulation/Technology';
@@ -30,6 +30,9 @@ export function CivilizationPanel({ universe, civ }: { universe: Universe; civ: 
   const followedCivId = useSimulatorStore((s) => s.followedCivId);
   const setFollowedCiv = useSimulatorStore((s) => s.setFollowedCiv);
   const setAiAnalystCiv = useSimulatorStore((s) => s.setAiAnalystCiv);
+  const aiRuledKeys = useSimulatorStore((s) => s.aiRuledKeys);
+  const toggleAiRuler = useSimulatorStore((s) => s.toggleAiRuler);
+  const aiRuled = aiRuledKeys.includes(`${universe.id}/${civ.id}`);
   const following = followedCivId === civ.id;
   const snapshot = universe.snapshot;
   const history = snapshot?.civHistories[civ.id];
@@ -70,6 +73,14 @@ export function CivilizationPanel({ universe, civ }: { universe: Universe; civ: 
         </button>
         <button className="icon-btn" onClick={() => setAiAnalystCiv(civ.id)} title={t('ai.open')}>
           <Bot size={14} />
+        </button>
+        <button
+          className={`icon-btn ${aiRuled ? 'icon-active' : ''}`}
+          onClick={() => toggleAiRuler(universe.id, civ.id)}
+          title={aiRuled ? t('ruler.stop') : t('ruler.start')}
+          disabled={!civ.alive}
+        >
+          <Cpu size={14} />
         </button>
       </div>
 
