@@ -23,6 +23,7 @@ import { HistorySummary } from './HistorySummary';
 import { GodToolbar } from './GodToolbar';
 import { EventBanner } from './EventBanner';
 import { AchievementsPanel } from './AchievementsPanel';
+import { AiAnalyst } from './AiAnalyst';
 
 // Three.js loads only when the planet view is opened.
 const PlanetView = lazy(() => import('./PlanetView'));
@@ -355,6 +356,7 @@ export function SimulatorShell(): JSX.Element {
 
       <HistorySummary universe={universe} />
       <AchievementsPanel />
+      <AiAnalyst />
     </div>
   );
 }

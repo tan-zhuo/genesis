@@ -1,5 +1,5 @@
 // Civilization detail: stats, history charts, relations.
-import { ArrowLeft, Crosshair, Skull, Star } from 'lucide-react';
+import { ArrowLeft, Bot, Crosshair, Skull, Star } from 'lucide-react';
 import { Universe, useSimulatorStore } from '../state/simulatorStore';
 import { CivSummary } from '../simulation/types';
 import { techEraKeyOf } from '../simulation/Technology';
@@ -29,6 +29,7 @@ export function CivilizationPanel({ universe, civ }: { universe: Universe; civ: 
   const focusOn = useSimulatorStore((s) => s.focusOn);
   const followedCivId = useSimulatorStore((s) => s.followedCivId);
   const setFollowedCiv = useSimulatorStore((s) => s.setFollowedCiv);
+  const setAiAnalystCiv = useSimulatorStore((s) => s.setAiAnalystCiv);
   const following = followedCivId === civ.id;
   const snapshot = universe.snapshot;
   const history = snapshot?.civHistories[civ.id];
@@ -66,6 +67,9 @@ export function CivilizationPanel({ universe, civ }: { universe: Universe; civ: 
         </button>
         <button className="icon-btn" onClick={() => focusOn(Math.round(civ.cx), Math.round(civ.cy))} title={t('nat.locate')} disabled={!civ.alive}>
           <Crosshair size={14} />
+        </button>
+        <button className="icon-btn" onClick={() => setAiAnalystCiv(civ.id)} title={t('ai.open')}>
+          <Bot size={14} />
         </button>
       </div>
 

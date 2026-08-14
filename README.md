@@ -49,6 +49,7 @@ First run: click **Explore Example World** — a 200×200 world with 5 civilizat
 - **Planet view (3D)**: one click turns the world into a real Three.js globe — your continents on a sphere with atmosphere rim, starfield, a day/night terminator sweeping the surface, and civilization lights glowing on the night side (color shifts firelight→electric with technology). Textures repaint live from the running simulation; drag to rotate, scroll to zoom. Loaded lazily so the 2D analysis app pays no bundle cost
 - **Research Lab** (the instrument): Monte Carlo batches (same config × N deterministic seeds, run on a parallel worker pool → mean/σ/median tables and a population mean±σ band) and parameter sweeps (step one parameter — any trait for all civs, disasters, resources, ocean level — with several seeds per step → outcome-vs-parameter curves with error bands), plus CSV/JSON export. Experiments are themselves reproducible: every seed is derived from the recipe
 - **Scenario challenges**: six win/fail scripts — keep every nation alive for 5,000 years without touching anything, set a peaceful world ablaze with only 3 interventions, reach AI before year 3,000, witness an empire rise and fall as a purely silent god…
+- **AI Analyst (bring your own model)**: every nation panel has a Bot button that opens a chat with an LLM historian. The app compiles a compact numeric dossier — traits, population/territory/tech/economy/military trajectories, the tech path in unlock order with years, every war with scores, the chronicle, the epitaph, world context — injects it as the system prompt, and streams the answer. Ask "why did this civilization die?" and get a causal chain cited with years and numbers. Works with any OpenAI-compatible endpoint: local **Ollama** by default (free, private, no key), or free cloud tiers (Zhipu GLM-4-Flash, SiliconFlow Qwen, Groq) with your own key — the key never leaves your browser, requests go straight from browser to provider, no middle server
 
 ## Architecture
 
@@ -189,6 +190,7 @@ npm run dev      # 打开 http://localhost:5173
 - **行星视图（3D）**：一键把世界变成真正的 Three.js 地球仪——你的大陆贴在球面上，有大气边缘光晕、星空、扫过表面的昼夜晨昏线，夜半球亮起文明灯火（光色随科技从火光变为电光）。纹理从运行中的模拟实时重绘；拖拽旋转、滚轮缩放。按需懒加载，2D 分析端零打包成本
 - **研究实验室**（仪器本体）：蒙特卡洛批量（同配置 × N 个确定性种子，并行 worker 池运行 → 均值/σ/中位数统计表 + 人口均值±σ带）与参数扫描（任一参数步进——全体文明性格、灾难频率、资源、海平面——每步多种子 → 带误差带的"结果 vs 参数"曲线），支持 CSV/JSON 导出。实验本身可复现：所有种子由实验配方确定性派生
 - **剧本挑战**：六个带胜负判定的剧本 —— 零干预守护所有国家活满 5000 年、只用 3 次干预点燃和平世界、3000 年前抵达 AI、以纯粹沉默之神的身份见证帝国兴亡……
+- **AI 分析师（自带模型）**：每个国家面板都有一个机器人按钮，打开与"LLM 史官"的对话。应用会把该文明压缩成一份数值档案——性格、人口/领土/科技/经济/军事轨迹、按年份排列的科技解锁路径、每场战争与战争分、大事记、墓志铭、世界背景——注入系统提示词并流式返回回答。问一句"这个文明为什么消亡？"，会得到引用具体年份和数值的因果链分析。兼容任何 OpenAI 格式端点：默认本地 **Ollama**（免费、私密、无需密钥），也可用免费云端档位（智谱 GLM-4-Flash、SiliconFlow 免费 Qwen、Groq）配自己的密钥——密钥只存在你的浏览器里，请求由浏览器直连服务商，不经过任何中间服务器
 
 ## 架构与设计
 

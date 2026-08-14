@@ -50,6 +50,7 @@ interface SimulatorState {
   cinema: boolean;
   planetView: boolean;
   followedCivId: string | null;
+  aiAnalystCivId: string | null;
 
   setScreen: (s: Screen) => void;
   createUniverse: (config: WorldConfig, name?: string, autoplay?: boolean, scenarioId?: string) => string;
@@ -85,6 +86,7 @@ interface SimulatorState {
   setCinema: (on: boolean) => void;
   setPlanetView: (on: boolean) => void;
   setFollowedCiv: (id: string | null) => void;
+  setAiAnalystCiv: (id: string | null) => void;
   intervene: (tool: InterventionType, x: number, y: number) => void;
 }
 
@@ -209,6 +211,7 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
     cinema: false,
     planetView: false,
     followedCivId: null,
+    aiAnalystCivId: null,
 
     setScreen: (s) => set({ screen: s }),
 
@@ -353,6 +356,7 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => {
     setCinema: (on) => set({ cinema: on }),
     setPlanetView: (on) => set({ planetView: on }),
     setFollowedCiv: (id) => set({ followedCivId: id }),
+    setAiAnalystCiv: (id) => set({ aiAnalystCivId: id }),
     intervene: (tool, x, y) => {
       const u = activeUniverse();
       if (!u) return;
