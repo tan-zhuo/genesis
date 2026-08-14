@@ -4,8 +4,8 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { Universe } from '../state/simulatorStore';
-import { MapStatic, Snapshot } from '../simulation/types';
+import { Universe, useSimulatorStore } from '../state/simulatorStore';
+import { CivSummary, MapStatic, Snapshot } from '../simulation/types';
 import { buildTerrainCanvas } from './mapDetail';
 import { TECH_COUNT } from '../simulation/Technology';
 import { useT } from '../i18n';
@@ -768,6 +768,75 @@ export default function PlanetView({ universe }: { universe: Universe }): JSX.El
     rebuildSpaceAssets();
     const assetsTimer = setInterval(rebuildSpaceAssets, 1500);
 
+    // --- Click a nation on the globe to open its dossier ---
+    const raycaster = new THREE.Raycaster();
+    const downAt = { x: 0, y: 0, t: 0 };
+    const pickTile = (e: { clientX: number; clientY: number }): { tx: number; ty: number } | null => {
+      const u = universeRef.current;
+      if (!u.mapStatic) return null;
+      const rect = renderer.domElement.getBoundingClientRect();
+      const ndc = new THREE.Vector2(
+        ((e.clientX - rect.left) / rect.width) * 2 - 1,
+        -((e.clientY - rect.top) / rect.height) * 2 + 1,
+      );
+      raycaster.setFromCamera(ndc, camera);
+      const hits = raycaster.intersectObject(globe, false);
+      if (hits.length === 0) return null;
+      // Inverse of tileToLocal: world point → globe local → equirect UV → tile.
+      const p = globe.worldToLocal(hits[0].point.clone()).normalize();
+      const theta = Math.acos(Math.max(-1, Math.min(1, p.y)));
+      let phi = Math.atan2(p.z, -p.x);
+      if (phi < 0) phi += Math.PI * 2;
+      const tx = Math.floor(((phi / (Math.PI * 2) - MAP_RECT.x) / MAP_RECT.w) * u.mapStatic.width);
+      const ty = Math.floor(((theta / Math.PI - MAP_RECT.y) / MAP_RECT.h) * u.mapStatic.height);
+      if (tx < 0 || ty < 0 || tx >= u.mapStatic.width || ty >= u.mapStatic.height) return null;
+      return { tx, ty };
+    };
+    const ownerAtPointer = (e: { clientX: number; clientY: number }): CivSummary | null => {
+      const u = universeRef.current;
+      const hit = pickTile(e);
+      if (!hit || !u.snapshot || !u.mapStatic) return null;
+      const o = u.snapshot.owner[hit.ty * u.mapStatic.width + hit.tx];
+      const civ = o >= 0 ? u.snapshot.civs[o] : null;
+      return civ && civ.alive ? civ : null;
+    };
+    const tip = document.createElement('div');
+    tip.className = 'planet-tip';
+    tip.style.display = 'none';
+    mount.appendChild(tip);
+    const onPointerDown = (e: PointerEvent): void => {
+      downAt.x = e.clientX;
+      downAt.y = e.clientY;
+      downAt.t = performance.now();
+    };
+    const onClick = (e: MouseEvent): void => {
+      // A rotate-drag is not a click.
+      if (Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) > 6 || performance.now() - downAt.t > 450) return;
+      const civ = ownerAtPointer(e);
+      if (!civ) return;
+      const store = useSimulatorStore.getState();
+      store.selectCiv(civ.id);
+      store.setInspectorTab('nations');
+    };
+    const onHover = (e: PointerEvent): void => {
+      const civ = ownerAtPointer(e);
+      if (civ) {
+        const rect = mount.getBoundingClientRect();
+        tip.style.display = 'block';
+        tip.style.left = `${e.clientX - rect.left + 14}px`;
+        tip.style.top = `${e.clientY - rect.top + 10}px`;
+        tip.textContent = civ.name;
+        tip.style.borderColor = civ.color;
+        renderer.domElement.style.cursor = 'pointer';
+      } else {
+        tip.style.display = 'none';
+        renderer.domElement.style.cursor = 'grab';
+      }
+    };
+    renderer.domElement.addEventListener('pointerdown', onPointerDown);
+    renderer.domElement.addEventListener('click', onClick);
+    renderer.domElement.addEventListener('pointermove', onHover);
+
     // --- Controls ---
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enablePan = false;
@@ -853,6 +922,10 @@ export default function PlanetView({ universe }: { universe: Universe }): JSX.El
       clearInterval(repaintTimer);
       clearInterval(assetsTimer);
       window.removeEventListener('resize', onResize);
+      renderer.domElement.removeEventListener('pointerdown', onPointerDown);
+      renderer.domElement.removeEventListener('click', onClick);
+      renderer.domElement.removeEventListener('pointermove', onHover);
+      tip.remove();
       controls.dispose();
       renderer.dispose();
       globe.geometry.dispose();

@@ -573,7 +573,7 @@ const en: Record<string, string> = {
   'lab.p.seaLevel': 'Ocean level',
   'planet.title': 'Planet view',
   'planet.loading': 'Entering orbit…',
-  'planet.hint': 'Presentation view — drag to rotate, scroll to zoom. The simulation keeps running; night side shows civilization lights. Analysis lives on the flat map.',
+  'planet.hint': 'Drag to rotate, scroll to zoom — and click any nation on the globe to open its dossier. Night side shows civilization lights.',
 };
 
 const zh: Record<string, string> = {
@@ -1091,7 +1091,7 @@ const zh: Record<string, string> = {
   'lab.p.seaLevel': '海洋比例',
   'planet.title': '行星视图',
   'planet.loading': '正在进入轨道…',
-  'planet.hint': '展示视图 — 拖拽旋转，滚轮缩放。模拟持续运行；夜半球可见文明灯火。分析请使用平面地图。',
+  'planet.hint': '拖拽旋转，滚轮缩放 — 点击星球上的任意国家即可打开它的详情面板。夜半球可见文明灯火。',
 };
 
 const DICTS: Record<Lang, Record<string, string>> = { en, zh };

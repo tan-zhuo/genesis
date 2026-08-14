@@ -482,6 +482,19 @@ input[type='checkbox'] { accent-color: var(--accent); }
 .planet-view { position: relative; flex: 1; min-height: 0; }
 .planet-mount { position: absolute; inset: 0; }
 .planet-mount canvas { display: block; }
+.planet-tip {
+  position: absolute;
+  pointer-events: none;
+  z-index: 5;
+  background: rgba(10, 14, 22, 0.88);
+  border: 1px solid var(--border-strong);
+  border-left-width: 3px;
+  border-radius: 4px;
+  padding: 3px 9px;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--text);
+}
 .planet-hint {
   position: absolute;
   bottom: 12px;
