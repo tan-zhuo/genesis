@@ -11,7 +11,9 @@ import { TECH_COUNT } from '../simulation/Technology';
 import {
   buildBuildingsCanvas,
   buildDetailCanvas,
+  buildSeasonMasks,
   buildTerrainCanvas,
+  SEASON_YEAR_MS,
   citySignature,
   drawCaravans,
   drawCars,
@@ -62,6 +64,7 @@ export function WorldCanvas({ universe }: Props): JSX.Element {
   const lightsCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const detailCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const buildingsCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const seasonMasksRef = useRef<{ snow: HTMLCanvasElement; autumn: HTMLCanvasElement } | null>(null);
   const buildingsSigRef = useRef<string>('');
   const warFrontTilesRef = useRef<number[]>([]);
   const targetViewRef = useRef<ViewTransform | null>(null);
@@ -102,6 +105,7 @@ export function WorldCanvas({ universe }: Props): JSX.Element {
     if (!mapStatic) return;
     terrainCanvasRef.current = buildTerrainCanvas(mapStatic);
     detailCanvasRef.current = buildDetailCanvas(mapStatic);
+    seasonMasksRef.current = buildSeasonMasks(mapStatic);
     buildingsCanvasRef.current = null;
     buildingsSigRef.current = '';
     // Center map on first load
@@ -284,6 +288,27 @@ export function WorldCanvas({ universe }: Props): JSX.Element {
           data[i * 4 + 3] = 30 + v * 210;
         }
       }
+    } else if (mapMode === 'temperature') {
+      // Blue-to-red climate ramp; global warming shifts the whole field.
+      const anomaly = (snapshot.stats[snapshot.stats.length - 1]?.tempAnomaly ?? 0) / 55;
+      for (let i = 0; i < n; i++) {
+        if (mapStatic.terrain[i] === 0) continue;
+        const v = Math.max(0, Math.min(1, mapStatic.temperature[i] + anomaly));
+        data[i * 4] = v < 0.5 ? 60 + v * 2 * 195 : 255;
+        data[i * 4 + 1] = v < 0.5 ? 120 + v * 2 * 100 : 220 - (v - 0.5) * 2 * 160;
+        data[i * 4 + 2] = v < 0.5 ? 255 - v * 2 * 175 : 80 - (v - 0.5) * 2 * 50;
+        data[i * 4 + 3] = 165;
+      }
+    } else if (mapMode === 'moisture') {
+      // Parchment-to-teal precipitation ramp (mm rain via wind-band model).
+      for (let i = 0; i < n; i++) {
+        if (mapStatic.terrain[i] === 0) continue;
+        const v = Math.max(0, Math.min(1, mapStatic.moisture[i]));
+        data[i * 4] = 205 - v * 165;
+        data[i * 4 + 1] = 185 - v * 45;
+        data[i * 4 + 2] = 120 + v * 120;
+        data[i * 4 + 3] = 165;
+      }
     } else if (mapMode === 'resources') {
       for (let i = 0; i < n; i++) {
         const bits = mapStatic.resources[i];
@@ -414,6 +439,33 @@ export function WorldCanvas({ universe }: Props): JSX.Element {
         ctx.imageSmoothingEnabled = true;
         ctx.globalAlpha = Math.min(1, (v.scale - 4) / 3) * (mapMode === 'terrain' ? 1 : 0.85);
         ctx.drawImage(detail, v.x, v.y, terrain.width * v.scale, terrain.height * v.scale);
+        ctx.restore();
+      }
+      // Seasons: snow creeps down in winter, temperate forests turn amber in
+      // autumn — hemispheres half a year out of phase. Pure presentation.
+      const seasons = seasonMasksRef.current;
+      if (seasons && terrain && !night) {
+        const phase = (performance.now() / SEASON_YEAR_MS) % 1; // 0 = northern midwinter
+        const winterN = Math.pow(0.5 + 0.5 * Math.cos(phase * Math.PI * 2), 1.6);
+        const winterS = Math.pow(0.5 - 0.5 * Math.cos(phase * Math.PI * 2), 1.6);
+        const autumnN = Math.pow(Math.max(0, Math.sin((phase - 0.55) * Math.PI * 2)), 2.5);
+        const autumnS = Math.pow(Math.max(0, Math.sin((phase - 0.05) * Math.PI * 2)), 2.5);
+        const halfH = terrain.height / 2;
+        const dw = terrain.width * v.scale;
+        const dh = halfH * v.scale;
+        ctx.save();
+        ctx.imageSmoothingEnabled = true;
+        const passes: [HTMLCanvasElement, number, number][] = [
+          [seasons.autumn, autumnN * 0.8, 0],
+          [seasons.autumn, autumnS * 0.8, 1],
+          [seasons.snow, winterN * 0.92, 0],
+          [seasons.snow, winterS * 0.92, 1],
+        ];
+        for (const [img, alpha, half] of passes) {
+          if (alpha < 0.02) continue;
+          ctx.globalAlpha = alpha;
+          ctx.drawImage(img, 0, half * halfH, terrain.width, halfH, v.x, v.y + half * dh, dw, dh);
+        }
         ctx.restore();
       }
       const buildings = buildingsCanvasRef.current;

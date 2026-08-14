@@ -563,6 +563,15 @@ input[type='checkbox'] { accent-color: var(--accent); }
 }
 .follow-chip:hover { background: rgba(245, 165, 36, 0.12); }
 
+.season-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  margin-left: 2px;
+  opacity: 0.9;
+}
+
 .tech-unlock {
   margin-top: 3px;
   font-size: 10px;

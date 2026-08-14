@@ -1,5 +1,5 @@
 // The main simulator layout: top bar, sidebar, map, controls, inspector.
-import { Suspense, lazy, useCallback, useEffect, useRef } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
 import {
   BookOpen,
   Clapperboard,
@@ -8,6 +8,10 @@ import {
   Download,
   Home,
   Languages,
+  Leaf,
+  Snowflake,
+  Sprout,
+  Sun,
   Trophy,
   Link2,
   PanelLeftClose,
@@ -25,9 +29,37 @@ import { EventBanner } from './EventBanner';
 import { AchievementsPanel } from './AchievementsPanel';
 import { AiAnalyst } from './AiAnalyst';
 import { useAiRulers } from '../utils/aiRuler';
+import { SEASON_YEAR_MS } from './mapDetail';
 
 // Three.js loads only when the planet view is opened.
 const PlanetView = lazy(() => import('./PlanetView'));
+
+const SEASON_DEFS = [
+  { key: 'winter', Icon: Snowflake, color: '#9ec8e8' },
+  { key: 'spring', Icon: Sprout, color: '#7ec87e' },
+  { key: 'summer', Icon: Sun, color: '#f0c24a' },
+  { key: 'autumn', Icon: Leaf, color: '#d8894a' },
+] as const;
+
+function SeasonChip(): JSX.Element {
+  const t = useT();
+  const [idx, setIdx] = useState(0);
+  useEffect(() => {
+    const tick = (): void => {
+      const phase = (performance.now() / SEASON_YEAR_MS) % 1; // 0 = northern midwinter
+      setIdx(Math.floor(((phase + 0.125) % 1) * 4));
+    };
+    tick();
+    const h = window.setInterval(tick, 1500);
+    return () => window.clearInterval(h);
+  }, []);
+  const s = SEASON_DEFS[idx];
+  return (
+    <span className="season-chip" title={t('season.hint')} style={{ color: s.color }}>
+      <s.Icon size={13} /> {t(`season.${s.key}`)}
+    </span>
+  );
+}
 
 function FollowChip({ universe }: { universe: import('../state/simulatorStore').Universe }): JSX.Element | null {
   const t = useT();
@@ -60,7 +92,7 @@ import { useLang } from '../i18n';
 import { STAT_ICONS } from './icons';
 import { TECH_COUNT } from '../simulation/Technology';
 
-const MAP_MODES: MapMode[] = ['political', 'night', 'population', 'terrain', 'resources', 'technology', 'economy', 'military', 'culture'];
+const MAP_MODES: MapMode[] = ['political', 'night', 'population', 'terrain', 'temperature', 'moisture', 'resources', 'technology', 'economy', 'military', 'culture'];
 
 export function SimulatorShell(): JSX.Element {
   const universe = useActiveUniverse();
@@ -228,6 +260,7 @@ export function SimulatorShell(): JSX.Element {
         <span className="topbar-year">
           {t('top.year')} <b>{(snapshot?.year ?? 0).toLocaleString('en-US')}</b>
         </span>
+        <SeasonChip />
         <span className={`run-dot ${universe.running ? 'run-on' : ''}`} />
         <span className="muted small">{universe.running ? t('top.running') : t('top.paused')}</span>
 

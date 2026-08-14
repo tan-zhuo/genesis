@@ -7,7 +7,7 @@ import { trimEvents } from '../simulation/World';
 import { MainToWorker, WorkerToMain } from '../worker/protocol';
 import { translate, useI18nStore } from '../i18n';
 
-export type MapMode = 'political' | 'night' | 'population' | 'terrain' | 'resources' | 'technology' | 'economy' | 'military' | 'culture';
+export type MapMode = 'political' | 'night' | 'population' | 'terrain' | 'temperature' | 'moisture' | 'resources' | 'technology' | 'economy' | 'military' | 'culture';
 
 export interface Universe {
   id: string;

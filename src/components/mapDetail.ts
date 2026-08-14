@@ -29,11 +29,34 @@ export function buildTerrainCanvas(map: MapStatic): HTMLCanvasElement {
   const W = map.width;
   const H = map.height;
   const elev = map.elevation;
+  // Sea level: everything below it is ocean, so land elevation is measured
+  // from the waterline upward for hypsometric tinting.
+  let seaLevel = 1;
+  for (let i = 0; i < map.terrain.length; i++) {
+    if (map.terrain[i] !== 0 && elev[i] < seaLevel) seaLevel = elev[i];
+  }
   for (let i = 0; i < map.terrain.length; i++) {
     const t = map.terrain[i];
     let [r, g, b] = TERRAIN_RGB[t];
     const e = elev[i];
-    let shade = t === 0 ? 0.75 + e * 0.5 : 0.72 + e * 0.55;
+    // Hypsometric tint: lowlands keep their biome colour, highlands dry into
+    // rock-browns and greys, the highest ridges whiten toward snow.
+    if (t !== 0) {
+      const h = Math.max(0, Math.min(1, (e - seaLevel) / (1 - seaLevel)));
+      if (h > 0.45) {
+        const rock = Math.min(1, (h - 0.45) / 0.35);
+        r = r + (139 - r) * rock * 0.75;
+        g = g + (126 - g) * rock * 0.75;
+        b = b + (112 - b) * rock * 0.75;
+      }
+      if (h > 0.78) {
+        const snow = Math.min(1, (h - 0.78) / 0.22);
+        r = r + (238 - r) * snow;
+        g = g + (242 - g) * snow;
+        b = b + (246 - b) * snow;
+      }
+    }
+    let shade = t === 0 ? 0.75 + e * 0.5 : 0.66 + e * 0.62;
     if (t !== 0) {
       const x = i % W;
       const yy = (i / W) | 0;
@@ -42,7 +65,7 @@ export function buildTerrainCanvas(map: MapStatic): HTMLCanvasElement {
       const eU = yy > 0 ? elev[i - W] : e;
       const eD = yy < H - 1 ? elev[i + W] : e;
       const slope = eL - eR + (eU - eD);
-      shade *= Math.max(0.62, Math.min(1.38, 1 + slope * 5.5));
+      shade *= Math.max(0.5, Math.min(1.55, 1 + slope * 8.5));
     }
     r = Math.min(255, r * shade);
     g = Math.min(255, g * shade);
@@ -59,6 +82,52 @@ export function buildTerrainCanvas(map: MapStatic): HTMLCanvasElement {
   }
   ctx.putImageData(img, 0, 0);
   return c;
+}
+
+/** One full visual season cycle (spring→winter) in wall-clock milliseconds. */
+export const SEASON_YEAR_MS = 48000;
+
+/**
+ * Season masks, precomputed once per map:
+ * - snow: white, alpha = how readily this tile takes winter snow (cold and/or high)
+ * - autumn: amber, alpha on deciduous forest tiles
+ * Drawn per-frame with hemisphere-opposed seasonal opacity (visual layer only —
+ * the simulation itself ticks in whole years and is untouched).
+ */
+export function buildSeasonMasks(map: MapStatic): { snow: HTMLCanvasElement; autumn: HTMLCanvasElement } {
+  const mk = (): [HTMLCanvasElement, ImageData, CanvasRenderingContext2D] => {
+    const c = document.createElement('canvas');
+    c.width = map.width;
+    c.height = map.height;
+    const ctx = c.getContext('2d')!;
+    return [c, ctx.createImageData(map.width, map.height), ctx];
+  };
+  const [snowC, snowImg, snowCtx] = mk();
+  const [autC, autImg, autCtx] = mk();
+  for (let i = 0; i < map.terrain.length; i++) {
+    const t = map.terrain[i];
+    if (t === 0) continue;
+    // Snow susceptibility: cold latitudes and high ridges whiten first.
+    const cold = Math.max(0, 0.52 - map.temperature[i]) * 2.6;
+    const high = Math.max(0, map.elevation[i] - 0.72) * 2.2;
+    const s = Math.min(1, cold + high);
+    if (s > 0.04) {
+      snowImg.data[i * 4] = 235;
+      snowImg.data[i * 4 + 1] = 240;
+      snowImg.data[i * 4 + 2] = 248;
+      snowImg.data[i * 4 + 3] = Math.round(s * 235);
+    }
+    // Deciduous turn: temperate forest goes amber; tropical forest stays green.
+    if (t === 2 && map.temperature[i] < 0.72) {
+      autImg.data[i * 4] = 205;
+      autImg.data[i * 4 + 1] = 132;
+      autImg.data[i * 4 + 2] = 48;
+      autImg.data[i * 4 + 3] = 215;
+    }
+  }
+  snowCtx.putImageData(snowImg, 0, 0);
+  autCtx.putImageData(autImg, 0, 0);
+  return { snow: snowC, autumn: autC };
 }
 
 /** Cheap deterministic hash -> [0,1) for visual placement. */
