@@ -647,7 +647,7 @@ export default function PlanetView({ universe }: { universe: Universe }): JSX.El
     globe.add(surfaceGroup);
     const satellites: { mesh: THREE.Group; beacon: THREE.Mesh; r: number; incl: number; speed: number; phase: number }[] = [];
     const ships: { mesh: THREE.Group; engine: THREE.Sprite; phase: number }[] = [];
-    let missiles: { mesh: THREE.Mesh; trails: THREE.Sprite[]; a: THREE.Vector3; b: THREE.Vector3; phase: number }[] = [];
+    let missiles: { mesh: THREE.Group; trails: THREE.Sprite[]; impact: THREE.Sprite; a: THREE.Vector3; b: THREE.Vector3; phase: number }[] = [];
     const orbitRings: THREE.Line[] = [];
     let portal: THREE.Mesh | null = null;
     let beam: THREE.Mesh | null = null;
@@ -708,6 +708,7 @@ export default function PlanetView({ universe }: { universe: Universe }): JSX.El
       // Missiles: ballistic arcs over active fronts, once flight is known.
       for (const mm of missiles) {
         surfaceGroup.remove(mm.mesh);
+        surfaceGroup.remove(mm.impact);
         for (const tr of mm.trails) surfaceGroup.remove(tr);
       }
       missiles = [];
@@ -719,10 +720,35 @@ export default function PlanetView({ universe }: { universe: Universe }): JSX.El
         if (!a?.alive || !b?.alive) continue;
         const pa = tileToLocal(a.cx, a.cy, u.mapStatic.width, u.mapStatic.height, 1.01);
         const pb = tileToLocal(b.cx, b.cy, u.mapStatic.width, u.mapStatic.height, 1.01);
-        const mesh = new THREE.Mesh(
-          new THREE.SphereGeometry(0.016, 8, 8),
-          new THREE.MeshBasicMaterial({ color: 0xffd0a0 }),
+        // A real airframe: cylinder body, red cone warhead, additive exhaust —
+        // oriented along the velocity every frame.
+        const mesh = new THREE.Group();
+        const bodyGeo = new THREE.CylinderGeometry(0.0052, 0.0052, 0.03, 10);
+        bodyGeo.rotateX(Math.PI / 2);
+        mesh.add(new THREE.Mesh(bodyGeo, new THREE.MeshStandardMaterial({ color: 0xe6e9ee, metalness: 0.65, roughness: 0.3 })));
+        const noseGeo = new THREE.ConeGeometry(0.0052, 0.013, 10);
+        noseGeo.rotateX(Math.PI / 2);
+        const nose = new THREE.Mesh(noseGeo, new THREE.MeshStandardMaterial({ color: 0xb8352c, metalness: 0.4, roughness: 0.4 }));
+        nose.position.z = 0.0215;
+        mesh.add(nose);
+        const finGeo = new THREE.BoxGeometry(0.014, 0.0012, 0.008);
+        for (const fa of [0, Math.PI / 2]) {
+          const fin = new THREE.Mesh(finGeo, new THREE.MeshStandardMaterial({ color: 0x9aa2ae }));
+          fin.rotation.z = fa;
+          fin.position.z = -0.012;
+          mesh.add(fin);
+        }
+        const exhaust = new THREE.Sprite(
+          new THREE.SpriteMaterial({ map: glowTex, color: 0xffd9a0, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false }),
         );
+        exhaust.scale.set(0.035, 0.035, 1);
+        exhaust.position.z = -0.022;
+        mesh.add(exhaust);
+        const impact = new THREE.Sprite(
+          new THREE.SpriteMaterial({ map: glowTex, color: 0xffb050, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false }),
+        );
+        impact.visible = false;
+        surfaceGroup.add(impact);
         // A staged exhaust plume: bright at the nozzle, cooling down the arc.
         const trailSpecs: [number, number][] = [[0xffc080, 0.07], [0xff7040, 0.055], [0x99584a, 0.04]];
         const trails = trailSpecs.map(([col, sz]) => {
@@ -734,7 +760,7 @@ export default function PlanetView({ universe }: { universe: Universe }): JSX.El
           return tr;
         });
         surfaceGroup.add(mesh);
-        missiles.push({ mesh, trails, a: pa, b: pb, phase: missiles.length * 1.4 });
+        missiles.push({ mesh, trails, impact, a: pa, b: pb, phase: missiles.length * 1.4 });
       }
 
       // The Gate: a transcendent nation opens a shimmering ring above its land.
@@ -881,22 +907,37 @@ export default function PlanetView({ universe }: { universe: Universe }): JSX.El
       }
       for (const mm of missiles) {
         const f = (tt * 0.28 + mm.phase) % 1.6;
-        if (f < 1) {
+        const arcPos = (ff: number): THREE.Vector3 => {
+          const lift = 1 + Math.sin(ff * Math.PI) * 0.25;
+          return mm.a.clone().lerp(mm.b, ff).normalize().multiplyScalar(lift);
+        };
+        if (f < 0.94) {
           mm.mesh.visible = true;
-          const pos = mm.a.clone().lerp(mm.b, f);
-          const lift = 1 + Math.sin(f * Math.PI) * 0.25;
-          mm.mesh.position.copy(pos.normalize().multiplyScalar(lift));
+          mm.impact.visible = false;
+          const pos = arcPos(f);
+          mm.mesh.position.copy(pos);
+          // nose along the flight path
+          const ahead = arcPos(Math.min(0.94, f + 0.02));
+          mm.mesh.lookAt(surfaceGroup.localToWorld(ahead.clone()));
           mm.trails.forEach((tr, ti) => {
-            const fT = Math.max(0, f - 0.04 * (ti + 1));
-            tr.visible = f > 0.04 * (ti + 1);
-            const posT = mm.a.clone().lerp(mm.b, fT);
-            const liftT = 1 + Math.sin(fT * Math.PI) * 0.25;
-            tr.position.copy(posT.normalize().multiplyScalar(liftT));
+            const fT = Math.max(0, f - 0.045 * (ti + 1));
+            tr.visible = f > 0.045 * (ti + 1);
+            tr.position.copy(arcPos(fT));
             (tr.material as THREE.SpriteMaterial).opacity = (0.6 - ti * 0.16) * (0.6 + Math.sin(f * Math.PI) * 0.4);
           });
-          mm.mesh.scale.setScalar(f > 0.93 ? 4.5 : 1 + Math.sin(f * Math.PI) * 0.5); // impact flash
+        } else if (f < 1.12) {
+          // impact: hide the airframe, bloom the strike flash
+          mm.mesh.visible = false;
+          for (const tr of mm.trails) tr.visible = false;
+          const bt = (f - 0.94) / 0.18;
+          mm.impact.visible = true;
+          mm.impact.position.copy(mm.b.clone().normalize().multiplyScalar(1.012));
+          const sz = 0.05 + bt * 0.17;
+          mm.impact.scale.set(sz, sz, 1);
+          (mm.impact.material as THREE.SpriteMaterial).opacity = 0.95 * (1 - bt);
         } else {
           mm.mesh.visible = false;
+          mm.impact.visible = false;
           for (const tr of mm.trails) tr.visible = false;
         }
       }

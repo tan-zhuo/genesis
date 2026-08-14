@@ -650,12 +650,45 @@ export function WorldCanvas({ universe }: Props): JSX.Element {
             ctx.beginPath();
             ctx.arc(mx, my, 4.5, 0, Math.PI * 2);
             ctx.fill();
-          } else if (isMeteor && age < 0.45) {
-            const flash = 1 - (age - 0.28) / 0.17;
-            ctx.fillStyle = `rgba(255, 240, 200, ${flash * 0.9})`;
-            ctx.beginPath();
-            ctx.arc(sx, sy, 14 + (1 - flash) * 30, 0, Math.PI * 2);
-            ctx.fill();
+          } else if (isMeteor && age < 0.85) {
+            // Nuke-scale blast: white flash, expanding fireball, double shockwave, rising smoke.
+            const bt = (age - 0.28) / 0.57;
+            const blastR = (9.5 * v.scale) * Math.min(1, bt * 1.6);
+            if (bt < 0.25) {
+              ctx.fillStyle = `rgba(255, 250, 230, ${0.95 * (1 - bt / 0.25)})`;
+              ctx.beginPath();
+              ctx.arc(sx, sy, blastR * 1.1 + 20, 0, Math.PI * 2);
+              ctx.fill();
+            }
+            const fire = Math.max(0, 1 - bt * 1.3);
+            if (fire > 0) {
+              const g = ctx.createRadialGradient(sx, sy, 2, sx, sy, blastR * 0.75);
+              g.addColorStop(0, `rgba(255, 240, 170, ${fire})`);
+              g.addColorStop(0.55, `rgba(255, 120, 40, ${fire * 0.85})`);
+              g.addColorStop(1, 'rgba(140, 40, 10, 0)');
+              ctx.fillStyle = g;
+              ctx.beginPath();
+              ctx.arc(sx, sy, blastR * 0.75, 0, Math.PI * 2);
+              ctx.fill();
+            }
+            for (const [ring, w] of [[1, 4], [0.72, 2.5]] as const) {
+              ctx.strokeStyle = `rgba(255, 220, 150, ${0.75 * (1 - bt)})`;
+              ctx.lineWidth = w;
+              ctx.beginPath();
+              ctx.arc(sx, sy, blastR * ring, 0, Math.PI * 2);
+              ctx.stroke();
+            }
+            // smoke column climbing off ground zero
+            if (bt > 0.3) {
+              const st = (bt - 0.3) / 0.7;
+              ctx.fillStyle = `rgba(80, 72, 66, ${0.5 * (1 - st * 0.6)})`;
+              for (let p = 0; p < 4; p++) {
+                const pr = (0.12 + st * 0.22 + p * 0.05) * blastR;
+                ctx.beginPath();
+                ctx.arc(sx + Math.sin(p * 2.4) * pr * 0.4, sy - st * blastR * (0.5 + p * 0.28), pr, 0, Math.PI * 2);
+                ctx.fill();
+              }
+            }
           }
           ctx.beginPath();
           ctx.arc(sx, sy, radius, 0, Math.PI * 2);

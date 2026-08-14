@@ -71,12 +71,42 @@ export function applyIntervention(world: WorldState, iv: Intervention, rng: Seed
 
   switch (iv.type) {
     case 'meteor': {
-      const radius = 4;
-      const affected = smite(world, x, y, radius, 0.75);
+      // Nuke-scale: a city-killer, not a firecracker.
+      const radius = 9;
+      const affected = smite(world, x, y, radius, 0.92);
+      // Ground zero becomes a scar: fertility annihilated, resources vaporized.
+      for (let dy = -radius; dy <= radius; dy++) {
+        for (let dx = -radius; dx <= radius; dx++) {
+          const d2 = dx * dx + dy * dy;
+          if (d2 > radius * radius) continue;
+          const nx = x + dx;
+          const ny = y + dy;
+          if (nx < 0 || ny < 0 || nx >= m.width || ny >= m.height) continue;
+          const ti = ny * m.width + nx;
+          if (m.terrain[ti] === TERRAIN_INDEX.ocean) continue;
+          const burn = 1 - Math.sqrt(d2) / (radius + 1);
+          m.fertility[ti] = Math.max(0.02, m.fertility[ti] * (1 - burn * 0.9));
+          if (d2 <= (radius * 0.45) ** 2) {
+            m.resources[ti] = 0;
+            if (m.terrain[ti] === TERRAIN_INDEX.forest) m.terrain[ti] = TERRAIN_INDEX.desert;
+          }
+        }
+      }
+      // Cities inside the fireball are simply gone.
+      for (const city of world.cities) {
+        if (city.destroyed) continue;
+        if ((city.x - x) ** 2 + (city.y - y) ** 2 <= (radius * 0.55) ** 2) {
+          city.destroyed = true;
+          m.population[city.tile] = 0;
+        }
+      }
+      world.mapVersion++;
+      recomputeAllYields(world);
       for (const idx of affected.keys()) {
         const civ = world.civs[idx];
-        civ.foodPenaltyUntil = world.year + 5;
-        civ.foodPenaltyMult = 0.6;
+        civ.foodPenaltyUntil = world.year + 8;
+        civ.foodPenaltyMult = 0.5;
+        civ.stability = Math.max(0, civ.stability - 15);
         receiveWrath(civ);
       }
       addEvent(world, {

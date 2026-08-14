@@ -2,6 +2,21 @@
 // animated "little people". Pure rendering — none of this touches the
 // simulation; everything is derived deterministically from world state.
 import { MapStatic, Snapshot, TradeRoute } from '../simulation/types';
+import {
+  arrowSprite,
+  blit,
+  carSprite,
+  civilianSprite,
+  explosionSprite,
+  fallenSprite,
+  firePuff,
+  flagSprite,
+  muzzleFlash,
+  planeSprite,
+  powderSmoke,
+  smokePuff,
+  soldierSprite,
+} from './spriteAtlas';
 
 /** Detail-layer pixels per tile: full 8px for normal maps, 4px for huge ones
  * (a 600-tile map at 8px would need a 4800² canvas — too much GPU memory). */
@@ -568,6 +583,24 @@ export function buildBuildingsCanvas(map: MapStatic, snapshot: Snapshot): HTMLCa
         ctx.lineTo(bx + d * 0.5, by - hgt - d * 0.6 - 1.6);
         ctx.stroke();
       } else {
+        // Masonry courses / plank lines give the facade material grain.
+        ctx.strokeStyle = 'rgba(30, 24, 18, 0.16)';
+        ctx.lineWidth = 0.16;
+        ctx.beginPath();
+        for (let ly = by - hgt + 0.7; ly < by - 0.4; ly += 0.66) {
+          ctx.moveTo(bx - w / 2 + 0.14, ly);
+          ctx.lineTo(bx + w / 2 - 0.14, ly);
+        }
+        ctx.stroke();
+        // door + two framed, lamplit windows
+        ctx.fillStyle = 'rgba(40, 28, 18, 0.92)';
+        ctx.fillRect(bx - 0.55, by - 1.7, 1.1, 1.7);
+        for (const wxo of [-w * 0.27, w * 0.27]) {
+          ctx.fillStyle = '#2b2018';
+          ctx.fillRect(bx + wxo - 0.55, by - hgt * 0.64 - 0.55, 1.1, 1.1);
+          ctx.fillStyle = 'rgba(255, 220, 130, 0.85)';
+          ctx.fillRect(bx + wxo - 0.38, by - hgt * 0.64 - 0.38, 0.76, 0.76);
+        }
         // Pitched roof: lit front slope + shadowed side slope
         ctx.fillStyle = st.roof;
         ctx.beginPath();
@@ -576,6 +609,16 @@ export function buildBuildingsCanvas(map: MapStatic, snapshot: Snapshot): HTMLCa
         ctx.lineTo(bx, by - hgt - 1.8);
         ctx.closePath();
         ctx.fill();
+        // roof tile courses running up the slope
+        ctx.strokeStyle = 'rgba(24, 16, 12, 0.28)';
+        ctx.lineWidth = 0.16;
+        ctx.beginPath();
+        for (let rr2 = 1; rr2 <= 2; rr2++) {
+          const f2 = rr2 / 3;
+          ctx.moveTo(bx - (w / 2 + 0.4) * (1 - f2), by - hgt - 1.8 * f2);
+          ctx.lineTo(bx + (w / 2 + 0.4) * (1 - f2), by - hgt - 1.8 * f2);
+        }
+        ctx.stroke();
         ctx.fillStyle = shade(st.roof, 0.7);
         ctx.beginPath();
         ctx.moveTo(bx + w / 2 + 0.4, by - hgt);
@@ -584,11 +627,11 @@ export function buildBuildingsCanvas(map: MapStatic, snapshot: Snapshot): HTMLCa
         ctx.lineTo(bx, by - hgt - 1.8);
         ctx.closePath();
         ctx.fill();
-        ctx.fillStyle = 'rgba(255, 220, 130, 0.8)';
-        ctx.fillRect(bx - 0.5, by - hgt / 2 - 0.5, 1, 1);
         if (st.chimney) {
           ctx.fillStyle = '#3c3a38';
           ctx.fillRect(bx + w / 2 - 0.8, by - hgt - 2.6, 0.9, 2.6);
+          ctx.fillStyle = '#55504c';
+          ctx.fillRect(bx + w / 2 - 0.95, by - hgt - 2.9, 1.2, 0.45);
         }
       }
     }
@@ -705,7 +748,6 @@ export function drawWalkers(
   const span = (maxTx - minTx + 1) * (maxTy - minTy + 1);
   const stride = span > 2400 ? Math.ceil(Math.sqrt(span / 2400)) : 1;
   let drawn = 0;
-  const size = Math.min(4.2, v.scale * 0.3);
 
   for (let ty = minTy; ty <= maxTy && drawn < 420; ty += stride) {
     for (let tx = minTx; tx <= maxTx && drawn < 420; tx += stride) {
@@ -733,52 +775,20 @@ export function drawWalkers(
         const along = 0.5 - span / 2 + span * m;
         const wx = horiz ? along : laneOff;
         const wy = horiz ? laneOff : along;
-        // Size + role variety: children are small and quick, elders small and slow.
-        const child = h2(i, k + 41) < 0.15;
-        const s = size * (child ? 0.62 : 0.82 + h2(i, k + 43) * 0.36);
-        const bob = moving ? Math.abs(Math.sin(t * 6.5 + ph * 9)) * s * 0.1 : 0;
+        // Pre-rendered citizen sprite: role, walk frame, garments in the
+        // nation's dye. Detail was paid at atlas build time.
+        const roleR = h2(i, k + 41);
+        const role = roleR < 0.14 ? 3 : roleR < 0.3 ? 1 : roleR < 0.45 ? 2 : 0;
+        const hpx = Math.min(22, Math.max(4.5, v.scale * 0.52)) * (0.9 + h2(i, k + 43) * 0.24);
+        const frame = moving ? Math.floor((t * 5.4 + ph * 11) % 4) : 0;
         const px = v.x + (tx + wx) * v.scale;
-        const py = v.y + (ty + wy) * v.scale - bob;
-        // Clothing: the civ's dye in varied shades; some wear working neutrals.
-        const neutral = h2(i, k + 53) < 0.3;
-        const cloth = neutral ? shade('#9a8b72', 0.75 + h2(i, k + 57) * 0.5) : shade(color, 0.62 + h2(i, k + 57) * 0.66);
-        // ground shadow (cast at the feet, unaffected by gait bob)
+        const py = v.y + (ty + wy) * v.scale;
+        const flip = horiz ? dir < 0 : h2(i, k + 61) < 0.5;
         ctx.fillStyle = 'rgba(8, 10, 16, 0.3)';
         ctx.beginPath();
-        ctx.ellipse(px + s * 0.08, py + bob + s * 0.62, s * 0.4, s * 0.14, 0, 0, Math.PI * 2);
+        ctx.ellipse(px + hpx * 0.05, py + hpx * 0.05, hpx * 0.24, hpx * 0.09, 0, 0, Math.PI * 2);
         ctx.fill();
-        // legs: two strides scissoring while walking
-        const swing = moving ? Math.sin(t * 6.5 + ph * 9) * s * 0.16 : 0;
-        ctx.fillStyle = '#3a3430';
-        ctx.fillRect(px - s * 0.16 + swing, py + s * 0.18, s * 0.13, s * 0.42);
-        ctx.fillRect(px + s * 0.05 - swing, py + s * 0.18, s * 0.13, s * 0.42);
-        // body leans into the direction of travel
-        const lean = moving ? dir * (horiz ? 1 : 0.25) * s * 0.07 : 0;
-        ctx.fillStyle = cloth;
-        ctx.fillRect(px - s * 0.26 + lean * 0.5, py - s * 0.42, s * 0.52, s * 0.62);
-        // a sash of the nation's colour on neutral-clad workers
-        if (neutral && !child) {
-          ctx.fillStyle = color;
-          ctx.fillRect(px - s * 0.26 + lean * 0.5, py - s * 0.2, s * 0.52, s * 0.12);
-        }
-        // head (slightly ahead of the body when walking)
-        ctx.fillStyle = h2(i, k + 61) < 0.5 ? '#e8d3b5' : '#caa27e';
-        ctx.beginPath();
-        ctx.arc(px + lean, py - s * 0.62, s * 0.26, 0, Math.PI * 2);
-        ctx.fill();
-        // carried things: baskets on heads, staffs over shoulders
-        const carry = h2(i, k + 67);
-        if (!child && carry < 0.16) {
-          ctx.fillStyle = '#8a6a42';
-          ctx.fillRect(px + lean - s * 0.22, py - s * 1.02, s * 0.44, s * 0.18);
-        } else if (!child && carry < 0.3) {
-          ctx.strokeStyle = '#7d6752';
-          ctx.lineWidth = Math.max(0.6, s * 0.08);
-          ctx.beginPath();
-          ctx.moveTo(px + lean - s * 0.3, py + s * 0.12);
-          ctx.lineTo(px + lean + s * 0.34, py - s * 0.78);
-          ctx.stroke();
-        }
+        blit(ctx, civilianSprite(role, frame, color), px, py, hpx, { flip });
         drawn++;
       }
     }
@@ -926,21 +936,9 @@ export function drawCars(
       const px = v.x + (seg.x1 + (seg.x2 - seg.x1) * u + Math.cos(heading + Math.PI / 2) * laneOff) * v.scale;
       const py = v.y + (seg.y1 + (seg.y2 - seg.y1) * u + Math.sin(heading + Math.PI / 2) * laneOff) * v.scale;
       if (px < -8 || py < -8 || px > rectW + 8 || py > rectH + 8) continue;
-      ctx.save();
-      ctx.translate(px, py);
-      ctx.rotate(heading + (dirBack ? Math.PI : 0));
-      const hue = h2(si, k + 11);
-      ctx.fillStyle = hue < 0.25 ? '#c9463d' : hue < 0.5 ? '#3f6db8' : hue < 0.75 ? '#d8d5cf' : '#3a3f45';
-      ctx.fillRect(-size * 0.55, -size * 0.26, size * 1.1, size * 0.52);
-      ctx.fillStyle = 'rgba(30, 34, 40, 0.9)'; // cabin glass
-      ctx.fillRect(-size * 0.2, -size * 0.2, size * 0.45, size * 0.4);
-      ctx.fillStyle = 'rgba(255, 244, 190, 0.95)'; // headlights
-      ctx.fillRect(size * 0.45, -size * 0.22, size * 0.14, size * 0.14);
-      ctx.fillRect(size * 0.45, size * 0.08, size * 0.14, size * 0.14);
-      ctx.fillStyle = 'rgba(255, 70, 60, 0.9)'; // tail lights
-      ctx.fillRect(-size * 0.58, -size * 0.22, size * 0.1, size * 0.12);
-      ctx.fillRect(-size * 0.58, size * 0.1, size * 0.1, size * 0.12);
-      ctx.restore();
+      blit(ctx, carSprite(Math.floor(h2(si, k + 11) * 5)), px, py, size * 1.15, {
+        rot: heading + (dirBack ? Math.PI : 0),
+      });
       drawn++;
     }
   }
@@ -975,50 +973,28 @@ export function drawPlanes(
       const py = v.y + fy * v.scale;
       if (px < -30 || py < -30 || px > rectW + 30 || py > rectH + 30) continue;
       const heading = Math.atan2(b.y - a.y, b.x - a.x);
-      const s = Math.min(5, Math.max(2.4, v.scale * 0.3));
-      // shadow far below on the ground
+      const hpx = Math.min(30, Math.max(10, v.scale * 0.85));
+      // ground shadow, offset by "altitude"
       ctx.save();
-      ctx.translate(px + s * 1.6, py + s * 2.4);
+      ctx.translate(px + hpx * 0.55, py + hpx * 0.8);
       ctx.rotate(heading);
       ctx.fillStyle = 'rgba(8, 10, 14, 0.22)';
       ctx.beginPath();
-      ctx.ellipse(0, 0, s * 0.8, s * 0.28, 0, 0, Math.PI * 2);
+      ctx.ellipse(0, 0, hpx * 0.4, hpx * 0.12, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
-      // contrail
-      ctx.strokeStyle = 'rgba(235, 240, 248, 0.4)';
-      ctx.lineWidth = Math.max(0.7, s * 0.16);
-      ctx.beginPath();
-      ctx.moveTo(px - Math.cos(heading) * s * 4.4, py - Math.sin(heading) * s * 4.4);
-      ctx.lineTo(px - Math.cos(heading) * s * 1.1, py - Math.sin(heading) * s * 1.1);
-      ctx.stroke();
-      // airframe: fuselage + swept wings + tailplane
-      ctx.save();
-      ctx.translate(px, py);
-      ctx.rotate(heading);
-      ctx.fillStyle = '#dde3ea';
-      ctx.beginPath();
-      ctx.ellipse(0, 0, s * 0.95, s * 0.22, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.beginPath(); // wings
-      ctx.moveTo(s * 0.1, 0);
-      ctx.lineTo(-s * 0.55, -s * 0.95);
-      ctx.lineTo(-s * 0.8, -s * 0.85);
-      ctx.lineTo(-s * 0.25, 0);
-      ctx.lineTo(-s * 0.8, s * 0.85);
-      ctx.lineTo(-s * 0.55, s * 0.95);
-      ctx.closePath();
-      ctx.fill();
-      ctx.beginPath(); // tail
-      ctx.moveTo(-s * 0.75, 0);
-      ctx.lineTo(-s * 1.05, -s * 0.4);
-      ctx.lineTo(-s * 0.95, 0);
-      ctx.lineTo(-s * 1.05, s * 0.4);
-      ctx.closePath();
-      ctx.fill();
-      ctx.fillStyle = civ.color; // tail fin in the nation's livery
-      ctx.fillRect(-s * 1.02, -s * 0.14, s * 0.3, s * 0.28);
-      ctx.restore();
+      // twin engine contrails
+      const perpX = -Math.sin(heading);
+      const perpY = Math.cos(heading);
+      for (const sside of [-1, 1]) {
+        const ox = perpX * sside * hpx * 0.17;
+        const oy = perpY * sside * hpx * 0.17;
+        for (let ci = 1; ci <= 5; ci++) {
+          const back = hpx * (0.45 + ci * 0.34);
+          blit(ctx, powderSmoke(), px - Math.cos(heading) * back + ox, py - Math.sin(heading) * back + oy, hpx * (0.16 + ci * 0.07), { alpha: 0.4 * (1 - ci / 6) });
+        }
+      }
+      blit(ctx, planeSprite(civ.color), px, py, hpx, { rot: heading });
       drawn++;
     }
   }
@@ -1035,21 +1011,22 @@ export function drawFrontFighters(
   timeMs: number,
 ): void {
   const t = timeMs / 1000;
-  const size = Math.min(6.5, v.scale * 0.36);
+  const hpx = Math.min(26, Math.max(7, v.scale * 0.58)); // soldier sprite height
   const W = map.width;
   let drawn = 0;
-  const step = Math.max(1, Math.floor(frontTiles.length / 56));
+  const step = Math.max(1, Math.floor(frontTiles.length / 48));
+  ctx.save();
+  ctx.imageSmoothingEnabled = true;
 
-  for (let f = 0; f < frontTiles.length && drawn < 56; f += step) {
+  for (let f = 0; f < frontTiles.length && drawn < 48; f += step) {
     const i = frontTiles[f];
     const tx = i % W;
     const ty = Math.floor(i / W);
     const px = v.x + (tx + 0.5) * v.scale;
     const py = v.y + (ty + 0.5) * v.scale;
-    if (px < -14 || py < -14 || px > rectW + 14 || py > rectH + 14) continue;
+    if (px < -20 || py < -20 || px > rectW + 20 || py > rectH + 20) continue;
     const o = snapshot.owner[i];
     if (o < 0) continue;
-    // Which way is the enemy? Battle scenes face along that axis.
     let ndx = 1;
     let ndy = 0;
     let enemy = -1;
@@ -1071,192 +1048,124 @@ export function drawFrontFighters(
     const cB = enemy >= 0 ? snapshot.civs[enemy]?.color ?? '#8a8a8a' : '#8a8a8a';
     const techA = snapshot.civs[o]?.researchedTechs.length ?? 0;
     const techB = enemy >= 0 ? snapshot.civs[enemy]?.researchedTechs.length ?? 0 : 0;
-    const era = Math.max(techA, techB); // melee < 16, musket 16–26, mechanized ≥ 27
+    const era = Math.max(techA, techB) >= 27 ? 2 : Math.max(techA, techB) >= 16 ? 1 : 0;
     const ph = h2(i, 3) * 10;
-
-    ctx.save();
-    ctx.translate(px, py);
-    ctx.rotate(Math.atan2(ndy, ndx));
     const sc = v.scale;
 
-    // Scorched ground + guttering fire under the fighting.
-    const flick = 0.55 + Math.sin(t * 9 + ph * 7) * 0.25;
-    ctx.fillStyle = `rgba(20, 12, 8, 0.35)`;
+    // --- Scorched ground + guttering fires ---
+    ctx.fillStyle = 'rgba(20, 12, 8, 0.32)';
     ctx.beginPath();
-    ctx.ellipse(0, 0, sc * 0.42, sc * 0.3, 0, 0, Math.PI * 2);
+    ctx.ellipse(px, py, sc * 0.44, sc * 0.3, 0, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = `rgba(255, ${110 + flick * 60 | 0}, 30, ${0.22 + flick * 0.2})`;
-    ctx.beginPath();
-    ctx.arc(sc * (h2(i, 11) - 0.5) * 0.5, sc * (h2(i, 13) - 0.5) * 0.4, sc * 0.1 * (0.7 + flick), 0, Math.PI * 2);
-    ctx.fill();
-
-    // The fallen lie where they fell.
-    if (h2(i, 17) < 0.4) {
-      ctx.fillStyle = 'rgba(60, 40, 38, 0.8)';
-      ctx.save();
-      ctx.rotate(h2(i, 19) * Math.PI);
-      ctx.fillRect(-size * 0.5, sc * 0.16, size, size * 0.3);
-      ctx.restore();
+    for (let fi = 0; fi < 2; fi++) {
+      const flick = 0.75 + Math.sin(t * 9 + ph * 7 + fi * 2.6) * 0.25;
+      blit(ctx, firePuff(),
+        px + (h2(i, 11 + fi) - 0.5) * sc * 0.6,
+        py + (h2(i, 13 + fi) - 0.5) * sc * 0.45,
+        hpx * 0.55 * flick, { alpha: 0.8 });
     }
 
-    // Two ranks of soldiers face each other across the line.
+    // --- The fallen ---
+    if (h2(i, 17) < 0.45) {
+      blit(ctx, fallenSprite(h2(i, 18) < 0.5 ? cA : cB),
+        px + (h2(i, 19) - 0.5) * sc * 0.5,
+        py + sc * 0.2,
+        hpx * 0.34, { rot: (h2(i, 20) - 0.5) * 0.9, alpha: 0.92 });
+    }
+
+    // --- Two ranks face each other across the line ---
     for (let side = 0; side < 2; side++) {
-      const sgn = side === 0 ? -1 : 1; // side 0 = defenders (this tile's owner)
+      const sgn = side === 0 ? -1 : 1; // side 0 = this tile's owner
       const col = side === 0 ? cA : cB;
+      const baseX = px + ndx * sgn * sc * 0.3;
+      const baseY = py + ndy * sgn * sc * 0.3;
       for (let j = 0; j < 2; j++) {
-        const jy = (j - 0.5) * sc * 0.34 + (h2(i, 23 + side * 4 + j) - 0.5) * sc * 0.12;
-        const lunge = Math.max(0, Math.sin(t * 4.2 + ph * 6 + side * Math.PI + j * 1.9)) * sc * 0.075;
-        const bx = sgn * (sc * 0.26 - lunge);
-        ctx.save();
-        ctx.translate(bx, jy);
-        if (era >= 27) {
-          // Mechanized: soldiers fight prone, hugging the earth.
-          ctx.fillStyle = '#3a3430';
-          ctx.fillRect(-size * 0.14, size * 0.06, size * 0.28, size * 0.22);
-          ctx.fillStyle = col;
-          ctx.fillRect(sgn * -size * 0.5, -size * 0.08, size, size * 0.26);
-          ctx.fillStyle = '#e8d3b5';
-          ctx.beginPath();
-          ctx.arc(sgn * -size * 0.45, -size * 0.14, size * 0.16, 0, Math.PI * 2);
-          ctx.fill();
-        } else {
-          // Standing: legs braced, body, head.
-          ctx.fillStyle = '#3a3430';
-          ctx.fillRect(-size * 0.2, size * 0.16, size * 0.14, size * 0.4);
-          ctx.fillRect(size * 0.06, size * 0.16, size * 0.14, size * 0.4);
-          ctx.fillStyle = col;
-          ctx.fillRect(-size * 0.26, -size * 0.42, size * 0.52, size * 0.6);
-          ctx.fillStyle = '#e8d3b5';
-          ctx.beginPath();
-          ctx.arc(0, -size * 0.6, size * 0.24, 0, Math.PI * 2);
-          ctx.fill();
-        }
-        // Weapons by era.
-        ctx.strokeStyle = era >= 16 ? '#4c453c' : '#8d8578';
-        ctx.lineWidth = Math.max(0.7, size * 0.1);
-        if (era < 16) {
-          // spear thrust toward the enemy + a round shield
-          ctx.beginPath();
-          ctx.moveTo(-sgn * size * 0.1, -size * 0.15);
-          ctx.lineTo(-sgn * (size * 0.85 + lunge * 2.2), -size * 0.2);
-          ctx.stroke();
-          ctx.fillStyle = shade(col, 0.55);
-          ctx.beginPath();
-          ctx.arc(-sgn * size * 0.3, -size * 0.1, size * 0.2, 0, Math.PI * 2);
-          ctx.fill();
-        } else {
-          // musket / rifle levelled at the foe
-          ctx.beginPath();
-          ctx.moveTo(sgn * size * 0.15, -size * (era >= 27 ? 0.1 : 0.25));
-          ctx.lineTo(-sgn * size * 0.72, -size * (era >= 27 ? 0.14 : 0.3));
-          ctx.stroke();
-          // muzzle flash + powder smoke, staggered per soldier
-          const fire = (t * 0.55 + h2(i, 31 + side * 3 + j)) % 1;
-          if (fire < 0.06) {
-            ctx.fillStyle = 'rgba(255, 236, 160, 0.95)';
-            ctx.beginPath();
-            ctx.arc(-sgn * size * 0.82, -size * 0.28, size * 0.2, 0, Math.PI * 2);
-            ctx.fill();
-          } else if (fire < 0.5) {
-            const age = (fire - 0.06) / 0.44;
-            ctx.fillStyle = `rgba(200, 198, 190, ${0.4 * (1 - age)})`;
-            ctx.beginPath();
-            ctx.arc(-sgn * (size * 0.85 + age * size * 0.4), -size * (0.32 + age * 0.55), size * (0.14 + age * 0.3), 0, Math.PI * 2);
-            ctx.fill();
+        const jx = baseX + -ndy * (j - 0.5) * sc * 0.42 + (h2(i, 23 + side * 4 + j) - 0.5) * sc * 0.1;
+        const jy = baseY + ndx * (j - 0.5) * sc * 0.42 + (h2(i, 27 + side * 4 + j) - 0.5) * sc * 0.1;
+        const cyc = (t * 1.35 + h2(i, 31 + side * 3 + j) * 3 + side * 0.7) % 1;
+        const frame = cyc < 0.55 ? 0 : cyc < 0.78 ? 1 : 2;
+        const enemyX = px + ndx * -sgn * sc * 0.3;
+        const flip = enemyX < jx - 0.01 || (Math.abs(ndx) < 0.01 && side === 1);
+        const lungeK = frame === 1 ? sc * 0.06 : 0;
+        const sx2 = jx + ndx * -sgn * lungeK;
+        const sy2 = jy + ndy * -sgn * lungeK + hpx * 0.5;
+        ctx.fillStyle = 'rgba(8, 10, 16, 0.32)';
+        ctx.beginPath();
+        ctx.ellipse(sx2, sy2 + 1, hpx * 0.26, hpx * 0.1, 0, 0, Math.PI * 2);
+        ctx.fill();
+        blit(ctx, soldierSprite(era, frame, col), sx2, sy2, hpx, { flip });
+        // Firearms: muzzle flash on the attack frame, then drifting smoke.
+        if (era >= 1) {
+          const fire = (t * 0.5 + h2(i, 37 + side * 3 + j)) % 1;
+          const mx = sx2 + (flip ? -1 : 1) * hpx * 0.62;
+          const my = sy2 - hpx * (era === 2 ? 0.28 : 0.4);
+          if (fire < 0.05) {
+            blit(ctx, muzzleFlash(), mx, my, hpx * 0.5, { flip });
+          } else if (fire < 0.55) {
+            const age = (fire - 0.05) / 0.5;
+            blit(ctx, powderSmoke(),
+              mx + (flip ? -1 : 1) * age * hpx * 0.4,
+              my - age * hpx * 0.8,
+              hpx * (0.3 + age * 0.55), { alpha: 0.55 * (1 - age) });
           }
         }
-        ctx.restore();
       }
     }
 
-    if (era < 16) {
-      // Arrow volleys arcing over the melee.
+    // --- Era projectiles ---
+    if (era === 0) {
       for (let a = 0; a < 2; a++) {
-        const u = (t * 0.7 + h2(i, 37 + a) + a * 0.5) % 1;
+        const u = (t * 0.65 + h2(i, 41 + a) + a * 0.5) % 1;
         const from = a % 2 === 0 ? -1 : 1;
-        const ax = from * sc * (0.34 - 0.68 * u);
-        const ay = -Math.sin(Math.PI * u) * sc * 0.34 - size * 0.3;
-        const slope = -from * Math.cos(Math.PI * u) * 0.9;
-        ctx.strokeStyle = 'rgba(40, 34, 26, 0.9)';
-        ctx.lineWidth = Math.max(0.6, size * 0.07);
+        const ax = px + ndx * from * sc * (0.34 - 0.68 * u) + -ndy * (h2(i, 43 + a) - 0.5) * sc * 0.3;
+        const ay = py + ndy * from * sc * (0.34 - 0.68 * u) + ndx * (h2(i, 45 + a) - 0.5) * sc * 0.3
+          - Math.sin(Math.PI * u) * sc * 0.34 - hpx * 0.3;
+        const vx = ndx * -from;
+        const vy = ndy * -from - Math.cos(Math.PI * u) * 0.9;
+        blit(ctx, arrowSprite(), ax, ay, hpx * 0.16, { rot: Math.atan2(vy, vx) });
+      }
+    } else if (era === 2) {
+      for (let a = 0; a < 2; a++) {
+        const u = (t * 2.6 + h2(i, 47 + a)) % 1;
+        const from = a % 2 === 0 ? -1 : 1;
+        const ax = px + ndx * from * sc * (0.3 - 0.6 * u);
+        const ay = py + ndy * from * sc * (0.3 - 0.6 * u) - hpx * 0.2;
+        ctx.strokeStyle = `rgba(255, 210, 120, ${0.85 - u * 0.4})`;
+        ctx.lineWidth = Math.max(0.7, hpx * 0.05);
         ctx.beginPath();
         ctx.moveTo(ax, ay);
-        ctx.lineTo(ax - from * size * 0.34, ay - slope * size * 0.34);
+        ctx.lineTo(ax - ndx * from * hpx * 0.5, ay - ndy * from * hpx * 0.5);
         ctx.stroke();
       }
-      // ring of sparks where steel meets steel
-      const clash = Math.sin(t * 4.2 + ph * 6);
-      if (clash > 0.8) {
-        ctx.strokeStyle = `rgba(255, 245, 200, ${(clash - 0.8) * 4})`;
-        ctx.lineWidth = Math.max(0.6, size * 0.08);
-        for (let sp = 0; sp < 4; sp++) {
-          const an = h2(i, 41 + sp) * Math.PI * 2 + t * 2;
-          ctx.beginPath();
-          ctx.moveTo(Math.cos(an) * size * 0.12, -size * 0.25 + Math.sin(an) * size * 0.12);
-          ctx.lineTo(Math.cos(an) * size * 0.4, -size * 0.25 + Math.sin(an) * size * 0.4);
-          ctx.stroke();
-        }
-      }
-    } else if (era >= 27) {
-      // Tracer fire snapping across the gap; shells bursting.
-      for (let a = 0; a < 2; a++) {
-        const u = (t * 2.6 + h2(i, 43 + a)) % 1;
-        const from = a % 2 === 0 ? -1 : 1;
-        const ax = from * sc * (0.3 - 0.6 * u);
-        ctx.strokeStyle = `rgba(255, 210, 120, ${0.85 - u * 0.4})`;
-        ctx.lineWidth = Math.max(0.6, size * 0.06);
-        ctx.beginPath();
-        ctx.moveTo(ax, -size * 0.12);
-        ctx.lineTo(ax - from * size * 0.5, -size * 0.12);
-        ctx.stroke();
-      }
-      const boom = (t * 0.32 + h2(i, 47)) % 1;
-      if (boom < 0.16) {
-        const bu = boom / 0.16;
-        const bx2 = (h2(i, 49) - 0.5) * sc * 0.5;
-        ctx.strokeStyle = `rgba(255, 190, 90, ${(1 - bu) * 0.9})`;
-        ctx.lineWidth = Math.max(0.8, size * 0.1 * (1 - bu));
-        ctx.beginPath();
-        ctx.arc(bx2, -size * 0.1, size * (0.2 + bu * 0.9), 0, Math.PI * 2);
-        ctx.stroke();
-        if (bu < 0.3) {
-          ctx.fillStyle = 'rgba(255, 240, 190, 0.95)';
-          ctx.beginPath();
-          ctx.arc(bx2, -size * 0.1, size * 0.25, 0, Math.PI * 2);
-          ctx.fill();
-        }
+      const boom = (t * 0.3 + h2(i, 49)) % 1;
+      if (boom < 0.3) {
+        const bframe = boom < 0.06 ? 0 : boom < 0.18 ? 1 : 2;
+        blit(ctx, explosionSprite(bframe),
+          px + (h2(i, 51) - 0.5) * sc * 0.6,
+          py + (h2(i, 52) - 0.5) * sc * 0.4 - hpx * 0.2,
+          hpx * (0.9 + boom * 1.6), { alpha: 1 - boom * 2.2 });
       }
     }
 
-    // War smoke rising off the line — visible even before you spot the soldiers.
+    // --- Smoke column off the burning line ---
     for (let p = 0; p < 3; p++) {
-      const age = (t * 0.16 + p / 3 + ph) % 1;
-      const sx = (h2(i, 53 + p) - 0.5) * sc * 0.5 + Math.sin(t * 0.8 + p * 2.1 + ph) * sc * 0.06 * age;
-      ctx.fillStyle = `rgba(70, 66, 62, ${(1 - age) * 0.34})`;
-      ctx.beginPath();
-      ctx.arc(sx, -age * sc * 0.85 - size * 0.3, sc * (0.07 + age * 0.17), 0, Math.PI * 2);
-      ctx.fill();
+      const age = (t * 0.15 + p / 3 + ph) % 1;
+      blit(ctx, smokePuff(),
+        px + (h2(i, 53 + p) - 0.5) * sc * 0.5 + Math.sin(t * 0.8 + p * 2.1 + ph) * sc * 0.06 * age,
+        py - age * sc * 0.95 - hpx * 0.3,
+        hpx * (0.35 + age * 0.85), { alpha: 0.5 * (1 - age) });
     }
 
-    // A battle standard every few scenes: pole + wind-torn banner.
+    // --- A battle standard every few scenes ---
     if (h2(i, 59) < 0.3) {
-      const wave = Math.sin(t * 3.2 + ph * 5) * size * 0.12;
-      ctx.strokeStyle = '#6b5f4e';
-      ctx.lineWidth = Math.max(0.7, size * 0.09);
-      ctx.beginPath();
-      ctx.moveTo(-sc * 0.34, size * 0.5);
-      ctx.lineTo(-sc * 0.34, -size * 1.25);
-      ctx.stroke();
-      ctx.fillStyle = cA;
-      ctx.beginPath();
-      ctx.moveTo(-sc * 0.34, -size * 1.25);
-      ctx.lineTo(-sc * 0.34 + size * 0.75, -size * (1.08 - 0.06) + wave);
-      ctx.lineTo(-sc * 0.34, -size * 0.85);
-      ctx.closePath();
-      ctx.fill();
+      const fframe = Math.floor((t * 2.2 + ph) % 3);
+      blit(ctx, flagSprite(cA, fframe),
+        px - ndy * sc * 0.4 - ndx * sc * 0.36,
+        py + ndx * sc * 0.4 - ndy * sc * 0.36 + hpx * 0.5,
+        hpx * 1.35);
     }
 
-    ctx.restore();
     drawn++;
   }
+  ctx.restore();
 }
