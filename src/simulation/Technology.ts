@@ -38,6 +38,23 @@ export interface Technology {
   effects: TechEffects;
 }
 
+// What a technology makes REAL in the world — not a stat buff but a thing you
+// can see or do. Shown on the tech tree; the map/engine honours each of these.
+export const TECH_UNLOCKS: Record<string, { en: string; zh: string }> = {
+  agriculture: { en: 'Tilled fields appear around settlements', zh: '聚落周围出现耕地与条垄农田' },
+  wheel: { en: 'Dirt wagon-tracks link your cities; wagon caravans', zh: '城市间出现土路，陆上篷车商队上路' },
+  sailing: { en: 'Sea trade ships; coastal expansion', zh: '海上帆船贸易，沿海扩张' },
+  navigation: { en: 'Overseas colonization of distant continents', zh: '跨洋殖民遥远大陆' },
+  roads: { en: 'Paved stone highways between cities', zh: '城市间铺设石板大道' },
+  masonry: { en: 'City walls rise around major towns', zh: '重要城镇筑起石墙' },
+  'internal-combustion': { en: 'Asphalt highways with car traffic', zh: '柏油公路建成，汽车川流不息' },
+  flight: { en: 'Aircraft between cities; war missiles on the 3D globe', zh: '飞机航线连通城市；战时导弹划过 3D 星球' },
+  industry: { en: 'Factory chimneys; mines begin to exhaust', zh: '工厂烟囱林立；矿脉开始枯竭' },
+  electricity: { en: 'Cities glow electric-white at night', zh: '城市夜灯由火光变为电光' },
+  spaceflight: { en: 'Satellites + spaceships in orbit; orbital mining', zh: '卫星与飞船入轨（3D）；轨道采矿缓解枯竭' },
+  transcendence: { en: 'The Gate opens — the civilization ascends', zh: '「门」开启——文明整体升维离开此世' },
+};
+
 // Costs tuned to real-history proportions: millennia for the neolithic and
 // classical packages, accelerating (but still slow) toward modernity.
 const TIER_COST = [10, 900, 2200, 4200, 7500, 13000, 22000, 40000, 120000, 300000, 600000];

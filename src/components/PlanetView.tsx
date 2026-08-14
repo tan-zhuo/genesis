@@ -647,7 +647,7 @@ export default function PlanetView({ universe }: { universe: Universe }): JSX.El
     globe.add(surfaceGroup);
     const satellites: { mesh: THREE.Group; beacon: THREE.Mesh; r: number; incl: number; speed: number; phase: number }[] = [];
     const ships: { mesh: THREE.Group; engine: THREE.Sprite; phase: number }[] = [];
-    let missiles: { mesh: THREE.Mesh; trail: THREE.Sprite; a: THREE.Vector3; b: THREE.Vector3; phase: number }[] = [];
+    let missiles: { mesh: THREE.Mesh; trails: THREE.Sprite[]; a: THREE.Vector3; b: THREE.Vector3; phase: number }[] = [];
     const orbitRings: THREE.Line[] = [];
     let portal: THREE.Mesh | null = null;
     let beam: THREE.Mesh | null = null;
@@ -670,6 +670,7 @@ export default function PlanetView({ universe }: { universe: Universe }): JSX.El
       while (satellites.length < wantSats) {
         const i = satellites.length;
         const { group, beacon } = makeSatellite();
+        group.scale.setScalar(1.35);
         orbitGroup.add(group);
         const r = 1.14 + (i % 4) * 0.055;
         const incl = ((i * 0.7) % 1.4) - 0.7;
@@ -707,7 +708,7 @@ export default function PlanetView({ universe }: { universe: Universe }): JSX.El
       // Missiles: ballistic arcs over active fronts, once flight is known.
       for (const mm of missiles) {
         surfaceGroup.remove(mm.mesh);
-        surfaceGroup.remove(mm.trail);
+        for (const tr of mm.trails) surfaceGroup.remove(tr);
       }
       missiles = [];
       const activeWars = snap.wars.filter((w) => w.endYear === null).slice(0, 3);
@@ -722,13 +723,18 @@ export default function PlanetView({ universe }: { universe: Universe }): JSX.El
           new THREE.SphereGeometry(0.016, 8, 8),
           new THREE.MeshBasicMaterial({ color: 0xffd0a0 }),
         );
-        const trail = new THREE.Sprite(
-          new THREE.SpriteMaterial({ map: glowTex, color: 0xff7040, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false }),
-        );
-        trail.scale.set(0.06, 0.06, 1);
+        // A staged exhaust plume: bright at the nozzle, cooling down the arc.
+        const trailSpecs: [number, number][] = [[0xffc080, 0.07], [0xff7040, 0.055], [0x99584a, 0.04]];
+        const trails = trailSpecs.map(([col, sz]) => {
+          const tr = new THREE.Sprite(
+            new THREE.SpriteMaterial({ map: glowTex, color: col, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false }),
+          );
+          tr.scale.set(sz, sz, 1);
+          surfaceGroup.add(tr);
+          return tr;
+        });
         surfaceGroup.add(mesh);
-        surfaceGroup.add(trail);
-        missiles.push({ mesh, trail, a: pa, b: pb, phase: missiles.length * 1.4 });
+        missiles.push({ mesh, trails, a: pa, b: pb, phase: missiles.length * 1.4 });
       }
 
       // The Gate: a transcendent nation opens a shimmering ring above its land.
@@ -808,19 +814,21 @@ export default function PlanetView({ universe }: { universe: Universe }): JSX.El
         const f = (tt * 0.28 + mm.phase) % 1.6;
         if (f < 1) {
           mm.mesh.visible = true;
-          mm.trail.visible = f > 0.04;
           const pos = mm.a.clone().lerp(mm.b, f);
           const lift = 1 + Math.sin(f * Math.PI) * 0.25;
           mm.mesh.position.copy(pos.normalize().multiplyScalar(lift));
-          const fT = Math.max(0, f - 0.045);
-          const posT = mm.a.clone().lerp(mm.b, fT);
-          const liftT = 1 + Math.sin(fT * Math.PI) * 0.25;
-          mm.trail.position.copy(posT.normalize().multiplyScalar(liftT));
-          (mm.trail.material as THREE.SpriteMaterial).opacity = 0.5 + Math.sin(f * Math.PI) * 0.3;
+          mm.trails.forEach((tr, ti) => {
+            const fT = Math.max(0, f - 0.04 * (ti + 1));
+            tr.visible = f > 0.04 * (ti + 1);
+            const posT = mm.a.clone().lerp(mm.b, fT);
+            const liftT = 1 + Math.sin(fT * Math.PI) * 0.25;
+            tr.position.copy(posT.normalize().multiplyScalar(liftT));
+            (tr.material as THREE.SpriteMaterial).opacity = (0.6 - ti * 0.16) * (0.6 + Math.sin(f * Math.PI) * 0.4);
+          });
           mm.mesh.scale.setScalar(f > 0.93 ? 4.5 : 1 + Math.sin(f * Math.PI) * 0.5); // impact flash
         } else {
           mm.mesh.visible = false;
-          mm.trail.visible = false;
+          for (const tr of mm.trails) tr.visible = false;
         }
       }
       if (portal) {

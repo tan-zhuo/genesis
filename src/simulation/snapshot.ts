@@ -65,8 +65,19 @@ export function buildSnapshot(
   includeMapUpdate = false,
 ): Snapshot {
   const landTiles = countLandTiles(world);
+  const m = world.map;
   const civs: CivSummary[] = world.civs.map((c) => {
     const upcoming = c.currentResearch ? TECH_BY_ID.get(c.currentResearch) : null;
+    // Resource footprint: what is left in the ground the nation stands on.
+    let forestTiles = 0;
+    let mineTiles = 0;
+    let fertSum = 0;
+    for (const ti of c.tiles) {
+      if (m.owner[ti] !== c.index) continue;
+      if (m.terrain[ti] === 2) forestTiles++;
+      if (m.resources[ti] & (4 | 8 | 16)) mineTiles++; // stone / iron / gold seams
+      fertSum += m.fertility[ti];
+    }
     return {
       id: c.id,
       name: c.name,
@@ -102,6 +113,9 @@ export function buildSnapshot(
       doctrine: c.faith.doctrine,
       pendingPrayer: c.faith.pendingPrayer ? { ...c.faith.pendingPrayer } : null,
       ascended: c.ascended,
+      forestTiles,
+      mineTiles,
+      avgFertility: c.territory > 0 ? fertSum / c.territory : 0,
     };
   });
 

@@ -73,12 +73,21 @@ export function buildCouncilPrompt(
 ): string {
   const zh = lang === 'zh';
   const dossier = buildCivDossier(snapshot, events, universe.config, civ.id, lang);
+  const unstable = civ.stability < 45;
   const head = zh
-    ? `你是文明「${civ.name}」的执政议会。根据下方档案，为未来数十年做出一个最有利于本文明长期存续与繁荣的战略决策。
+    ? `你是文明「${civ.name}」的执政议会。根据下方档案，为未来数十年做出一个战略决策。你的世界观：
+- 国家是利己的。你只为本国的存续与强盛负责，条约与友谊都是利益的工具。
+- 但人民的意志是你权力的地基：幸福度与稳定度过低时，帝国会内乱、分裂甚至崩溃——穷兵黩武会失去民心。${unstable ? `（警告：当前稳定度仅 ${Math.round(civ.stability)}，分裂风险已经真实存在！）` : ''}
+- 这个世界的资源是有限的：矿脉会枯竭、森林会砍尽、土壤会耗竭、工业会让全球变暖淹没海岸。只顾眼前的国家会在几百年后困死在废土上。
+- 唯一的终局出路是科技：沿科技树走到「星际航行」可开采轨道资源，走到「维度跃迁」则整个文明超越此世。你要在短期生存与这条长路之间做平衡。
 只输出一个 JSON 对象，不要输出任何其他文字、解释或代码块标记。格式：
 {"kind":"research|war|peace|diplomacy|policy|none","techId":"...","targetId":"...","trait":"...","delta":0,"reason":"不超过60字的决策理由"}
 只填写与所选 kind 相关的字段。reason 用中文，要具体引用局势。`
-    : `You are the ruling council of the civilization "${civ.name}". Based on the dossier below, make ONE strategic decision that best serves the nation's long-term survival and prosperity over the coming decades.
+    : `You are the ruling council of the civilization "${civ.name}". Based on the dossier below, make ONE strategic decision for the coming decades. Your worldview:
+- Nations are self-interested. You answer only for this nation's survival and power; treaties and friendships are instruments.
+- But the will of the people is the ground you stand on: when happiness and stability fall, empires riot, split, and collapse — endless war costs you the people.${unstable ? ` (WARNING: stability is only ${Math.round(civ.stability)} — the risk of a split is real right now.)` : ''}
+- This world's resources are finite: ore seams empty, forests fall, soil tires, and industry warms the globe until coasts drown. A nation that lives for today starves in the wasteland tomorrow.
+- The only true exit is technology: Spaceflight opens orbital mining, Dimensional Transcendence lets the whole civilization leave this world. Balance short-term survival against that long road.
 Output ONLY a single JSON object — no prose, no explanations, no code fences. Format:
 {"kind":"research|war|peace|diplomacy|policy|none","techId":"...","targetId":"...","trait":"...","delta":0,"reason":"one concrete sentence, max 25 words"}
 Fill only the fields relevant to your chosen kind. The reason must cite the actual situation.`;

@@ -2,7 +2,7 @@
 // Pick a civilization to see its personal path — done / researching / available
 // / locked. Different geographies and cultures grow visibly different trees.
 import { Universe } from '../state/simulatorStore';
-import { availableTechs, techCost, TECHNOLOGIES, Technology } from '../simulation/Technology';
+import { availableTechs, techCost, TECHNOLOGIES, TECH_UNLOCKS, Technology } from '../simulation/Technology';
 import { useSimulatorStore } from '../state/simulatorStore';
 import { useLang, useT } from '../i18n';
 import { FlaskConical } from 'lucide-react';
@@ -81,6 +81,11 @@ export function TechnologyTree({ universe }: { universe: Universe }): JSX.Elemen
                   </div>
                   {tech.requirements.length > 0 && (
                     <div className="tech-blurb">{reqNames(tech)}</div>
+                  )}
+                  {TECH_UNLOCKS[tech.id] && (
+                    <div className="tech-unlock">
+                      {lang === 'zh' ? TECH_UNLOCKS[tech.id].zh : TECH_UNLOCKS[tech.id].en}
+                    </div>
                   )}
                   {current && focus && (
                     <div className="tech-progress">

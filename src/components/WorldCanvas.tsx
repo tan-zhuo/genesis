@@ -14,7 +14,9 @@ import {
   buildTerrainCanvas,
   citySignature,
   drawCaravans,
+  drawCars,
   drawFrontFighters,
+  drawPlanes,
   drawWalkers,
 } from './mapDetail';
 
@@ -427,7 +429,11 @@ export function WorldCanvas({ universe }: Props): JSX.Element {
       const wfLayer = warFrontCanvasRef.current;
       if (wfLayer && terrain && (mapMode === 'political' || night)) {
         ctx.save();
-        ctx.globalAlpha = 0.5 + 0.4 * Math.sin(performance.now() / 220);
+        // Far out: a pulsing ember line marks the front. Zoomed in: the layer
+        // fades away and the animated battle scenes carry the war instead.
+        const closeness = Math.min(1, Math.max(0, (v.scale - 5) / 8));
+        ctx.globalAlpha = (0.4 + 0.28 * Math.sin(performance.now() / 220)) * (1 - closeness * 0.82) + 0.05;
+        ctx.imageSmoothingEnabled = true; // soft glow rather than hard blocks
         ctx.drawImage(wfLayer, v.x, v.y, terrain.width * v.scale, terrain.height * v.scale);
         ctx.restore();
       }
@@ -549,9 +555,13 @@ export function WorldCanvas({ universe }: Props): JSX.Element {
         }
         if (v.scale >= 5 && (mapMode === 'political' || mapMode === 'night')) {
           if (mapStatic) drawCaravans(ctx, v, snap.tradeRoutes, snap.civs, mapStatic, performance.now());
+          drawCars(ctx, v, rect.width, rect.height, snap.civs, performance.now());
           if (mapStatic && v.scale >= 6.5 && warFrontTilesRef.current.length > 0) {
             drawFrontFighters(ctx, v, rect.width, rect.height, warFrontTilesRef.current, mapStatic, snap, performance.now());
           }
+        }
+        if (v.scale >= 3.2 && mapMode !== 'terrain') {
+          drawPlanes(ctx, v, rect.width, rect.height, snap, performance.now());
         }
 
         // Event pings: fading rings + glyphs at event location.
@@ -660,7 +670,7 @@ export function WorldCanvas({ universe }: Props): JSX.Element {
     const rect = wrapRef.current.getBoundingClientRect();
     const v = viewRef.current;
     const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
-    const newScale = Math.max(0.8, Math.min(24, v.scale * factor));
+    const newScale = Math.max(0.8, Math.min(44, v.scale * factor));
     const mx = e.clientX - rect.left;
     const my = e.clientY - rect.top;
     viewRef.current = {
@@ -699,7 +709,7 @@ export function WorldCanvas({ universe }: Props): JSX.Element {
         const pts = [...pointersRef.current.values()];
         const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
         const v = viewRef.current;
-        const newScale = Math.max(0.8, Math.min(24, pinchRef.current.scale * (dist / pinchRef.current.dist)));
+        const newScale = Math.max(0.8, Math.min(44, pinchRef.current.scale * (dist / pinchRef.current.dist)));
         const cx = (pts[0].x + pts[1].x) / 2;
         const cy = (pts[0].y + pts[1].y) / 2;
         const rect = wrapRef.current!.getBoundingClientRect();

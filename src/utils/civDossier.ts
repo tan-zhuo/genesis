@@ -87,6 +87,21 @@ export function buildCivDossier(
     ? `经济 ${Math.round(civ.economy)}，军事 ${Math.round(civ.military)}，稳定 ${Math.round(civ.stability)}，幸福 ${Math.round(civ.happiness)}，文化 ${Math.round(civ.culture)}`
     : `Economy ${Math.round(civ.economy)}, military ${Math.round(civ.military)}, stability ${Math.round(civ.stability)}, happiness ${Math.round(civ.happiness)}, culture ${Math.round(civ.culture)}`);
 
+  // --- Resources & sustainability (the ground is finite) ---
+  L(zh ? `\n## 资源与永续` : `\n## Resources & sustainability`);
+  L(zh
+    ? `库存: 粮 ${fmt(civ.food)}，木 ${fmt(civ.wood)}，石 ${fmt(civ.stone)}，铁 ${fmt(civ.iron)}，金 ${fmt(civ.gold)}`
+    : `Stocks: food ${fmt(civ.food)}, wood ${fmt(civ.wood)}, stone ${fmt(civ.stone)}, iron ${fmt(civ.iron)}, gold ${fmt(civ.gold)}`);
+  L(zh
+    ? `国土家底: 剩余森林 ${civ.forestTiles} 格，未枯竭矿脉 ${civ.mineTiles} 处，土壤平均肥力 ${(civ.avgFertility * 100).toFixed(0)}%（矿会挖空、林会砍尽、地力会耗竭，且不可再生）`
+    : `The land itself: ${civ.forestTiles} forest tiles left, ${civ.mineTiles} unexhausted ore seams, mean soil fertility ${(civ.avgFertility * 100).toFixed(0)}% (mines empty, forests fall, soil tires — none of it comes back easily)`);
+  const latestStats = snapshot.stats[snapshot.stats.length - 1];
+  if (latestStats && latestStats.co2 > 300) {
+    L(zh
+      ? `气候: CO₂ ${Math.round(latestStats.co2)}ppm，全球已升温 ${latestStats.tempAnomaly.toFixed(1)}°C —— 工业排放正在改变气候，海岸与农业带都会迁移`
+      : `Climate: CO₂ ${Math.round(latestStats.co2)}ppm, ${latestStats.tempAnomaly.toFixed(1)}°C of warming — industry is shifting coastlines and harvest zones`);
+  }
+
   // --- Trajectories ---
   if (hist && hist.years.length > 1) {
     L(zh ? `\n## 数值轨迹（年份:值 采样）` : `\n## Trajectories (year:value samples)`);

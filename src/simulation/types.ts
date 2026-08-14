@@ -483,6 +483,9 @@ export interface CivSummary {
   doctrine: string | null;
   pendingPrayer: { year: number; kind: string } | null;
   ascended: boolean;
+  forestTiles: number; // remaining forest inside the borders
+  mineTiles: number; // unexhausted stone/iron/gold seams inside the borders
+  avgFertility: number; // 0..1 mean soil fertility of the territory
 }
 
 export interface CitySummary {
