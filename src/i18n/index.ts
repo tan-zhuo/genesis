@@ -278,6 +278,11 @@ const en: Record<string, string> = {
   'tile.resources': 'Resources',
 
   // Nations
+  'follow.start': 'Follow this civilization — its events surface as banners and a chronicle',
+  'follow.stop': 'Unfollow',
+  'follow.chronicle': 'Chronicle of {name}',
+  'follow.filter': 'Following',
+  'follow.chipHint': 'Following — click to open panel',
   'nat.fallen': 'Fallen civilizations',
   'nat.citiesCount': '{n} cities',
   'nat.extinct': 'extinct',
@@ -770,6 +775,11 @@ const zh: Record<string, string> = {
   'tile.city': '城市',
   'tile.resources': '资源',
 
+  'follow.start': '关注此文明 — 它的事件将优先横幅播报并生成专属编年史',
+  'follow.stop': '取消关注',
+  'follow.chronicle': '{name}编年史',
+  'follow.filter': '关注中',
+  'follow.chipHint': '关注中 — 点击打开面板',
   'nat.fallen': '消亡的文明',
   'nat.citiesCount': '{n} 座城市',
   'nat.extinct': '已消亡',

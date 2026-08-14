@@ -17,6 +17,7 @@ export function EventBanner({ universe }: { universe: Universe }): JSX.Element |
   const pauseOnHistoric = useSimulatorStore((s) => s.pauseOnHistoric);
   const pause = useSimulatorStore((s) => s.pause);
   const cinema = useSimulatorStore((s) => s.cinema);
+  const followedCivId = useSimulatorStore((s) => s.followedCivId);
   const lang = useLang();
   void cinema;
 
@@ -31,7 +32,8 @@ export function EventBanner({ universe }: { universe: Universe }): JSX.Element |
     let paused = false;
     for (let i = Math.max(0, events.length - 40); i < events.length; i++) {
       const e = events[i];
-      if (e.importance < 8 || seenRef.current.has(e.id)) continue;
+      const threshold = followedCivId && e.civilizationIds.includes(followedCivId) ? 5 : 8;
+      if (e.importance < threshold || seenRef.current.has(e.id)) continue;
       seenRef.current.add(e.id);
       queueRef.current.push(e);
       if (pauseOnHistoric && universe.running && !paused) {
@@ -41,7 +43,7 @@ export function EventBanner({ universe }: { universe: Universe }): JSX.Element |
     }
     if (queueRef.current.length > 6) queueRef.current.splice(0, queueRef.current.length - 6);
     if (seenRef.current.size > 3000) seenRef.current.clear();
-  }, [universe.events, universe.runToTarget, pauseOnHistoric, universe.running, pause]);
+  }, [universe.events, universe.runToTarget, pauseOnHistoric, universe.running, pause, followedCivId]);
 
   // Advance the banner queue.
   useEffect(() => {

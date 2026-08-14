@@ -26,6 +26,28 @@ import { AchievementsPanel } from './AchievementsPanel';
 
 // Three.js loads only when the planet view is opened.
 const PlanetView = lazy(() => import('./PlanetView'));
+
+function FollowChip({ universe }: { universe: import('../state/simulatorStore').Universe }): JSX.Element | null {
+  const t = useT();
+  const followedCivId = useSimulatorStore((s) => s.followedCivId);
+  const selectCiv = useSimulatorStore((s) => s.selectCiv);
+  const setInspectorTab = useSimulatorStore((s) => s.setInspectorTab);
+  const civ = universe.snapshot?.civs.find((c) => c.id === followedCivId);
+  if (!civ) return null;
+  return (
+    <button
+      className="follow-chip"
+      onClick={() => {
+        selectCiv(civ.id);
+        setInspectorTab('nations');
+      }}
+      title={t('follow.chipHint')}
+    >
+      <span className="dot" style={{ background: civ.color }} /> ★ {civ.name}
+      {!civ.alive && <span className="muted small"> · {civ.ascended ? t('nat.ascended') : t('nat.extinct')}</span>}
+    </button>
+  );
+}
 import { checkAchievements, loadUnlocked } from '../utils/achievements';
 import { getScenario } from '../utils/scenarios';
 import { ScenarioHud } from './ScenarioHud';
@@ -324,6 +346,7 @@ export function SimulatorShell(): JSX.Element {
           {!planetView && <GodToolbar />}
           <EventBanner universe={universe} />
           <ScenarioHud universe={universe} />
+          <FollowChip universe={universe} />
           <SimulationControls universe={universe} />
         </div>
 

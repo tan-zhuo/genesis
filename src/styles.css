@@ -545,6 +545,25 @@ input[type='checkbox'] { accent-color: var(--accent); }
 .scenario-modal-actions { display: flex; gap: 10px; justify-content: center; margin-top: 6px; }
 .scenario-card { border-color: rgba(245, 165, 36, 0.25); }
 
+.follow-chip {
+  position: absolute;
+  top: 52px;
+  left: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(10, 14, 22, 0.9);
+  border: 1px solid var(--accent-dim);
+  color: var(--accent);
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  z-index: 6;
+}
+.follow-chip:hover { background: rgba(245, 165, 36, 0.12); }
+.civ-chronicle-list { max-height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; }
+
 /* ---------- Cinema mode ---------- */
 .cinema-mode .sidebar,
 .cinema-mode .inspector,

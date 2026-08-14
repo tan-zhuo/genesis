@@ -27,14 +27,19 @@ export function Timeline({ universe }: { universe: Universe }): JSX.Element {
   const [minImportance, setMinImportance] = useState(3);
   const focusOn = useSimulatorStore((s) => s.focusOn);
   const selectCiv = useSimulatorStore((s) => s.selectCiv);
+  const followedCivId = useSimulatorStore((s) => s.followedCivId);
 
   const events = useMemo(() => {
-    const f = FILTERS.find((x) => x.id === filter);
     let list = universe.events;
-    if (f && f.types.length > 0) list = list.filter((e) => f.types.includes(e.type));
+    if (filter === 'followed' && followedCivId) {
+      list = list.filter((e) => e.civilizationIds.includes(followedCivId));
+    } else {
+      const f = FILTERS.find((x) => x.id === filter);
+      if (f && f.types.length > 0) list = list.filter((e) => f.types.includes(e.type));
+    }
     list = list.filter((e) => e.importance >= minImportance);
     return list.slice(-400).reverse();
-  }, [universe.events, filter, minImportance]);
+  }, [universe.events, filter, minImportance, followedCivId]);
 
   const clickEvent = (e: WorldEvent): void => {
     if (e.x !== undefined && e.y !== undefined) focusOn(e.x, e.y);
@@ -49,6 +54,11 @@ export function Timeline({ universe }: { universe: Universe }): JSX.Element {
             {t(f.key)}
           </button>
         ))}
+        {followedCivId && (
+          <button className={`chip ${filter === 'followed' ? 'chip-active' : ''}`} onClick={() => setFilter('followed')}>
+            ★ {t('follow.filter')}
+          </button>
+        )}
         <select className="input input-sm" value={minImportance} onChange={(e) => setMinImportance(Number(e.target.value))} title={t('tl.minImportance')}>
           <option value={1}>{t('tl.allEvents')}</option>
           <option value={3}>{t('tl.notable')}</option>

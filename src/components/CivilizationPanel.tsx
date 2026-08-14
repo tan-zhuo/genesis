@@ -1,9 +1,10 @@
 // Civilization detail: stats, history charts, relations.
-import { ArrowLeft, Crosshair, Skull } from 'lucide-react';
+import { ArrowLeft, Crosshair, Skull, Star } from 'lucide-react';
 import { Universe, useSimulatorStore } from '../state/simulatorStore';
 import { CivSummary } from '../simulation/types';
 import { techEraKeyOf } from '../simulation/Technology';
-import { useT } from '../i18n';
+import { useLang, useT } from '../i18n';
+import { EVENT_ICONS } from './icons';
 import { fmtNum, fmtPct } from '../utils/format';
 import { LineChart } from './LineChart';
 import { civProfile } from './CivEditor';
@@ -23,10 +24,15 @@ function StatBar({ label, value, color }: { label: string; value: number; color?
 
 export function CivilizationPanel({ universe, civ }: { universe: Universe; civ: CivSummary }): JSX.Element {
   const t = useT();
+  const lang = useLang();
   const selectCiv = useSimulatorStore((s) => s.selectCiv);
   const focusOn = useSimulatorStore((s) => s.focusOn);
+  const followedCivId = useSimulatorStore((s) => s.followedCivId);
+  const setFollowedCiv = useSimulatorStore((s) => s.setFollowedCiv);
+  const following = followedCivId === civ.id;
   const snapshot = universe.snapshot;
   const history = snapshot?.civHistories[civ.id];
+  const chronicle = universe.events.filter((e) => e.civilizationIds.includes(civ.id)).slice(-30).reverse();
 
   const relations = (snapshot?.relations ?? [])
     .filter((r) => r.a === civ.id || r.b === civ.id)
@@ -51,6 +57,13 @@ export function CivilizationPanel({ universe, civ }: { universe: Universe; civ: 
         {!civ.alive && !civ.ascended && (
           <span className="tag tag-dead"><Skull size={11} /> {t('nat.extinct')} {civ.deathYear !== null ? `· ${civ.deathYear}` : ''}</span>
         )}
+        <button
+          className={`icon-btn ${following ? 'icon-active' : ''}`}
+          onClick={() => setFollowedCiv(following ? null : civ.id)}
+          title={following ? t('follow.stop') : t('follow.start')}
+        >
+          <Star size={14} fill={following ? 'currentColor' : 'none'} />
+        </button>
         <button className="icon-btn" onClick={() => focusOn(Math.round(civ.cx), Math.round(civ.cy))} title={t('nat.locate')} disabled={!civ.alive}>
           <Crosshair size={14} />
         </button>
@@ -92,6 +105,26 @@ export function CivilizationPanel({ universe, civ }: { universe: Universe; civ: 
           <LineChart title={t('nat.techHistory')} series={[{ label: civ.name, color: civ.color, xs: history.years, ys: history.technology }]} />
           <LineChart title={t('nat.ecoHistory')} series={[{ label: civ.name, color: civ.color, xs: history.years, ys: history.economy }]} />
         </>
+      )}
+
+      {chronicle.length > 0 && (
+        <div className="civ-chronicle">
+          <div className="section-title">{t('follow.chronicle', { name: civ.name })}</div>
+          <div className="civ-chronicle-list">
+            {chronicle.map((e) => {
+              const Icon = EVENT_ICONS[e.type];
+              return (
+                <div key={e.id} className={`event-item importance-${Math.min(9, e.importance)}`}>
+                  <span className="event-year">{t('tl.year', { y: e.year.toLocaleString('en-US') })}</span>
+                  <span className="event-title">
+                    {Icon && <Icon size={12} className="event-icon" />} {lang === 'zh' && e.titleZh ? e.titleZh : e.title}
+                  </span>
+                  <span className="event-desc">{lang === 'zh' && e.descriptionZh ? e.descriptionZh : e.description}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       )}
 
       {relations.length > 0 && (

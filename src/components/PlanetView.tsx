@@ -572,14 +572,83 @@ export default function PlanetView({ universe }: { universe: Universe }): JSX.El
       sisters.push({ mesh, r: 9 + i * 5.5, speed: 0.02 / (i + 1), phase: (seedHash >> (i * 5)) % 628 / 100 });
     }
 
+    // Detailed craft builders (procedural, no assets).
+    const makeSatellite = (): { group: THREE.Group; beacon: THREE.Mesh } => {
+      const g = new THREE.Group();
+      const body = new THREE.Mesh(
+        new THREE.BoxGeometry(0.02, 0.02, 0.042),
+        new THREE.MeshStandardMaterial({ color: 0xd0d8e6, metalness: 0.7, roughness: 0.35 }),
+      );
+      g.add(body);
+      const panelMat = new THREE.MeshStandardMaterial({
+        color: 0x1c3f9e,
+        emissive: 0x12307e,
+        emissiveIntensity: 0.55,
+        side: THREE.DoubleSide,
+        metalness: 0.4,
+        roughness: 0.4,
+      });
+      for (const side of [-1, 1]) {
+        const panel = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.0016, 0.026), panelMat);
+        panel.position.x = side * 0.056;
+        g.add(panel);
+        const strut = new THREE.Mesh(
+          new THREE.BoxGeometry(0.02, 0.0014, 0.004),
+          new THREE.MeshStandardMaterial({ color: 0x8a94a6 }),
+        );
+        strut.position.x = side * 0.018;
+        g.add(strut);
+      }
+      const dish = new THREE.Mesh(
+        new THREE.ConeGeometry(0.011, 0.008, 12, 1, true),
+        new THREE.MeshStandardMaterial({ color: 0xe8ecf4, side: THREE.DoubleSide }),
+      );
+      dish.position.z = 0.028;
+      dish.rotation.x = Math.PI / 2;
+      g.add(dish);
+      const beacon = new THREE.Mesh(
+        new THREE.SphereGeometry(0.0045, 8, 8),
+        new THREE.MeshBasicMaterial({ color: 0xff5544 }),
+      );
+      beacon.position.y = 0.016;
+      g.add(beacon);
+      return { group: g, beacon };
+    };
+
+    const makeShip = (): { group: THREE.Group; engine: THREE.Sprite } => {
+      const g = new THREE.Group();
+      const hullMat = new THREE.MeshStandardMaterial({ color: 0xdde4ee, metalness: 0.5, roughness: 0.35 });
+      const fuselage = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.016, 0.06, 12), hullMat);
+      fuselage.rotation.x = Math.PI / 2;
+      g.add(fuselage);
+      const nose = new THREE.Mesh(new THREE.ConeGeometry(0.012, 0.024, 12), hullMat);
+      nose.rotation.x = Math.PI / 2;
+      nose.position.z = 0.042;
+      g.add(nose);
+      const finMat = new THREE.MeshStandardMaterial({ color: 0x8fb4dd, metalness: 0.4, roughness: 0.5, side: THREE.DoubleSide });
+      for (const side of [-1, 1]) {
+        const wing = new THREE.Mesh(new THREE.BoxGeometry(0.034, 0.002, 0.018), finMat);
+        wing.position.set(side * 0.02, 0, -0.012);
+        g.add(wing);
+      }
+      const engine = new THREE.Sprite(
+        new THREE.SpriteMaterial({ map: glowTex, color: 0x9fd8ff, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false }),
+      );
+      engine.scale.set(0.05, 0.05, 1);
+      engine.position.z = -0.042;
+      g.add(engine);
+      return { group: g, engine };
+    };
+
     // ---- Technology made visible: satellites, ships, missiles, the Gate ----
     const orbitGroup = new THREE.Group(); // satellites (world space, own spin)
     scene.add(orbitGroup);
     const surfaceGroup = new THREE.Group(); // attached to the globe (rotates with it)
     globe.add(surfaceGroup);
-    const satellites: { mesh: THREE.Mesh; r: number; incl: number; speed: number; phase: number }[] = [];
-    const ships: { mesh: THREE.Mesh; phase: number }[] = [];
-    let missiles: { mesh: THREE.Mesh; a: THREE.Vector3; b: THREE.Vector3; phase: number }[] = [];
+    const satellites: { mesh: THREE.Group; beacon: THREE.Mesh; r: number; incl: number; speed: number; phase: number }[] = [];
+    const ships: { mesh: THREE.Group; engine: THREE.Sprite; phase: number }[] = [];
+    let missiles: { mesh: THREE.Mesh; trail: THREE.Sprite; a: THREE.Vector3; b: THREE.Vector3; phase: number }[] = [];
+    const orbitRings: THREE.Line[] = [];
     let portal: THREE.Mesh | null = null;
     let beam: THREE.Mesh | null = null;
 
@@ -595,17 +664,32 @@ export default function PlanetView({ universe }: { universe: Universe }): JSX.El
       // Satellites: constellation size scales with spacefaring nations.
       const wantSats = Math.min(14, spacefarers.length * 5);
       while (satellites.length > wantSats) {
-        const s = satellites.pop()!;
-        orbitGroup.remove(s.mesh);
+        const sPop = satellites.pop()!;
+        orbitGroup.remove(sPop.mesh);
       }
       while (satellites.length < wantSats) {
         const i = satellites.length;
-        const mesh = new THREE.Mesh(
-          new THREE.BoxGeometry(0.02, 0.02, 0.05),
-          new THREE.MeshBasicMaterial({ color: 0xd8e6ff }),
-        );
-        orbitGroup.add(mesh);
-        satellites.push({ mesh, r: 1.14 + (i % 4) * 0.055, incl: (i * 0.7) % 1.4 - 0.7, speed: 0.5 + (i % 3) * 0.17, phase: i * 1.33 });
+        const { group, beacon } = makeSatellite();
+        orbitGroup.add(group);
+        const r = 1.14 + (i % 4) * 0.055;
+        const incl = ((i * 0.7) % 1.4) - 0.7;
+        satellites.push({ mesh: group, beacon, r, incl, speed: 0.5 + (i % 3) * 0.17, phase: i * 1.33 });
+        // Faint orbit ring for legibility (one per unique orbit).
+        if (i < 4) {
+          const pts: THREE.Vector3[] = [];
+          for (let k = 0; k <= 72; k++) {
+            const ang = (k / 72) * Math.PI * 2;
+            const pv = new THREE.Vector3(Math.cos(ang) * r, 0, Math.sin(ang) * r);
+            pv.applyAxisAngle(new THREE.Vector3(1, 0, 0), incl);
+            pts.push(pv);
+          }
+          const ring = new THREE.Line(
+            new THREE.BufferGeometry().setFromPoints(pts),
+            new THREE.LineBasicMaterial({ color: 0x88a8d8, transparent: true, opacity: 0.14 }),
+          );
+          orbitGroup.add(ring);
+          orbitRings.push(ring);
+        }
       }
 
       // Ships: shuttles running to the moon once spaceflight exists.
@@ -615,16 +699,16 @@ export default function PlanetView({ universe }: { universe: Universe }): JSX.El
         scene.remove(sh.mesh);
       }
       while (ships.length < wantShips) {
-        const mesh = new THREE.Mesh(
-          new THREE.ConeGeometry(0.025, 0.08, 8),
-          new THREE.MeshBasicMaterial({ color: 0xaFe0ff }),
-        );
-        scene.add(mesh);
-        ships.push({ mesh, phase: ships.length * 0.5 });
+        const { group, engine } = makeShip();
+        scene.add(group);
+        ships.push({ mesh: group, engine, phase: ships.length * 0.5 });
       }
 
       // Missiles: ballistic arcs over active fronts, once flight is known.
-      for (const mm of missiles) surfaceGroup.remove(mm.mesh);
+      for (const mm of missiles) {
+        surfaceGroup.remove(mm.mesh);
+        surfaceGroup.remove(mm.trail);
+      }
       missiles = [];
       const activeWars = snap.wars.filter((w) => w.endYear === null).slice(0, 3);
       for (const war of activeWars) {
@@ -635,11 +719,16 @@ export default function PlanetView({ universe }: { universe: Universe }): JSX.El
         const pa = tileToLocal(a.cx, a.cy, u.mapStatic.width, u.mapStatic.height, 1.01);
         const pb = tileToLocal(b.cx, b.cy, u.mapStatic.width, u.mapStatic.height, 1.01);
         const mesh = new THREE.Mesh(
-          new THREE.SphereGeometry(0.018, 8, 8),
-          new THREE.MeshBasicMaterial({ color: 0xff6a50 }),
+          new THREE.SphereGeometry(0.016, 8, 8),
+          new THREE.MeshBasicMaterial({ color: 0xffd0a0 }),
         );
+        const trail = new THREE.Sprite(
+          new THREE.SpriteMaterial({ map: glowTex, color: 0xff7040, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false }),
+        );
+        trail.scale.set(0.06, 0.06, 1);
         surfaceGroup.add(mesh);
-        missiles.push({ mesh, a: pa, b: pb, phase: missiles.length * 1.4 });
+        surfaceGroup.add(trail);
+        missiles.push({ mesh, trail, a: pa, b: pb, phase: missiles.length * 1.4 });
       }
 
       // The Gate: a transcendent nation opens a shimmering ring above its land.
@@ -703,6 +792,7 @@ export default function PlanetView({ universe }: { universe: Universe }): JSX.El
         pos.applyAxisAngle(new THREE.Vector3(1, 0, 0), sat.incl);
         sat.mesh.position.copy(pos);
         sat.mesh.lookAt(0, 0, 0);
+        sat.beacon.visible = Math.sin(tt * 5 + sat.phase * 3) > 0.55;
       }
       for (const sh of ships) {
         const f = (tt * 0.06 + sh.phase) % 1;
@@ -712,19 +802,25 @@ export default function PlanetView({ universe }: { universe: Universe }): JSX.El
         pos.y += Math.sin(f * Math.PI) * 0.35;
         sh.mesh.position.copy(pos);
         sh.mesh.lookAt(to);
-        sh.mesh.rotateX(Math.PI / 2);
+        (sh.engine.material as THREE.SpriteMaterial).opacity = 0.65 + Math.sin(tt * 9 + sh.phase * 7) * 0.3;
       }
       for (const mm of missiles) {
         const f = (tt * 0.28 + mm.phase) % 1.6;
         if (f < 1) {
           mm.mesh.visible = true;
+          mm.trail.visible = f > 0.04;
           const pos = mm.a.clone().lerp(mm.b, f);
           const lift = 1 + Math.sin(f * Math.PI) * 0.25;
           mm.mesh.position.copy(pos.normalize().multiplyScalar(lift));
-          const heat = 0.018 * (1 + Math.sin(f * Math.PI));
-          mm.mesh.scale.setScalar(f > 0.93 ? 4.5 : heat / 0.018); // impact flash
+          const fT = Math.max(0, f - 0.045);
+          const posT = mm.a.clone().lerp(mm.b, fT);
+          const liftT = 1 + Math.sin(fT * Math.PI) * 0.25;
+          mm.trail.position.copy(posT.normalize().multiplyScalar(liftT));
+          (mm.trail.material as THREE.SpriteMaterial).opacity = 0.5 + Math.sin(f * Math.PI) * 0.3;
+          mm.mesh.scale.setScalar(f > 0.93 ? 4.5 : 1 + Math.sin(f * Math.PI) * 0.5); // impact flash
         } else {
           mm.mesh.visible = false;
+          mm.trail.visible = false;
         }
       }
       if (portal) {

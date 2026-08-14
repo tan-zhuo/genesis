@@ -462,46 +462,90 @@ export function drawCaravans(
       const fy = a.cy + (b.cy - a.cy) * f;
       const px = v.x + fx * v.scale;
       const py = v.y + fy * v.scale;
-      // Over the sea the caravan becomes a sailing ship.
+      // Heading of travel (ships and carts face where they're going).
+      const heading = Math.atan2(b.cy - a.cy, b.cx - a.cx);
       const tx = Math.max(0, Math.min(map.width - 1, Math.round(fx)));
       const ty = Math.max(0, Math.min(map.height - 1, Math.round(fy)));
       const atSea = map.terrain[ty * map.width + tx] === 0;
+      ctx.save();
+      ctx.translate(px, py);
+      ctx.rotate(heading);
       if (atSea) {
-        const s = Math.max(2.2, v.scale * 0.22);
-        // hull
-        ctx.fillStyle = 'rgba(120, 86, 50, 0.95)';
+        // Top-down square-rigger: pointed hull, deck, two yards with sails, wake.
+        const s = Math.max(2.6, v.scale * 0.26);
+        // Wake: two diverging trails + stern foam
+        ctx.strokeStyle = 'rgba(190, 220, 248, 0.28)';
+        ctx.lineWidth = Math.max(0.8, s * 0.14);
         ctx.beginPath();
-        ctx.moveTo(px - s, py);
-        ctx.lineTo(px + s, py);
-        ctx.lineTo(px + s * 0.55, py + s * 0.5);
-        ctx.lineTo(px - s * 0.55, py + s * 0.5);
-        ctx.closePath();
-        ctx.fill();
-        // sail
-        ctx.fillStyle = 'rgba(238, 240, 244, 0.95)';
-        ctx.beginPath();
-        ctx.moveTo(px, py - s * 1.5);
-        ctx.lineTo(px, py - s * 0.1);
-        ctx.lineTo(px + s * 0.9, py - s * 0.1);
-        ctx.closePath();
-        ctx.fill();
-        // wake
-        ctx.strokeStyle = 'rgba(180, 215, 245, 0.35)';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(px - s * 1.6, py + s * 0.3);
-        ctx.lineTo(px - s * 3, py + s * 0.3);
+        ctx.moveTo(-s * 1.1, 0);
+        ctx.lineTo(-s * 3.4, -s * 0.55);
+        ctx.moveTo(-s * 1.1, 0);
+        ctx.lineTo(-s * 3.4, s * 0.55);
         ctx.stroke();
-      } else {
-        ctx.fillStyle = 'rgba(240, 200, 90, 0.95)';
+        // Hull: leaf shape with bow at +x
+        ctx.fillStyle = '#5d4226';
         ctx.beginPath();
-        ctx.arc(px, py, Math.max(1.4, v.scale * 0.14), 0, Math.PI * 2);
+        ctx.moveTo(s * 1.3, 0);
+        ctx.quadraticCurveTo(s * 0.5, -s * 0.5, -s * 1.05, -s * 0.34);
+        ctx.quadraticCurveTo(-s * 1.3, 0, -s * 1.05, s * 0.34);
+        ctx.quadraticCurveTo(s * 0.5, s * 0.5, s * 1.3, 0);
+        ctx.closePath();
         ctx.fill();
-        ctx.fillStyle = 'rgba(240, 200, 90, 0.3)';
+        // Deck stripe
+        ctx.fillStyle = '#8a6a44';
         ctx.beginPath();
-        ctx.arc(px - (b.cx - a.cx) * 0.004 * v.scale, py - (b.cy - a.cy) * 0.004 * v.scale, Math.max(1, v.scale * 0.1), 0, Math.PI * 2);
+        ctx.moveTo(s * 1.0, 0);
+        ctx.quadraticCurveTo(s * 0.4, -s * 0.3, -s * 0.85, -s * 0.2);
+        ctx.quadraticCurveTo(-s * 1.02, 0, -s * 0.85, s * 0.2);
+        ctx.quadraticCurveTo(s * 0.4, s * 0.3, s * 1.0, 0);
+        ctx.closePath();
+        ctx.fill();
+        // Two square sails (billowed toward the stern) on yard lines
+        for (const mx of [s * 0.45, -s * 0.35]) {
+          ctx.strokeStyle = 'rgba(60, 44, 26, 0.9)';
+          ctx.lineWidth = Math.max(0.6, s * 0.08);
+          ctx.beginPath();
+          ctx.moveTo(mx, -s * 0.62);
+          ctx.lineTo(mx, s * 0.62);
+          ctx.stroke();
+          ctx.fillStyle = 'rgba(240, 238, 228, 0.96)';
+          ctx.beginPath();
+          ctx.moveTo(mx, -s * 0.58);
+          ctx.quadraticCurveTo(mx - s * 0.42, 0, mx, s * 0.58);
+          ctx.quadraticCurveTo(mx - s * 0.18, 0, mx, -s * 0.58);
+          ctx.closePath();
+          ctx.fill();
+        }
+        // Bow foam
+        ctx.fillStyle = 'rgba(210, 232, 250, 0.5)';
+        ctx.beginPath();
+        ctx.arc(s * 1.35, 0, s * 0.14, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        // Land caravan: covered wagon with wheels and a draft animal.
+        const s2 = Math.max(1.8, v.scale * 0.18);
+        ctx.fillStyle = 'rgba(30, 24, 16, 0.3)';
+        ctx.beginPath();
+        ctx.ellipse(0, s2 * 0.5, s2 * 1.3, s2 * 0.35, 0, 0, Math.PI * 2);
+        ctx.fill();
+        // wheels
+        ctx.fillStyle = '#3c2f1e';
+        ctx.beginPath();
+        ctx.arc(-s2 * 0.55, -s2 * 0.5, s2 * 0.28, 0, Math.PI * 2);
+        ctx.arc(-s2 * 0.55, s2 * 0.5, s2 * 0.28, 0, Math.PI * 2);
+        ctx.fill();
+        // wagon body + canvas cover
+        ctx.fillStyle = '#7a5a34';
+        ctx.fillRect(-s2 * 1.1, -s2 * 0.42, s2 * 1.4, s2 * 0.84);
+        ctx.fillStyle = 'rgba(238, 232, 214, 0.95)';
+        ctx.fillRect(-s2 * 0.95, -s2 * 0.34, s2 * 1.05, s2 * 0.68);
+        // draft animal
+        ctx.fillStyle = '#6e5136';
+        ctx.beginPath();
+        ctx.ellipse(s2 * 0.85, 0, s2 * 0.34, s2 * 0.2, 0, 0, Math.PI * 2);
         ctx.fill();
       }
+      ctx.restore();
     }
   }
 }
